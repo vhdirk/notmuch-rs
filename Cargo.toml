@@ -1,0 +1,5 @@
+[package]
+
+name = "notmuch"
+version = "0.0.1"
+authors = ["C. Morgan Hamill <me@cmhamill.org>"]
