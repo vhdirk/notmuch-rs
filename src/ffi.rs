@@ -11,62 +11,75 @@ use libc::{
     time_t,
 };
 
+use utils::NotmuchEnum;
+
 pub type notmuch_bool_t = c_int;
 
 pub type notmuch_compact_status_cb_t = extern fn(*const c_char, *mut c_void);
 
-#[repr(C)]
-#[derive(Copy, Debug)]
-pub enum notmuch_status_t {
-    NOTMUCH_STATUS_SUCCESS = 0,
-    NOTMUCH_STATUS_OUT_OF_MEMORY,
-    NOTMUCH_STATUS_READ_ONLY_DATABASE,
-    NOTMUCH_STATUS_XAPIAN_EXCEPTION,
-    NOTMUCH_STATUS_FILE_ERROR,
-    NOTMUCH_STATUS_FILE_NOT_EMAIL,
-    NOTMUCH_STATUS_DUPLICATE_MESSAGE_ID,
-    NOTMUCH_STATUS_NULL_POINTER,
-    NOTMUCH_STATUS_TAG_TOO_LONG,
-    NOTMUCH_STATUS_UNBALANCED_FREEZE_THAW,
-    NOTMUCH_STATUS_UNBALANCED_ATOMIC,
-    NOTMUCH_STATUS_UNSUPPORTED_OPERATION,
-    NOTMUCH_STATUS_UPGRADE_REQUIRED,
-    // Not an actual status value.  Just a way to find out how many
-    // valid status values there are.
-    NOTMUCH_STATUS_LAST_STATUS,
+notmuch_enum! {
+    #[repr(C)]
+    #[derive(Copy, Debug)]
+    pub enum notmuch_status_t => NotmuchStatus {
+        NOTMUCH_STATUS_SUCCESS => Success,
+        NOTMUCH_STATUS_OUT_OF_MEMORY => OutOfMemory,
+        NOTMUCH_STATUS_READ_ONLY_DATABASE => ReadOnlyDatabase,
+        NOTMUCH_STATUS_XAPIAN_EXCEPTION => XapianException,
+        NOTMUCH_STATUS_FILE_ERROR => FileError,
+        NOTMUCH_STATUS_FILE_NOT_EMAIL => FileNotEmail,
+        NOTMUCH_STATUS_DUPLICATE_MESSAGE_ID => DuplicateMessageID,
+        NOTMUCH_STATUS_NULL_POINTER => NullPointer,
+        NOTMUCH_STATUS_TAG_TOO_LONG => TagTooLong,
+        NOTMUCH_STATUS_UNBALANCED_FREEZE_THAW => UnbalancedFreezeThaw,
+        NOTMUCH_STATUS_UNBALANCED_ATOMIC => UnbalancedAtomic,
+        NOTMUCH_STATUS_UNSUPPORTED_OPERATION => UnsupportedOperation,
+        NOTMUCH_STATUS_UPGRADE_REQUIRED => UpgradeRequired,
+        // Not an actual status value.  Just a way to find out how many
+        // valid status values there are.
+        NOTMUCH_STATUS_LAST_STATUS => LastStatus
+    }
+}
 }
 
-#[repr(C)]
-#[derive(Copy, Debug)]
-pub enum notmuch_database_mode_t {
-    NOTMUCH_DATABASE_MODE_READ_ONLY = 0,
-    NOTMUCH_DATABASE_MODE_READ_WRITE,
+notmuch_enum! {
+    #[repr(C)]
+    #[derive(Copy, Debug)]
+    pub enum notmuch_database_mode_t => NotmuchDatabaseMode {
+        NOTMUCH_DATABASE_MODE_READ_ONLY => ReadOnly,
+        NOTMUCH_DATABASE_MODE_READ_WRITE => ReadWrite
+    }
 }
 
-#[repr(C)]
-#[derive(Copy, Debug)]
-pub enum notmuch_sort_t {
-    NOTMUCH_SORT_OLDEST_FIRST = 0,
-    NOTMUCH_SORT_NEWEST_FIRST,
-    NOTMUCH_SORT_MESSAGE_ID,
-    NOTMUCH_SORT_UNSORTED,
+notmuch_enum! {
+    #[repr(C)]
+    #[derive(Copy, Debug)]
+    pub enum notmuch_sort_t => NotmuchSort {
+        NOTMUCH_SORT_OLDEST_FIRST => OldestFirst,
+        NOTMUCH_SORT_NEWEST_FIRST => NewestFirst,
+        NOTMUCH_SORT_MESSAGE_ID => MessageID,
+        NOTMUCH_SORT_UNSORTED => ReadWrite
+    }
 }
 
-#[repr(C)]
-#[derive(Copy, Debug)]
-pub enum notmuch_exclude_t {
-    NOTMUCH_EXCLUDE_FLAG = 0,
-    NOTMUCH_EXCLUDE_TRUE,
-    NOTMUCH_EXCLUDE_FALSE,
-    NOTMUCH_EXCLUDE_ALL,
+notmuch_enum! {
+    #[repr(C)]
+    #[derive(Copy, Debug)]
+    pub enum notmuch_exclude_t => NotmuchExclude {
+        NOTMUCH_EXCLUDE_FLAG => Flag,
+        NOTMUCH_EXCLUDE_TRUE => True,
+        NOTMUCH_EXCLUDE_FALSE => False,
+        NOTMUCH_EXCLUDE_ALL => All
+    }
 }
 
-#[repr(C)]
-#[derive(Copy, Debug)]
-pub enum notmuch_message_flag_t {
-    NOTMUCH_MESSAGE_FLAG_MATCH = 0,
-    NOTMUCH_MESSAGE_FLAG_EXCLUDED,
-    NOTMUCH_MESSAGE_FLAG_GHOST,
+notmuch_enum! {
+    #[repr(C)]
+    #[derive(Copy, Debug)]
+    pub enum notmuch_message_flag_t => NotmuchMessageFlag {
+        NOTMUCH_MESSAGE_FLAG_MATCH => Match,
+        NOTMUCH_MESSAGE_FLAG_EXCLUDED => Excluded,
+        NOTMUCH_MESSAGE_FLAG_GHOST => Ghost
+    }
 }
 
 #[repr(C)] pub struct notmuch_database_t;
