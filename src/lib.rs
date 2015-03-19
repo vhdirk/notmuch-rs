@@ -1,4 +1,4 @@
-#![feature(libc)]
+#![feature(core, libc)]
 extern crate libc;
 
 #[macro_use]
