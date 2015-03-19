@@ -39,6 +39,21 @@ notmuch_enum! {
         NOTMUCH_STATUS_LAST_STATUS => LastStatus
     }
 }
+
+impl notmuch_status_t {
+    pub fn is_ok(&self) -> bool {
+       match *self {
+            notmuch_status_t::NOTMUCH_STATUS_SUCCESS => true,
+            _ => false,
+        }
+    }
+
+    pub fn as_result(self) -> Result<(), Self> {
+        match self.is_ok() {
+            true => Ok(()),
+            false => Err(self),
+        }
+    }
 }
 
 notmuch_enum! {
