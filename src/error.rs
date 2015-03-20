@@ -1,0 +1,47 @@
+use std::{
+    error,
+    fmt,
+    io,
+};
+
+use utils::NotmuchEnum;
+use ffi;
+
+#[derive(Debug)]
+pub enum Error {
+    IoError(io::Error),
+    NotmuchError(ffi::NotmuchStatus),
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", error::Error::description(self))
+    }
+}
+
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        match *self {
+            Error::IoError(ref e) => error::Error::description(e),
+            Error::NotmuchError(ref e) => e.description(),
+        }
+    }
+}
+
+impl error::FromError<io::Error> for Error {
+    fn from_error(err: io::Error) -> Error {
+        Error::IoError(err)
+    }
+}
+
+impl error::FromError<ffi::NotmuchStatus> for Error {
+    fn from_error(err: ffi::NotmuchStatus) -> Error {
+        Error::NotmuchError(err)
+    }
+}
+
+impl error::FromError<ffi::notmuch_status_t> for Error {
+    fn from_error(err: ffi::notmuch_status_t) -> Error {
+        Error::NotmuchError(ffi::NotmuchStatus::from_notmuch_t(err))
+    }
+}

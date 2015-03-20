@@ -6,3 +6,5 @@ mod macros;
 
 mod ffi;
 mod utils;
+
+pub mod error;
