@@ -99,6 +99,12 @@ impl Database {
 
         Ok(())
     }
+
+    pub fn path(&self) -> &path::Path {
+        path::Path::new(unsafe {
+            ffi::notmuch_database_get_path(self.0)
+        }.to_str().unwrap())
+    }
 }
 
 impl ops::Drop for Database {
