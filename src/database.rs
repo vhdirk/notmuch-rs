@@ -105,6 +105,12 @@ impl Database {
             ffi::notmuch_database_get_path(self.0)
         }.to_str().unwrap())
     }
+
+    pub fn version(&self) -> Version {
+        Version(unsafe {
+            ffi::notmuch_database_get_version(self.0)
+        })
+    }
 }
 
 impl ops::Drop for Database {
