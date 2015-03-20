@@ -1,4 +1,5 @@
 use std::{
+    ops,
     path,
     ptr,
 };
@@ -90,5 +91,12 @@ impl Database {
 
         Ok(())
     }
+}
 
+impl ops::Drop for Database {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::notmuch_database_destroy(self.0)
+        };
+    }
 }
