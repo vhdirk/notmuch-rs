@@ -25,11 +25,11 @@ impl<T: ffi::AsOsStr> ToCString for T {
 }
 
 pub trait ToStr {
-    fn to_str(&self) -> Result<&str, str::Utf8Error>;
+    fn to_str<'a>(&self) -> Result<&'a str, str::Utf8Error>;
 }
 
 impl ToStr for *const libc::c_char {
-    fn to_str(&self) -> Result<&str, str::Utf8Error> {
+    fn to_str<'a>(&self) -> Result<&'a str, str::Utf8Error> {
         str::from_utf8(unsafe {
             ffi::CStr::from_ptr(*self)
         }.to_bytes())
