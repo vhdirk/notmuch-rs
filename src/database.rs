@@ -111,6 +111,12 @@ impl Database {
             ffi::notmuch_database_get_version(self.0)
         })
     }
+
+    pub fn needs_upgrade(&self) -> bool {
+        unsafe {
+            ffi::notmuch_database_needs_upgrade(self.0) == 1
+        }
+    }
 }
 
 impl ops::Drop for Database {
