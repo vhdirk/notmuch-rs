@@ -6,7 +6,10 @@ use std::{
 use libc;
 
 use error::Result;
-use utils::ToCString;
+use utils::{
+    NotmuchEnum,
+    ToCString,
+};
 
 use ffi;
 
@@ -29,4 +32,18 @@ impl Database {
 
         Ok(Database(db))
     }
+
+    pub fn open<P: path::AsPath>(path: &P, mode: Mode) -> Result<Database> {
+        let path = path.as_path().to_cstring().unwrap();
+
+        let mut db = ptr::null_mut();
+        try!(unsafe {
+            ffi::notmuch_database_open(
+                path.as_ptr(), mode.to_notmuch_t(), &mut db,
+            )
+        }.as_result());
+
+        Ok(Database(db))
+    }
+
 }
