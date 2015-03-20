@@ -2,10 +2,13 @@ use std::{
     error,
     fmt,
     io,
+    result,
 };
 
 use utils::NotmuchEnum;
 use ffi;
+
+pub type Result<T> = result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Error {
