@@ -11,7 +11,17 @@ use libc::{
     time_t,
 };
 
-use utils::NotmuchEnum;
+use std::{
+    error,
+    fmt,
+    str,
+};
+
+use utils::{
+    NotmuchEnum,
+    ToStaticStr,
+    ToStr,
+};
 
 pub type notmuch_bool_t = c_int;
 
@@ -53,6 +63,26 @@ impl notmuch_status_t {
             true => Ok(()),
             false => Err(self),
         }
+    }
+}
+
+impl ToStr for NotmuchStatus {
+    fn to_str(&self) -> Result<&str, str::Utf8Error> {
+        unsafe {
+            notmuch_status_to_string(self.to_notmuch_t())
+        }.to_static_str()
+    }
+}
+
+impl fmt::Display for NotmuchStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.to_str().unwrap())
+    }
+}
+
+impl error::Error for NotmuchStatus {
+    fn description(&self) -> &str {
+        self.to_str().unwrap()
     }
 }
 
