@@ -117,6 +117,39 @@ impl Database {
             ffi::notmuch_database_needs_upgrade(self.0) == 1
         }
     }
+
+    pub fn upgrade<F: FnMut(f64)>(&self) -> Result<()> {
+        let status: Option<F> = None;
+        self._upgrade(status)
+    }
+
+    pub fn upgrade_with_status<F: FnMut(f64)>(&self, status: F) -> Result<()> {
+        self._upgrade(Some(status))
+    }
+
+    fn _upgrade<F: FnMut(f64)>(&self, status: Option<F>) -> Result<()> {
+
+        extern fn wrapper<F: FnMut(f64)>(
+            closure: *mut libc::c_void, progress: libc::c_double,
+        ) {
+            let closure = closure as *mut F;
+            unsafe {
+                (*closure)(progress as f64)
+            }
+        }
+
+        try!(unsafe {
+            ffi::notmuch_database_upgrade(
+                self.0,
+                if status.is_some() { Some(wrapper::<F>) } else { None },
+                status.map_or(ptr::null_mut(), |f| {
+                    &f as *const _ as *mut libc::c_void
+                }),
+            )
+        }.as_result());
+
+        Ok(())
+    }
 }
 
 impl ops::Drop for Database {
