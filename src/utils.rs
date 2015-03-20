@@ -3,6 +3,8 @@ use std::{
     str,
 };
 
+use std::os::unix::ffi::OsStrExt;
+
 use libc;
 
 pub trait NotmuchEnum {
@@ -10,6 +12,16 @@ pub trait NotmuchEnum {
 
     fn from_notmuch_t(notmuch_t: Self::NotmuchT) -> Self;
     fn to_notmuch_t(self) -> Self::NotmuchT;
+}
+
+pub trait ToCString {
+    fn to_cstring(&self) -> Result<ffi::CString, ffi::NulError>;
+}
+
+impl<T: ffi::AsOsStr> ToCString for T {
+    fn to_cstring(&self) -> Result<ffi::CString, ffi::NulError> {
+        self.as_os_str().to_cstring()
+    }
 }
 
 pub trait ToStr {
