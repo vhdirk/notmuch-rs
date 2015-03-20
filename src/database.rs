@@ -48,6 +48,14 @@ impl Database {
         Ok(Database(db))
     }
 
+    pub fn close(self) -> Result<()> {
+        try!(unsafe {
+            ffi::notmuch_database_close(self.0)
+        }.as_result());
+
+        Ok(())
+    }
+
     pub fn compact<P: path::AsPath, F: FnMut(&str)>(
         path: &P, backup_path: Option<&P>,
     ) -> Result<()> {
