@@ -26,6 +26,13 @@ impl error::Error for Error {
             Error::NotmuchError(ref e) => e.description(),
         }
     }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            Error::IoError(ref e) => Some(e),
+            Error::NotmuchError(ref e) => Some(e),
+        }
+    }
 }
 
 impl error::FromError<io::Error> for Error {
