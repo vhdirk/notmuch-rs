@@ -19,7 +19,6 @@ use std::{
 
 use utils::{
     NotmuchType,
-    ToStaticStr,
     ToStr,
 };
 
@@ -70,7 +69,7 @@ impl ToStr for NotmuchStatus {
     fn to_str<'a>(&self) -> Result<&'a str, str::Utf8Error> {
         unsafe {
             notmuch_status_to_string(self.to_notmuch_t())
-        }.to_static_str()
+        }.to_str()
     }
 }
 

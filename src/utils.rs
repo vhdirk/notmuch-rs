@@ -35,15 +35,3 @@ impl ToStr for *const libc::c_char {
         }.to_bytes())
     }
 }
-
-pub trait ToStaticStr {
-    fn to_static_str(&self) -> Result<&'static str, str::Utf8Error>;
-}
-
-impl ToStaticStr for *const libc::c_char {
-    fn to_static_str(&self) -> Result<&'static str, str::Utf8Error> {
-        str::from_utf8(unsafe {
-            ffi::CStr::from_ptr(*self)
-        }.to_bytes())
-    }
-}
