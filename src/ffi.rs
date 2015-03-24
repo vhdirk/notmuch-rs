@@ -18,7 +18,7 @@ use std::{
 };
 
 use utils::{
-    NotmuchEnum,
+    NotmuchType,
     ToStaticStr,
     ToStr,
 };

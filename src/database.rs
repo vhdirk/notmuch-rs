@@ -8,7 +8,7 @@ use libc;
 
 use error::Result;
 use utils::{
-    NotmuchEnum,
+    NotmuchType,
     ToCString,
     ToStr,
 };

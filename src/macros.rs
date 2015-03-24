@@ -16,7 +16,7 @@ macro_rules! notmuch_enum {
             $($variant_alias),*
         }
 
-        impl NotmuchEnum for $name_alias {
+        impl NotmuchType for $name_alias {
             type NotmuchT = $name;
 
             fn from_notmuch_t(notmuch_t: $name) -> Self {

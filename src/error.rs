@@ -5,7 +5,7 @@ use std::{
     result,
 };
 
-use utils::NotmuchEnum;
+use utils::NotmuchType;
 use ffi;
 
 pub type Result<T> = result::Result<T, Error>;

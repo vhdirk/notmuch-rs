@@ -7,7 +7,7 @@ use std::os::unix::ffi::OsStrExt;
 
 use libc;
 
-pub trait NotmuchEnum {
+pub trait NotmuchType {
     type NotmuchT;
 
     fn from_notmuch_t(notmuch_t: Self::NotmuchT) -> Self;
