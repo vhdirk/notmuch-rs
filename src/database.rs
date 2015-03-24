@@ -118,16 +118,16 @@ impl Database {
         }
     }
 
-    pub fn upgrade<F: FnMut(f64)>(&self) -> Result<()> {
+    pub fn upgrade<F: FnMut(f64)>(&mut self) -> Result<()> {
         let status: Option<F> = None;
         self._upgrade(status)
     }
 
-    pub fn upgrade_with_status<F: FnMut(f64)>(&self, status: F) -> Result<()> {
+    pub fn upgrade_with_status<F: FnMut(f64)>(&mut self, status: F) -> Result<()> {
         self._upgrade(Some(status))
     }
 
-    fn _upgrade<F: FnMut(f64)>(&self, status: Option<F>) -> Result<()> {
+    fn _upgrade<F: FnMut(f64)>(&mut self, status: Option<F>) -> Result<()> {
 
         extern fn wrapper<F: FnMut(f64)>(
             closure: *mut libc::c_void, progress: libc::c_double,
