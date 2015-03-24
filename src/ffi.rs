@@ -233,7 +233,7 @@ extern {
         query_string: *const c_char,
     ) -> *mut notmuch_query_t;
 
-    pub fn notmuch_query_get_string(
+    pub fn notmuch_query_get_query_string(
         query: *mut notmuch_query_t,
     ) -> *const c_char;
 
@@ -452,6 +452,7 @@ extern {
 
     pub fn notmuch_directory_set_mtime(
         directory: *mut notmuch_directory_t,
+        mtime: time_t,
     ) -> notmuch_status_t;
 
     pub fn notmuch_directory_get_mtime(
