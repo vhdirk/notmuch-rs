@@ -24,8 +24,8 @@ pub struct Version(libc::c_uint);
 pub struct Database(*mut ffi::notmuch_database_t);
 
 impl Database {
-    pub fn create<P: path::AsPath>(path: &P) -> Result<Database> {
-        let path = path.as_path().to_cstring().unwrap();
+    pub fn create<P: AsRef<path::Path>>(path: &P) -> Result<Database> {
+        let path = path.as_ref().to_cstring().unwrap();
 
         let mut db = ptr::null_mut();
         try!(unsafe {
@@ -35,8 +35,8 @@ impl Database {
         Ok(Database(db))
     }
 
-    pub fn open<P: path::AsPath>(path: &P, mode: Mode) -> Result<Database> {
-        let path = path.as_path().to_cstring().unwrap();
+    pub fn open<P: AsRef<path::Path>>(path: &P, mode: Mode) -> Result<Database> {
+        let path = path.as_ref().to_cstring().unwrap();
 
         let mut db = ptr::null_mut();
         try!(unsafe {
@@ -56,20 +56,20 @@ impl Database {
         Ok(())
     }
 
-    pub fn compact<P: path::AsPath, F: FnMut(&str)>(
+    pub fn compact<P: AsRef<path::Path>, F: FnMut(&str)>(
         path: &P, backup_path: Option<&P>,
     ) -> Result<()> {
         let status: Option<F> = None;
         Database::_compact(path, backup_path, status)
     }
 
-    pub fn compact_with_status<P: path::AsPath, F: FnMut(&str)>(
+    pub fn compact_with_status<P: AsRef<path::Path>, F: FnMut(&str)>(
         path: &P, backup_path: Option<&P>, status: F,
     ) -> Result<()> {
         Database::_compact(path, backup_path, Some(status))
     }
 
-    fn _compact<P: path::AsPath, F: FnMut(&str)>(
+    fn _compact<P: AsRef<path::Path>, F: FnMut(&str)>(
         path: &P, backup_path: Option<&P>, status: Option<F>,
     ) -> Result<()> {
 
@@ -82,9 +82,9 @@ impl Database {
             }
         }
 
-        let path = path.as_path().to_cstring().unwrap();
+        let path = path.as_ref().to_cstring().unwrap();
         let backup_path = backup_path.map(|p| {
-            p.as_path().to_cstring().unwrap()
+            p.as_ref().to_cstring().unwrap()
         });
 
         try!(unsafe {
