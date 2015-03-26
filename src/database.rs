@@ -8,7 +8,6 @@ use libc;
 
 use error::Result;
 use utils::{
-    NotmuchType,
     ToCString,
     ToStr,
 };
@@ -41,7 +40,7 @@ impl Database {
         let mut db = ptr::null_mut();
         try!(unsafe {
             ffi::notmuch_database_open(
-                path.as_ptr(), mode.to_notmuch_t(), &mut db,
+                path.as_ptr(), mode.into(), &mut db,
             )
         }.as_result());
 

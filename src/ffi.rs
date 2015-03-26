@@ -18,7 +18,6 @@ use std::{
 };
 
 use utils::{
-    NotmuchType,
     ToStr,
 };
 
@@ -68,7 +67,7 @@ impl notmuch_status_t {
 impl ToStr for NotmuchStatus {
     fn to_str<'a>(&self) -> Result<&'a str, str::Utf8Error> {
         unsafe {
-            notmuch_status_to_string(self.to_notmuch_t())
+            notmuch_status_to_string((*self).into())
         }.to_str()
     }
 }

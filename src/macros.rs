@@ -16,16 +16,16 @@ macro_rules! notmuch_enum {
             $($variant_alias),*
         }
 
-        impl NotmuchType for $name_alias {
-            type NotmuchT = $name;
-
-            fn from_notmuch_t(notmuch_t: $name) -> Self {
-                match notmuch_t {
+        impl From<$name> for $name_alias {
+            fn from(t: $name) -> Self {
+                match t {
                     $($name::$variant => $name_alias::$variant_alias),*
                 }
             }
+        }
 
-            fn to_notmuch_t(self) -> $name {
+        impl Into<$name> for $name_alias {
+            fn into(self) -> $name {
                 match self {
                     $($name_alias::$variant_alias => $name::$variant),*
                 }

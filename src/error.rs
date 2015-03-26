@@ -5,7 +5,6 @@ use std::{
     result,
 };
 
-use utils::NotmuchType;
 use ffi;
 
 pub type Result<T> = result::Result<T, Error>;
@@ -52,6 +51,6 @@ impl error::FromError<ffi::NotmuchStatus> for Error {
 
 impl error::FromError<ffi::notmuch_status_t> for Error {
     fn from_error(err: ffi::notmuch_status_t) -> Error {
-        Error::NotmuchError(ffi::NotmuchStatus::from_notmuch_t(err))
+        Error::NotmuchError(ffi::NotmuchStatus::from(err))
     }
 }

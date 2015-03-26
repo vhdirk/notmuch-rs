@@ -8,13 +8,6 @@ use std::os::unix::ffi::OsStrExt;
 
 use libc;
 
-pub trait NotmuchType {
-    type NotmuchT;
-
-    fn from_notmuch_t(notmuch_t: Self::NotmuchT) -> Self;
-    fn to_notmuch_t(self) -> Self::NotmuchT;
-}
-
 pub trait ToCString {
     fn to_cstring(&self) -> Result<ffi::CString, ffi::NulError>;
 }
