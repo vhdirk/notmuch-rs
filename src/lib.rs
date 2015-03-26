@@ -1,4 +1,4 @@
-#![feature(convert, core, libc, std_misc, unsafe_destructor)]
+#![feature(convert, core, libc, unsafe_destructor)]
 extern crate libc;
 
 #[macro_use]

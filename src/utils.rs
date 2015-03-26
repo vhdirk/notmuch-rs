@@ -1,5 +1,6 @@
 use std::{
     ffi,
+    path,
     str,
 };
 
@@ -18,9 +19,10 @@ pub trait ToCString {
     fn to_cstring(&self) -> Result<ffi::CString, ffi::NulError>;
 }
 
-impl<T: ffi::AsOsStr> ToCString for T {
+impl<T: AsRef<path::Path>> ToCString for T {
     fn to_cstring(&self) -> Result<ffi::CString, ffi::NulError> {
-        self.as_os_str().to_cstring()
+        let path: &ffi::OsStr = self.as_ref().as_ref();
+        path.to_cstring()
     }
 }
 

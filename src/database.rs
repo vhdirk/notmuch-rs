@@ -25,7 +25,7 @@ pub struct Database(*mut ffi::notmuch_database_t);
 
 impl Database {
     pub fn create<P: AsRef<path::Path>>(path: &P) -> Result<Database> {
-        let path = path.as_ref().to_cstring().unwrap();
+        let path = path.to_cstring().unwrap();
 
         let mut db = ptr::null_mut();
         try!(unsafe {
@@ -36,7 +36,7 @@ impl Database {
     }
 
     pub fn open<P: AsRef<path::Path>>(path: &P, mode: Mode) -> Result<Database> {
-        let path = path.as_ref().to_cstring().unwrap();
+        let path = path.to_cstring().unwrap();
 
         let mut db = ptr::null_mut();
         try!(unsafe {
@@ -82,9 +82,9 @@ impl Database {
             }
         }
 
-        let path = path.as_ref().to_cstring().unwrap();
+        let path = path.to_cstring().unwrap();
         let backup_path = backup_path.map(|p| {
-            p.as_ref().to_cstring().unwrap()
+            p.to_cstring().unwrap()
         });
 
         try!(unsafe {
