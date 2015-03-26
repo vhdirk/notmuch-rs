@@ -128,6 +128,7 @@ impl Database {
 
     fn _upgrade<F: FnMut(f64)>(&mut self, status: Option<F>) -> Result<()> {
 
+        #[allow(trivial_numeric_casts)]
         extern fn wrapper<F: FnMut(f64)>(
             closure: *mut libc::c_void, progress: libc::c_double,
         ) {
