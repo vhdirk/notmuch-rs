@@ -8,6 +8,10 @@ use std::os::unix::ffi::OsStrExt;
 
 use libc;
 
+pub trait NewFromPtr<T> {
+    fn new(ptr: T) -> Self;
+}
+
 pub trait ToCString {
     fn to_cstring(&self) -> Result<ffi::CString, ffi::NulError>;
 }
