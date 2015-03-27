@@ -8,9 +8,12 @@ use libc;
 
 use error::Result;
 use utils::{
+    NewFromPtr,
     ToCString,
     ToStr,
 };
+
+use directory::Directory;
 
 use ffi;
 
@@ -149,6 +152,22 @@ impl Database {
         }.as_result());
 
         Ok(())
+    }
+
+    pub fn directory<P: AsRef<path::Path>>(&self, path: &P) -> Result<Option<Directory>> {
+        let path = path.to_cstring().unwrap();
+
+        let mut dir = ptr::null_mut();
+        try!(unsafe {
+            ffi::notmuch_database_get_directory(
+                self.0, path.as_ptr(), &mut dir,
+            )
+        }.as_result());
+
+        match dir.is_null() {
+            false => Ok(None),
+            true => Ok(Some(Directory::new(dir))),
+        }
     }
 }
 
