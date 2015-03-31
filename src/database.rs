@@ -18,7 +18,7 @@ use directory::Directory;
 use ffi;
 
 // Re-exported under database module for pretty namespacin'.
-pub use ffi::NotmuchDatabaseMode as Mode;
+pub use ffi::Mode;
 
 #[derive(Copy, Debug)]
 pub struct Version(libc::c_uint);

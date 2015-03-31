@@ -28,7 +28,7 @@ pub type notmuch_compact_status_cb_t = extern fn(*const c_char, *mut c_void);
 notmuch_enum! {
     #[repr(C)]
     #[derive(Copy, Debug)]
-    pub enum notmuch_status_t => NotmuchStatus {
+    pub enum notmuch_status_t => Status {
         NOTMUCH_STATUS_SUCCESS => Success,
         NOTMUCH_STATUS_OUT_OF_MEMORY => OutOfMemory,
         NOTMUCH_STATUS_READ_ONLY_DATABASE => ReadOnlyDatabase,
@@ -64,7 +64,7 @@ impl notmuch_status_t {
     }
 }
 
-impl ToStr for NotmuchStatus {
+impl ToStr for Status {
     fn to_str<'a>(&self) -> Result<&'a str, str::Utf8Error> {
         unsafe {
             notmuch_status_to_string((*self).into())
@@ -72,13 +72,13 @@ impl ToStr for NotmuchStatus {
     }
 }
 
-impl fmt::Display for NotmuchStatus {
+impl fmt::Display for Status {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.to_str().unwrap())
     }
 }
 
-impl error::Error for NotmuchStatus {
+impl error::Error for Status {
     fn description(&self) -> &str {
         self.to_str().unwrap()
     }
@@ -87,7 +87,7 @@ impl error::Error for NotmuchStatus {
 notmuch_enum! {
     #[repr(C)]
     #[derive(Copy, Debug)]
-    pub enum notmuch_database_mode_t => NotmuchDatabaseMode {
+    pub enum notmuch_database_mode_t => Mode {
         NOTMUCH_DATABASE_MODE_READ_ONLY => ReadOnly,
         NOTMUCH_DATABASE_MODE_READ_WRITE => ReadWrite
     }
@@ -96,7 +96,7 @@ notmuch_enum! {
 notmuch_enum! {
     #[repr(C)]
     #[derive(Copy, Debug)]
-    pub enum notmuch_sort_t => NotmuchSort {
+    pub enum notmuch_sort_t => Sort {
         NOTMUCH_SORT_OLDEST_FIRST => OldestFirst,
         NOTMUCH_SORT_NEWEST_FIRST => NewestFirst,
         NOTMUCH_SORT_MESSAGE_ID => MessageID,
@@ -107,7 +107,7 @@ notmuch_enum! {
 notmuch_enum! {
     #[repr(C)]
     #[derive(Copy, Debug)]
-    pub enum notmuch_exclude_t => NotmuchExclude {
+    pub enum notmuch_exclude_t => Exclude {
         NOTMUCH_EXCLUDE_FLAG => Flag,
         NOTMUCH_EXCLUDE_TRUE => True,
         NOTMUCH_EXCLUDE_FALSE => False,
@@ -118,7 +118,7 @@ notmuch_enum! {
 notmuch_enum! {
     #[repr(C)]
     #[derive(Copy, Debug)]
-    pub enum notmuch_message_flag_t => NotmuchMessageFlag {
+    pub enum notmuch_message_flag_t => MessageFlag {
         NOTMUCH_MESSAGE_FLAG_MATCH => Match,
         NOTMUCH_MESSAGE_FLAG_EXCLUDED => Excluded,
         NOTMUCH_MESSAGE_FLAG_GHOST => Ghost
