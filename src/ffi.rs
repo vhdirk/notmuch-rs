@@ -27,7 +27,7 @@ pub type notmuch_compact_status_cb_t = extern fn(*const c_char, *mut c_void);
 
 notmuch_enum! {
     #[repr(C)]
-    #[derive(Copy, Clone, Debug)]
+    #[derive(Debug, Eq, PartialEq, Clone, Copy)]
     pub enum notmuch_status_t => Status {
         NOTMUCH_STATUS_SUCCESS => Success,
         NOTMUCH_STATUS_OUT_OF_MEMORY => OutOfMemory,
@@ -86,7 +86,7 @@ impl error::Error for Status {
 
 notmuch_enum! {
     #[repr(C)]
-    #[derive(Copy, Clone, Debug)]
+    #[derive(Debug, Eq, PartialEq, Clone, Copy)]
     pub enum notmuch_database_mode_t => Mode {
         NOTMUCH_DATABASE_MODE_READ_ONLY => ReadOnly,
         NOTMUCH_DATABASE_MODE_READ_WRITE => ReadWrite
@@ -95,7 +95,7 @@ notmuch_enum! {
 
 notmuch_enum! {
     #[repr(C)]
-    #[derive(Copy, Clone, Debug)]
+    #[derive(Debug, Eq, PartialEq, Clone, Copy)]
     pub enum notmuch_sort_t => Sort {
         NOTMUCH_SORT_OLDEST_FIRST => OldestFirst,
         NOTMUCH_SORT_NEWEST_FIRST => NewestFirst,
@@ -117,7 +117,7 @@ notmuch_enum! {
 
 notmuch_enum! {
     #[repr(C)]
-    #[derive(Copy, Clone, Debug)]
+    #[derive(Debug, Eq, PartialEq, Clone, Copy)]
     pub enum notmuch_message_flag_t => MessageFlag {
         NOTMUCH_MESSAGE_FLAG_MATCH => Match,
         NOTMUCH_MESSAGE_FLAG_EXCLUDED => Excluded,
@@ -125,15 +125,15 @@ notmuch_enum! {
     }
 }
 
-#[repr(C)] pub struct notmuch_database_t;
-#[repr(C)] pub struct notmuch_query_t;
-#[repr(C)] pub struct notmuch_threads_t;
-#[repr(C)] pub struct notmuch_thread_t;
-#[repr(C)] pub struct notmuch_messages_t;
-#[repr(C)] pub struct notmuch_message_t;
-#[repr(C)] pub struct notmuch_tags_t;
-#[repr(C)] pub struct notmuch_directory_t;
-#[repr(C)] pub struct notmuch_filenames_t;
+#[repr(C)] pub struct notmuch_database_t(c_void);
+#[repr(C)] pub struct notmuch_query_t(c_void);
+#[repr(C)] pub struct notmuch_threads_t(c_void);
+#[repr(C)] pub struct notmuch_thread_t(c_void);
+#[repr(C)] pub struct notmuch_messages_t(c_void);
+#[repr(C)] pub struct notmuch_message_t(c_void);
+#[repr(C)] pub struct notmuch_tags_t(c_void);
+#[repr(C)] pub struct notmuch_directory_t(c_void);
+#[repr(C)] pub struct notmuch_filenames_t(c_void);
 
 #[link(name = "notmuch")]
 extern {

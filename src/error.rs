@@ -6,7 +6,6 @@ use std::{
     result,
 };
 
-use ffi_sys;
 use ffi;
 
 pub type Result<T> = result::Result<T, Error>;

@@ -4,8 +4,6 @@ use std::{
     str,
 };
 
-use std::os::unix::ffi::OsStrExt;
-
 use libc;
 
 pub trait NewFromPtr<T> {

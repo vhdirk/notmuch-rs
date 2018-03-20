@@ -5,5 +5,4 @@ authors = ["C. Morgan Hamill <me@cmhamill.org>",
            "Dirk Van Haerenborgh <vhdirk@gmail.com>"]
 
 [dependencies]
-notmuch-sys = "*"
 libc = "0.2"
