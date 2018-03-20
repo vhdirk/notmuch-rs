@@ -1,5 +1,9 @@
 [package]
-
 name = "notmuch"
 version = "0.0.1"
-authors = ["C. Morgan Hamill <me@cmhamill.org>"]
+authors = ["C. Morgan Hamill <me@cmhamill.org>",
+           "Dirk Van Haerenborgh <vhdirk@gmail.com>"]
+
+[dependencies]
+notmuch-sys = "*"
+libc = "0.2"

@@ -1,11 +1,12 @@
-#![feature(convert, core, libc, unsafe_destructor)]
-extern crate libc;
 
 #[macro_use]
 mod macros;
 
-mod ffi;
+extern crate notmuch_sys as ffi_sys;
+extern crate libc;
+
 mod utils;
+mod ffi;
 
 pub mod error;
 pub mod database;

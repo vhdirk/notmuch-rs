@@ -20,7 +20,7 @@ use ffi;
 // Re-exported under database module for pretty namespacin'.
 pub use ffi::Mode;
 
-#[derive(Copy, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Version(libc::c_uint);
 
 pub struct Database(*mut ffi::notmuch_database_t);

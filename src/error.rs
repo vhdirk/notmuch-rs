@@ -1,3 +1,4 @@
+use std;
 use std::{
     error,
     fmt,
@@ -5,6 +6,7 @@ use std::{
     result,
 };
 
+use ffi_sys;
 use ffi;
 
 pub type Result<T> = result::Result<T, Error>;
@@ -21,7 +23,7 @@ impl fmt::Display for Error {
     }
 }
 
-impl error::Error for Error {
+impl std::error::Error for Error {
     fn description(&self) -> &str {
         match *self {
             Error::IoError(ref e) => error::Error::description(e),
@@ -37,20 +39,20 @@ impl error::Error for Error {
     }
 }
 
-impl error::FromError<io::Error> for Error {
-    fn from_error(err: io::Error) -> Error {
+impl std::convert::From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
         Error::IoError(err)
     }
 }
 
-impl error::FromError<ffi::Status> for Error {
-    fn from_error(err: ffi::Status) -> Error {
+impl std::convert::From<ffi::Status> for Error {
+    fn from(err: ffi::Status) -> Error {
         Error::NotmuchError(err)
     }
 }
 
-impl error::FromError<ffi::notmuch_status_t> for Error {
-    fn from_error(err: ffi::notmuch_status_t) -> Error {
+impl std::convert::From<ffi::notmuch_status_t> for Error {
+    fn from(err: ffi::notmuch_status_t) -> Error {
         Error::NotmuchError(ffi::Status::from(err))
     }
 }
