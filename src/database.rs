@@ -4,12 +4,13 @@ use std::{
     ptr,
 };
 
+use std::ffi::CString;
+
 use libc;
 
 use error::Result;
 use utils::{
     NewFromPtr,
-    ToCString,
     ToStr,
 };
 
@@ -18,7 +19,7 @@ use directory::Directory;
 use ffi;
 
 // Re-exported under database module for pretty namespacin'.
-pub use ffi::Mode;
+pub use ffi::DatabaseOpenMode;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Version(libc::c_uint);
@@ -27,23 +28,23 @@ pub struct Database(*mut ffi::notmuch_database_t);
 
 impl Database {
     pub fn create<P: AsRef<path::Path>>(path: &P) -> Result<Database> {
-        let path = path.to_cstring().unwrap();
+        let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut db = ptr::null_mut();
         try!(unsafe {
-            ffi::notmuch_database_create(path.as_ptr(), &mut db)
+            ffi::notmuch_database_create(path_str.as_ptr(), &mut db)
         }.as_result());
 
         Ok(Database(db))
     }
 
-    pub fn open<P: AsRef<path::Path>>(path: &P, mode: Mode) -> Result<Database> {
-        let path = path.to_cstring().unwrap();
+    pub fn open<P: AsRef<path::Path>>(path: &P, mode: DatabaseOpenMode) -> Result<Database> {
+        let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut db = ptr::null_mut();
         try!(unsafe {
             ffi::notmuch_database_open(
-                path.as_ptr(), mode.into(), &mut db,
+                path_str.as_ptr(), mode.into(), &mut db,
             )
         }.as_result());
 
@@ -84,14 +85,15 @@ impl Database {
             }
         }
 
-        let path = path.to_cstring().unwrap();
+        let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
+
         let backup_path = backup_path.map(|p| {
-            p.to_cstring().unwrap()
+            CString::new(p.as_ref().to_str().unwrap()).unwrap()
         });
 
         try!(unsafe {
             ffi::notmuch_database_compact(
-                path.as_ptr(), backup_path.map_or(ptr::null(), |p| p.as_ptr()),
+                path_str.as_ptr(), backup_path.map_or(ptr::null(), |p| p.as_ptr()),
                 if status.is_some() { Some(wrapper::<F>) } else { None },
                 status.map_or(ptr::null_mut(), |f| {
                     &f as *const _ as *mut libc::c_void
@@ -155,12 +157,12 @@ impl Database {
     }
 
     pub fn directory<P: AsRef<path::Path>>(&self, path: &P) -> Result<Option<Directory>> {
-        let path = path.to_cstring().unwrap();
+        let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut dir = ptr::null_mut();
         try!(unsafe {
             ffi::notmuch_database_get_directory(
-                self.0, path.as_ptr(), &mut dir,
+                self.0, path_str.as_ptr(), &mut dir,
             )
         }.as_result());
 
