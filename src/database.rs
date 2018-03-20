@@ -24,6 +24,7 @@ pub use ffi::DatabaseOpenMode;
 #[derive(Copy, Clone, Debug)]
 pub struct Version(libc::c_uint);
 
+#[derive(Debug)]
 pub struct Database(*mut ffi::notmuch_database_t);
 
 impl Database {
