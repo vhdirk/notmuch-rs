@@ -7,7 +7,7 @@ authors = ["C. Morgan Hamill <me@cmhamill.org>",
 homepage = "https://github.com/vhdirk/notmuch-rs"
 repository = "https://github.com/vhdirk/notmuch-rs"
 description = "Rust interface and bindings for notmuch"
-license = "GPL-3.0-or-later"
+license = "GPL-3.0+"
 
 [dependencies]
 libc = "0.2"
