@@ -10,8 +10,10 @@ pub mod error;
 pub mod database;
 pub mod directory;
 pub mod query;
+pub mod messages;
 
 pub use database::Database;
 pub use query::Query;
+pub use messages::Messages;
 
 pub use ffi::DatabaseMode;

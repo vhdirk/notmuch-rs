@@ -1,6 +1,7 @@
 use std::{
     ops,
-    marker
+    marker,
+    ptr,
 };
 
 use error::Result;
@@ -10,6 +11,7 @@ use utils::{
     NewFromPtr,
 };
 use Database;
+use Messages;
 
 
 #[derive(Debug)]
@@ -22,6 +24,17 @@ pub struct Query<'d>(
 impl<'d> Query<'d> {
     pub fn create(db: &'d Database, query_string: &String) -> Result<Self> {
         db.create_query(query_string)
+    }
+
+    /// Filter messages according to the query and return
+    pub fn search_messages(self: &Self) -> Result<Messages>
+    {
+        let mut msgs = ptr::null_mut();
+        unsafe {
+            msgs = ffi::notmuch_query_search_messages(self.0);
+        }
+
+        Ok(Messages::new(msgs))
     }
 }
 
