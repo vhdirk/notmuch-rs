@@ -1,19 +1,8 @@
 use std::{
     ops,
-    path,
-    ptr,
 };
-
-use std::ffi::CString;
-use std::os::raw::c_char;
-
-use libc;
 
 use error::Result;
-use utils::{
-    NewFromPtr,
-    ToStr,
-};
 
 use ffi;
 
@@ -25,5 +14,14 @@ pub struct Query(pub(crate) *mut ffi::notmuch_query_t);
 impl Query {
     pub fn create(db: &Database, query_string: &String) -> Result<Self> {
         db.create_query(query_string)
+    }
+}
+
+
+impl ops::Drop for Query {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::notmuch_query_destroy(self.0)
+        };
     }
 }
