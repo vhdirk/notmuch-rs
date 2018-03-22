@@ -194,7 +194,7 @@ impl Database {
             query = ffi::notmuch_query_create(self.0, query_str.as_ptr());
         }
 
-        Ok(Query(query))
+        Ok(Query::new(query))
     }
 
 }
