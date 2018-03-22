@@ -15,6 +15,7 @@ use utils::{
 };
 
 use directory::Directory;
+use query::Query;
 
 use ffi;
 
@@ -31,7 +32,7 @@ pub struct Revision(libc::c_ulong);
 pub struct Database(*mut ffi::notmuch_database_t);
 
 impl Database {
-    pub fn create<P: AsRef<path::Path>>(path: &P) -> Result<Database> {
+    pub fn create<P: AsRef<path::Path>>(path: &P) -> Result<Self> {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut db = ptr::null_mut();
@@ -42,7 +43,7 @@ impl Database {
         Ok(Database(db))
     }
 
-    pub fn open<P: AsRef<path::Path>>(path: &P, mode: DatabaseMode) -> Result<Database> {
+    pub fn open<P: AsRef<path::Path>>(path: &P, mode: DatabaseMode) -> Result<Self> {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut db = ptr::null_mut();
@@ -184,6 +185,18 @@ impl Database {
             true => Ok(Some(Directory::new(dir))),
         }
     }
+
+    pub fn create_query(&self, query_string: &String) -> Result<Query> {
+        let query_str = CString::new(query_string.as_str()).unwrap();
+
+        let mut query = ptr::null_mut();
+        unsafe {
+            query = ffi::notmuch_query_create(self.0, query_str.as_ptr());
+        }
+
+        Ok(Query(query))
+    }
+
 }
 
 impl ops::Drop for Database {

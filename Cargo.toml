@@ -1,6 +1,6 @@
 [package]
 name = "notmuch"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["C. Morgan Hamill <me@cmhamill.org>",
            "Dirk Van Haerenborgh <vhdirk@gmail.com>"]
 
