@@ -11,4 +11,4 @@ pub mod database;
 pub mod directory;
 
 pub use database::Database;
-pub use ffi::DatabaseOpenMode;
+pub use ffi::DatabaseMode;

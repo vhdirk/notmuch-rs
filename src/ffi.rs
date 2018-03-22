@@ -85,7 +85,7 @@ impl error::Error for Status {
 notmuch_enum! {
     #[repr(C)]
     #[derive(Debug, Eq, PartialEq, Clone, Copy)]
-    pub enum notmuch_database_mode_t => DatabaseOpenMode {
+    pub enum notmuch_database_mode_t => DatabaseMode {
         NOTMUCH_DATABASE_MODE_READ_ONLY => ReadOnly,
         NOTMUCH_DATABASE_MODE_READ_WRITE => ReadWrite
     }

@@ -19,10 +19,13 @@ use directory::Directory;
 use ffi;
 
 // Re-exported under database module for pretty namespacin'.
-pub use ffi::DatabaseOpenMode;
+pub use ffi::DatabaseMode;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Version(libc::c_uint);
+
+#[derive(Copy, Clone, Debug)]
+pub struct Revision(libc::c_ulong);
 
 #[derive(Debug)]
 pub struct Database(*mut ffi::notmuch_database_t);
@@ -39,13 +42,15 @@ impl Database {
         Ok(Database(db))
     }
 
-    pub fn open<P: AsRef<path::Path>>(path: &P, mode: DatabaseOpenMode) -> Result<Database> {
+    pub fn open<P: AsRef<path::Path>>(path: &P, mode: DatabaseMode) -> Result<Database> {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut db = ptr::null_mut();
         try!(unsafe {
             ffi::notmuch_database_open(
-                path_str.as_ptr(), mode.into(), &mut db,
+                path_str.as_ptr(),
+                mode.into(),
+                &mut db,
             )
         }.as_result());
 
@@ -114,6 +119,13 @@ impl Database {
     pub fn version(&self) -> Version {
         Version(unsafe {
             ffi::notmuch_database_get_version(self.0)
+        })
+    }
+
+    pub fn revision(&self) -> Revision {
+        let uuid = ptr::null_mut();
+        Revision(unsafe {
+            ffi::notmuch_database_get_revision(self.0, uuid)
         })
     }
 
