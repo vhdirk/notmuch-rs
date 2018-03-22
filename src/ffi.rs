@@ -751,9 +751,12 @@ extern {
     /// If a Xapian exception occurs this function will return NULL.
     ///
     /// @since libnotmuch 4.2 (notmuch 0.20)
-    pub fn notmuch_query_search_messages(
-        query: *mut notmuch_query_t,
-    ) -> *mut notmuch_messages_t;
+    pub fn notmuch_query_search_messages(query: *mut notmuch_query_t,
+                                         out: *mut *mut notmuch_messages_t)
+                                         -> notmuch_status_t;
+    pub fn notmuch_query_search_messages_st(query: *mut notmuch_query_t,
+                                            out: *mut *mut notmuch_messages_t)
+                                            -> notmuch_status_t;
 
     /// Destroy a `notmuch_query_t` along with any associated resources.
     ///

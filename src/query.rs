@@ -28,18 +28,19 @@ impl<'d> Query<'d> {
     }
 
     /// Filter messages according to the query and return
-    pub fn search_messages(self: &Self) -> std::result::Result<Messages, ()>
+    pub fn search_messages(self: &Self) -> Result<Option<Messages>>
     {
         let mut msgs = ptr::null_mut();
-        unsafe {
-            msgs = ffi::notmuch_query_search_messages(self.0);
-        }
-        if !msgs.is_null() {
-            return Ok(Messages::new(msgs));
-        }else{
-            return Err(());
-        }
+        try!(unsafe {
+            ffi::notmuch_query_search_messages(
+                self.0, &mut msgs,
+            )
+        }.as_result());
 
+        match msgs.is_null() {
+            false => Ok(None),
+            true => Ok(Some(Messages::new(msgs))),
+        }
     }
 }
 
