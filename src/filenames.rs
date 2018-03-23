@@ -4,6 +4,11 @@ use std::{
     iter
 };
 
+use std::path::{
+    PathBuf,
+    Path
+};
+
 use std::ffi::{
     CString,
     CStr
@@ -37,7 +42,7 @@ impl<'d> ops::Drop for Filenames<'d> {
 }
 
 impl<'d> iter::Iterator for Filenames<'d> {
-    type Item = String;
+    type Item = PathBuf;
 
     fn next(&mut self) -> Option<Self::Item> {
 
@@ -54,6 +59,6 @@ impl<'d> iter::Iterator for Filenames<'d> {
             CStr::from_ptr(ffi::notmuch_filenames_get(self.0))
         };
 
-        Some(ctag.to_str().unwrap().to_string())
+        Some(PathBuf::from(ctag.to_str().unwrap()))
     }
 }
