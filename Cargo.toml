@@ -1,6 +1,6 @@
 [package]
 name = "notmuch"
-version = "0.0.6"
+version = "0.0.7"
 authors = ["Dirk Van Haerenborgh <vhdirk@gmail.com>"]
 
 homepage = "https://github.com/vhdirk/notmuch-rs"
