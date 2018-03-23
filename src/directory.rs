@@ -7,14 +7,14 @@ use utils::{
     NewFromPtr,
 };
 
-use database;
+use Database;
 
 use ffi;
 
 #[derive(Debug)]
 pub struct Directory<'d>(
     *mut ffi::notmuch_directory_t,
-    marker::PhantomData<&'d mut database::Database>,
+    marker::PhantomData<&'d mut Database>,
 );
 
 impl<'d> NewFromPtr<*mut ffi::notmuch_directory_t> for Directory<'d> {

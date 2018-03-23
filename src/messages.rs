@@ -1,6 +1,7 @@
 use std::{
     ops,
-    marker
+    marker,
+    iter
 };
 
 use error::Result;
@@ -10,28 +11,48 @@ use utils::{
     NewFromPtr,
 };
 use Database;
-use Query;
+use Message;
 
 #[derive(Debug)]
-pub struct Messages<'q, 'd:'q>(
+pub struct Messages<'d>(
     // TODO: is this lifetime specifier correct?
     // query may outlive messages.
     pub(crate) *mut ffi::notmuch_messages_t,
-    marker::PhantomData<&'q Query<'d>>
+    marker::PhantomData<&'d mut Database>,
 );
 
-impl<'q, 'd:'q> NewFromPtr<*mut ffi::notmuch_messages_t> for Messages<'q, 'd> {
-    fn new(ptr: *mut ffi::notmuch_messages_t) -> Messages<'q, 'd> {
+impl<'d> NewFromPtr<*mut ffi::notmuch_messages_t> for Messages<'d> {
+    fn new(ptr: *mut ffi::notmuch_messages_t) -> Messages<'d> {
         Messages(ptr, marker::PhantomData)
     }
 }
 
-
-
-impl<'q, 'd:'q> ops::Drop for Messages<'q, 'd> {
+impl<'d> ops::Drop for Messages<'d> {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_messages_destroy(self.0)
         };
+    }
+}
+
+impl<'d> iter::Iterator for Messages<'d> {
+    type Item = Message<'d>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+
+        let valid = unsafe {
+            ffi::notmuch_messages_valid(self.0)
+        };
+
+        if valid == 0{
+            return None
+        }
+
+        let cmsg = unsafe {
+            ffi::notmuch_messages_move_to_next(self.0);
+            ffi::notmuch_messages_get(self.0)
+        };
+
+        Some(Message::new(cmsg))
     }
 }
