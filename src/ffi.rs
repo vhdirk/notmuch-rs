@@ -856,7 +856,8 @@ extern {
     /// @since libnotmuch 4.3 (notmuch 0.21)
     pub fn notmuch_query_count_messages(
         query: *mut notmuch_query_t,
-    ) -> c_uint;
+        count: *mut c_uint
+    ) -> notmuch_status_t;
 
 
     /// Return the number of threads matching a search.
@@ -879,9 +880,10 @@ extern {
     ///      value of *count is not defined.
     ///
     /// @since libnotmuch 4.3 (notmuch 0.21)
-    pub fn notmuch_count_threads(
+    pub fn notmuch_query_count_threads(
         query: *mut notmuch_query_t,
-    ) -> c_uint;
+        count: *mut c_uint
+    ) -> notmuch_status_t;
 
     /// Get the thread ID of 'thread'.
     ///
