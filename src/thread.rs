@@ -25,12 +25,22 @@ impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_thread_t> for Thread<'q, 'd> {
     }
 }
 
-// impl<'d> Thread<'d>(
-//
-//
-//
-// };
-//
+impl<'q, 'd> Thread<'q, 'd>{
+
+    pub fn total_messages(self: &Self) -> i32{
+        unsafe {
+            ffi::notmuch_thread_get_total_messages(self.0)
+        }
+    }
+
+    pub fn total_files(self: &Self) -> i32{
+        unsafe {
+            ffi::notmuch_thread_get_total_files(self.0)
+        }
+    }
+
+}
+
 
 impl<'q, 'd> ops::Drop for Thread<'q, 'd> {
     fn drop(&mut self) {
