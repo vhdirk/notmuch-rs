@@ -13,7 +13,7 @@ use utils::{
 };
 use Database;
 use Messages;
-
+use ffi::Sort;
 
 #[derive(Debug)]
 pub struct Query<'d>(
@@ -26,6 +26,28 @@ impl<'d> Query<'d> {
     pub fn create(db: &'d Database, query_string: &String) -> Result<Self> {
         db.create_query(query_string)
     }
+
+    /// Specify the sorting desired for this query.
+    pub fn set_sort(self: &Self, sort: Sort)
+    {
+        unsafe {
+            ffi::notmuch_query_set_sort(
+                self.0, sort.into(),
+            )
+        }
+    }
+
+    /// Return the sort specified for this query. See
+    /// `set_sort`.
+    pub fn sort(self: &Self) -> Sort
+    {
+        unsafe {
+            ffi::notmuch_query_get_sort(
+                self.0,
+            )
+        }.into()
+    }
+
 
     /// Filter messages according to the query and return
     pub fn search_messages(self: &Self) -> Result<Option<Messages>>

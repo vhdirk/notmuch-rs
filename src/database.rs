@@ -16,6 +16,7 @@ use utils::{
 
 use directory::Directory;
 use query::Query;
+use tags::Tags;
 
 use ffi;
 
@@ -196,6 +197,19 @@ impl Database {
 
         Ok(Query::new(query))
     }
+
+    pub fn all_tags(&self) -> Result<Tags> {
+
+        let mut tags = ptr::null_mut();
+        unsafe {
+            tags = ffi::notmuch_database_get_all_tags(self.0);
+        }
+
+        Ok(Tags::new(tags))
+    }
+
+
+
 
 }
 

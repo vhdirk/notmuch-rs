@@ -134,6 +134,8 @@ notmuch_enum! {
 #[repr(C)] pub struct notmuch_filenames_t(c_void);
 #[repr(C)] pub struct notmuch_message_properties_t(c_void);
 #[repr(C)] pub struct notmuch_config_list_t(c_void);
+#[repr(C)] pub struct notmuch_indexopts_t(c_void);
+
 
 pub type notmuch_compact_status_cb_t = extern "C" fn(message: *const c_char, closure: *mut c_void);
 pub type notmuch_database_upgrade_cb_t = extern "C" fn(closure: *mut c_void, progress: c_double);
@@ -429,11 +431,13 @@ extern {
         directory: *mut *mut notmuch_directory_t,
     ) -> notmuch_status_t;
 
-    /// Add a new message to the given notmuch database or associate an
-    /// additional filename with an existing message.
+    /// Add a message file to a database, indexing it for retrieval by
+    /// future searches.  If a message already exists with the same message
+    /// ID as the specified file, their indexes will be merged, and this
+    /// new filename will also be associated with the existing message.
     ///
     /// Here, 'filename' should be a path relative to the path of
-    /// 'database' (see `notmuch_database_get_path`), or else should be an
+    /// 'database' (see notmuch_database_get_path), or else should be an
     /// absolute filename with initial components that match the path of
     /// 'database'.
     ///
@@ -443,40 +447,61 @@ extern {
     /// entire contents of the file.
     ///
     /// If another message with the same message ID already exists in the
-    /// database, rather than creating a new message, this adds 'filename'
-    /// to the list of the filenames for the existing message.
+    /// database, rather than creating a new message, this adds the search
+    /// terms from the identified file to the existing message's index, and
+    /// adds 'filename' to the list of filenames known for the message.
+    ///
+    /// The 'indexopts' parameter can be NULL (meaning, use the indexing
+    /// defaults from the database), or can be an explicit choice of
+    /// indexing options that should govern the indexing of this specific
+    /// 'filename'.
     ///
     /// If 'message' is not NULL, then, on successful return
-    /// (notmuch_status_t::SUCCESS or `notmuch_status_t::DUPLICATE_MESSAGE_ID`) '*message'
+    /// (NOTMUCH_STATUS_SUCCESS or NOTMUCH_STATUS_DUPLICATE_MESSAGE_ID) '*message'
     /// will be initialized to a message object that can be used for things
     /// such as adding tags to the just-added message. The user should call
-    /// `notmuch_message_destroy` when done with the message. On any failure
+    /// notmuch_message_destroy when done with the message. On any failure
     /// '*message' will be set to NULL.
     ///
     /// Return value:
     ///
-    /// * `notmuch_status_t::SUCCESS`: Message successfully added to database.
+    /// NOTMUCH_STATUS_SUCCESS: Message successfully added to database.
     ///
-    /// * `notmuch_status_t::XAPIAN_EXCEPTION`: A Xapian exception occurred,
-    /// 	  message not added.
+    /// NOTMUCH_STATUS_XAPIAN_EXCEPTION: A Xapian exception occurred,
+    ///	message not added.
     ///
-    /// * `notmuch_status_t::DUPLICATE_MESSAGE_ID`: Message has the same message
-    /// 	  ID as another message already in the database. The new
-    /// 	  filename was successfully added to the message in the database
-    /// 	  (if not already present) and the existing message is returned.
+    /// NOTMUCH_STATUS_DUPLICATE_MESSAGE_ID: Message has the same message
+    ///	ID as another message already in the database. The new
+    ///	filename was successfully added to the message in the database
+    ///	(if not already present) and the existing message is returned.
     ///
-    /// * `notmuch_status_t::FILE_ERROR`: an error occurred trying to open the
-    /// 	  file, (such as permission denied, or file not found,
-    /// 	  etc.). Nothing added to the database.
+    /// NOTMUCH_STATUS_FILE_ERROR: an error occurred trying to open the
+    ///	file, (such as permission denied, or file not found,
+    ///	etc.). Nothing added to the database.
     ///
-    /// * `notmuch_status_t::FILE_NOT_EMAIL`: the contents of filename don't look
-    /// 	  like an email message. Nothing added to the database.
+    /// NOTMUCH_STATUS_FILE_NOT_EMAIL: the contents of filename don't look
+    ///	like an email message. Nothing added to the database.
     ///
-    /// * `notmuch_status_t::READ_ONLY_DATABASE`: Database was opened in read-only
-    /// 	  mode so no message can be added.
+    /// NOTMUCH_STATUS_READ_ONLY_DATABASE: Database was opened in read-only
+    ///	mode so no message can be added.
     ///
-    /// * `notmuch_status_t::UPGRADE_REQUIRED`: The caller must upgrade the
-    ///   database to use this function.
+    /// NOTMUCH_STATUS_UPGRADE_REQUIRED: The caller must upgrade the
+    /// 	database to use this function.
+    ///
+    /// @since libnotmuch 5.1 (notmuch 0.26)
+    pub fn notmuch_database_index_file(
+         database: *mut notmuch_database_t,
+         filename: *const c_char,
+         indexopts: *mut notmuch_indexopts_t,
+         message: *mut *mut notmuch_message_t,
+     ) -> notmuch_status_t;
+
+
+    /// Deprecated alias for notmuch_database_index_file called with
+    /// NULL indexopts.
+    ///
+    /// @deprecated Deprecated as of libnotmuch 5.1 (notmuch 0.26). Please
+    /// use notmuch_database_index_file instead.
     pub fn notmuch_database_add_message(
         database: *mut notmuch_database_t,
         filename: *const c_char,
@@ -750,13 +775,10 @@ extern {
     ///
     /// If a Xapian exception occurs this function will return NULL.
     ///
-    /// @since libnotmuch 4.2 (notmuch 0.20)
+    /// @since libnotmuch 5 (notmuch 0.25)
     pub fn notmuch_query_search_messages(query: *mut notmuch_query_t,
                                          out: *mut *mut notmuch_messages_t)
                                          -> notmuch_status_t;
-    pub fn notmuch_query_search_messages_st(query: *mut notmuch_query_t,
-                                            out: *mut *mut notmuch_messages_t)
-                                            -> notmuch_status_t;
 
     /// Destroy a `notmuch_query_t` along with any associated resources.
     ///

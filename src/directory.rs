@@ -11,6 +11,7 @@ use database;
 
 use ffi;
 
+#[derive(Debug)]
 pub struct Directory<'d>(
     *mut ffi::notmuch_directory_t,
     marker::PhantomData<&'d mut database::Database>,
