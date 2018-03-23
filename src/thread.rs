@@ -32,11 +32,11 @@ impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_thread_t> for Thread<'q, 'd> {
 
 impl<'q, 'd> Thread<'q, 'd>{
 
-    pub fn id(self: &Self) -> result::Result<&'q str, str::Utf8Error>{
+    pub fn id(self: &Self) -> String{
         let tid = unsafe {
             ffi::notmuch_thread_get_thread_id(self.0)
         };
-        tid.to_str()
+        tid.to_str().unwrap().to_string()
     }
 
 
@@ -73,6 +73,24 @@ impl<'q, 'd> Thread<'q, 'd>{
             ffi::notmuch_thread_get_tags(self.0)
         })
     }
+
+    pub fn subject(self: &Self) -> String{
+        let sub = unsafe {
+            ffi::notmuch_thread_get_subject(self.0)
+        };
+
+        sub.to_str().unwrap().to_string()
+    }
+
+    pub fn authors(self: &Self) -> Vec<String>{
+        let athrs = unsafe {
+            ffi::notmuch_thread_get_authors(self.0)
+        };
+
+        athrs.to_str().unwrap().split(",").map(|s| s.to_string()).collect()
+    }
+
+
 
 }
 
