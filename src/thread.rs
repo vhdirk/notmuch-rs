@@ -5,6 +5,7 @@ use std::{
     str,
     result
 };
+
 use std::ffi::{CString, CStr};
 
 use error::Result;
@@ -90,8 +91,19 @@ impl<'q, 'd> Thread<'q, 'd>{
         athrs.to_str().unwrap().split(",").map(|s| s.to_string()).collect()
     }
 
+    /// Get the date of the oldest message in 'thread' as a time_t value.
+    pub fn oldest_date(self: &Self) -> i64 {
+        unsafe {
+            ffi::notmuch_thread_get_oldest_date(self.0)
+        }
+    }
 
-
+    /// Get the date of the newest message in 'thread' as a time_t value.
+    pub fn newest_date(self: &Self) -> i64 {
+       unsafe {
+           ffi::notmuch_thread_get_newest_date(self.0)
+       }
+    }
 }
 
 
