@@ -62,7 +62,9 @@ impl Database {
     pub fn close(self) -> Result<()> {
         try!(unsafe {
             ffi::notmuch_database_close(self.0)
-        }.as_result())
+        }.as_result());
+
+        Ok(())
     }
 
     pub fn compact<P: AsRef<path::Path>, F: FnMut(&str)>(
@@ -105,7 +107,9 @@ impl Database {
                     &f as *const _ as *mut libc::c_void
                 }),
             )
-        }.as_result())
+        }.as_result());
+
+        Ok(())
     }
 
     pub fn path(&self) -> &path::Path {
@@ -162,7 +166,9 @@ impl Database {
                     &f as *const _ as *mut libc::c_void
                 }),
             )
-        }.as_result())
+        }.as_result());
+
+        Ok(())
     }
 
     pub fn directory<P: AsRef<path::Path>>(&self, path: &P) -> Result<Option<Directory>> {
