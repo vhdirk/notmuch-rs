@@ -42,7 +42,7 @@ impl<'q, 'd> iter::Iterator for Threads<'q, 'd> {
         };
 
         if valid == 0{
-            return None
+            return None;
         }
 
         let cthread = unsafe {
@@ -50,6 +50,6 @@ impl<'q, 'd> iter::Iterator for Threads<'q, 'd> {
             ffi::notmuch_threads_get(self.0)
         };
 
-        Some(Thread::new(cthread))
+        Some(Self::Item::new(cthread))
     }
 }

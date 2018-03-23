@@ -51,7 +51,7 @@ impl<'d> Query<'d> {
 
 
     /// Filter messages according to the query and return
-    pub fn search_messages(self: &Self) -> Result<Messages>
+    pub fn search_messages<'q>(self: &Self) -> Result<Messages<'q, 'd>>
     {
         let mut msgs = ptr::null_mut();
         try!(unsafe {
@@ -75,7 +75,7 @@ impl<'d> Query<'d> {
         return Ok(cnt);
     }
 
-    pub fn search_threads(self: &Self) -> Result<Threads>
+    pub fn search_threads<'q>(self: &Self) -> Result<Threads<'q, 'd>>
     {
         let mut thrds = ptr::null_mut();
         try!(unsafe {

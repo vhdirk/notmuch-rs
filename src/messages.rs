@@ -64,6 +64,6 @@ impl<'q, 'd> iter::Iterator for Messages<'q, 'd> {
             ffi::notmuch_messages_get(self.0)
         };
 
-        Some(Message::new(cmsg))
+        Some(Self::Item::new(cmsg))
     }
 }
