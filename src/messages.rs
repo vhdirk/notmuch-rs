@@ -12,6 +12,7 @@ use utils::{
 };
 use Query;
 use Message;
+use Tags;
 
 #[derive(Debug)]
 pub struct Messages<'q, 'd:'q>(
@@ -25,6 +26,16 @@ impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_messages_t> for Messages<'q, 'd> {
     fn new(ptr: *mut ffi::notmuch_messages_t) -> Messages<'q, 'd> {
         Messages(ptr, marker::PhantomData)
     }
+}
+
+impl<'q, 'd> Messages<'q, 'd>{
+
+    pub fn collect_tags(self: &Self) -> Tags{
+        Tags::new(unsafe {
+            ffi::notmuch_messages_collect_tags(self.0)
+        })
+    }
+
 }
 
 impl<'q, 'd> ops::Drop for Messages<'q, 'd> {

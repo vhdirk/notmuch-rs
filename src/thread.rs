@@ -15,6 +15,8 @@ use utils::{
     ToStr
 };
 use Query;
+use Messages;
+use Tags;
 
 #[derive(Debug)]
 pub struct Thread<'q, 'd:'q>(
@@ -48,6 +50,28 @@ impl<'q, 'd> Thread<'q, 'd>{
         unsafe {
             ffi::notmuch_thread_get_total_files(self.0)
         }
+    }
+
+
+    pub fn toplevel_messages(self: &Self) -> Messages{
+        Messages::new(unsafe {
+            ffi::notmuch_thread_get_toplevel_messages(self.0)
+        })
+    }
+
+    /// Get a `Messages` iterator for all messages in 'thread' in
+    /// oldest-first order.
+    pub fn messages(self: &Self) -> Messages{
+        Messages::new(unsafe {
+            ffi::notmuch_thread_get_messages(self.0)
+        })
+    }
+
+
+    pub fn tags(self: &Self) -> Tags{
+        Tags::new(unsafe {
+            ffi::notmuch_thread_get_tags(self.0)
+        })
     }
 
 }

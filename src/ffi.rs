@@ -1149,6 +1149,13 @@ extern {
         message: *mut notmuch_message_t,
     ) -> *mut notmuch_messages_t;
 
+    /// Get the total number of files associated with a message.
+    /// @returns Non-negative integer
+    /// @since libnotmuch 5.0 (notmuch 0.25)
+    pub fn notmuch_message_count_files(
+        message: *mut notmuch_message_t,
+    ) -> c_int;
+
     /// Get a filename for the email corresponding to 'message'.
     ///
     /// The returned filename is an absolute filename, (the initial
