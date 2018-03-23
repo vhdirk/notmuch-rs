@@ -23,5 +23,6 @@ pub use message::Message;
 pub use tags::Tags;
 pub use threads::Threads;
 pub use thread::Thread;
+pub use filenames::Filenames;
 
 pub use ffi::DatabaseMode;
