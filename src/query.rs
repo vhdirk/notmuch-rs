@@ -51,7 +51,7 @@ impl<'d> Query<'d> {
 
 
     /// Filter messages according to the query and return
-    pub fn search_messages(self: &Self) -> Result<Option<Messages>>
+    pub fn search_messages(self: &Self) -> Result<Messages>
     {
         let mut msgs = ptr::null_mut();
         try!(unsafe {
@@ -60,10 +60,7 @@ impl<'d> Query<'d> {
             )
         }.as_result());
 
-        match msgs.is_null() {
-            false => Ok(None),
-            true => Ok(Some(Messages::new(msgs))),
-        }
+        Ok(Messages::new(msgs))
     }
 
     pub fn count_messages(self: &Self) -> Result<u32>
@@ -78,7 +75,7 @@ impl<'d> Query<'d> {
         return Ok(cnt);
     }
 
-    pub fn search_threads(self: &Self) -> Result<Option<Threads>>
+    pub fn search_threads(self: &Self) -> Result<Threads>
     {
         let mut thrds = ptr::null_mut();
         try!(unsafe {
@@ -87,10 +84,7 @@ impl<'d> Query<'d> {
             )
         }.as_result());
 
-        match thrds.is_null() {
-            false => Ok(None),
-            true => Ok(Some(Threads::new(thrds))),
-        }
+        Ok(Threads::new(thrds))
     }
 
     pub fn count_threads(self: &Self) -> Result<u32>
