@@ -8,23 +8,23 @@ use utils::{
     NewFromPtr,
 };
 
-use Database;
+use Query;
 use Thread;
 use ffi;
 
 #[derive(Debug)]
-pub struct Threads<'d>(
+pub struct Threads<'q, 'd:'q>(
     *mut ffi::notmuch_threads_t,
-    marker::PhantomData<&'d mut Database>,
+    marker::PhantomData<&'q mut Query<'d>>,
 );
 
-impl<'d> NewFromPtr<*mut ffi::notmuch_threads_t> for Threads<'d> {
-    fn new(ptr: *mut ffi::notmuch_threads_t) -> Threads<'d> {
+impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_threads_t> for Threads<'q, 'd> {
+    fn new(ptr: *mut ffi::notmuch_threads_t) -> Threads<'q, 'd> {
         Threads(ptr, marker::PhantomData)
     }
 }
 
-impl<'d> ops::Drop for Threads<'d> {
+impl<'q, 'd> ops::Drop for Threads<'q, 'd> {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_threads_destroy(self.0)
@@ -32,8 +32,8 @@ impl<'d> ops::Drop for Threads<'d> {
     }
 }
 
-impl<'d> iter::Iterator for Threads<'d> {
-    type Item = Thread<'d>;
+impl<'q, 'd> iter::Iterator for Threads<'q, 'd> {
+    type Item = Thread<'q, 'd>;
 
     fn next(&mut self) -> Option<Self::Item> {
 

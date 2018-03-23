@@ -10,24 +10,24 @@ use ffi;
 use utils::{
     NewFromPtr,
 };
-use Database;
+use Query;
 use Message;
 
 #[derive(Debug)]
-pub struct Messages<'d>(
+pub struct Messages<'q, 'd:'q>(
     // TODO: is this lifetime specifier correct?
     // query may outlive messages.
     pub(crate) *mut ffi::notmuch_messages_t,
-    marker::PhantomData<&'d mut Database>,
+    marker::PhantomData<&'q mut Query<'d>>,
 );
 
-impl<'d> NewFromPtr<*mut ffi::notmuch_messages_t> for Messages<'d> {
-    fn new(ptr: *mut ffi::notmuch_messages_t) -> Messages<'d> {
+impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_messages_t> for Messages<'q, 'd> {
+    fn new(ptr: *mut ffi::notmuch_messages_t) -> Messages<'q, 'd> {
         Messages(ptr, marker::PhantomData)
     }
 }
 
-impl<'d> ops::Drop for Messages<'d> {
+impl<'q, 'd> ops::Drop for Messages<'q, 'd> {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_messages_destroy(self.0)
@@ -35,8 +35,8 @@ impl<'d> ops::Drop for Messages<'d> {
     }
 }
 
-impl<'d> iter::Iterator for Messages<'d> {
-    type Item = Message<'d>;
+impl<'q, 'd> iter::Iterator for Messages<'q, 'd> {
+    type Item = Message<'q, 'd>;
 
     fn next(&mut self) -> Option<Self::Item> {
 

@@ -11,22 +11,22 @@ use ffi;
 use utils::{
     NewFromPtr,
 };
-use Database;
+use Query;
 
 #[derive(Debug)]
-pub struct Message<'d>(
+pub struct Message<'q, 'd:'q>(
     pub(crate) *mut ffi::notmuch_message_t,
-    marker::PhantomData<&'d mut Database>,
+    marker::PhantomData<&'q mut Query<'d>>,
 );
 
-impl<'d> NewFromPtr<*mut ffi::notmuch_message_t> for Message<'d> {
-    fn new(ptr: *mut ffi::notmuch_message_t) -> Message<'d> {
+impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_message_t> for Message<'q, 'd> {
+    fn new(ptr: *mut ffi::notmuch_message_t) -> Message<'q, 'd> {
         Message(ptr, marker::PhantomData)
     }
 }
 
 
-impl<'d> ops::Drop for Message<'d> {
+impl<'q, 'd> ops::Drop for Message<'q, 'd> {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_message_destroy(self.0)
