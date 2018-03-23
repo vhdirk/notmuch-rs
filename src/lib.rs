@@ -6,15 +6,16 @@ extern crate libc;
 mod utils;
 mod ffi;
 
-pub mod error;
-pub mod database;
-pub mod directory;
-pub mod query;
-pub mod messages;
-pub mod message;
-pub mod tags;
-pub mod threads;
-pub mod thread;
+mod error;
+mod database;
+mod directory;
+mod query;
+mod messages;
+mod message;
+mod tags;
+mod threads;
+mod thread;
+mod filenames;
 
 pub use database::Database;
 pub use query::Query;
