@@ -731,9 +731,9 @@ extern {
     /// to call it if the query is about to be destroyed).
     ///
     /// @since libnotmuch 4.2 (notmuch 0.20)
-    pub fn notmuch_query_search_threads(
-        query: *mut notmuch_query_t,
-    ) -> *mut notmuch_threads_t;
+    pub fn notmuch_query_search_threads(query: *mut notmuch_query_t,
+                                         out: *mut *mut notmuch_threads_t)
+                                         -> notmuch_status_t;
 
     /// Execute a query for messages, returning a `notmuch_messages_t` object
     /// which can be used to iterate over the results. The returned

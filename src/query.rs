@@ -13,6 +13,7 @@ use utils::{
 };
 use Database;
 use Messages;
+use Threads;
 use ffi::Sort;
 
 #[derive(Debug)]
@@ -53,7 +54,7 @@ impl<'d> Query<'d> {
     pub fn search_messages(self: &Self) -> Result<Option<Messages>>
     {
         let mut msgs = ptr::null_mut();
-        try!(unsafe {
+        let ret = try!(unsafe {
             ffi::notmuch_query_search_messages(
                 self.0, &mut msgs,
             )
@@ -62,6 +63,21 @@ impl<'d> Query<'d> {
         match msgs.is_null() {
             false => Ok(None),
             true => Ok(Some(Messages::new(msgs))),
+        }
+    }
+
+    pub fn search_threads(self: &Self) -> Result<Option<Threads>>
+    {
+        let mut thrds = ptr::null_mut();
+        let ret = try!(unsafe {
+            ffi::notmuch_query_search_threads(
+                self.0, &mut thrds,
+            )
+        }.as_result());
+
+        match thrds.is_null() {
+            false => Ok(None),
+            true => Ok(Some(Threads::new(thrds))),
         }
     }
 }

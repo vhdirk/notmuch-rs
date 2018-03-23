@@ -189,7 +189,7 @@ impl Database {
 
     pub fn create_query(&self, query_string: &String) -> Result<Query> {
         let query_str = CString::new(query_string.as_str()).unwrap();
-
+        println!("query {:?}", query_str);
         let mut query = ptr::null_mut();
         unsafe {
             query = ffi::notmuch_query_create(self.0, query_str.as_ptr());
