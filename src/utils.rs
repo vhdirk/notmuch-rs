@@ -20,3 +20,15 @@ impl ToStr for *const libc::c_char {
         }.to_bytes())
     }
 }
+
+pub trait ToString {
+    fn to_string(&self) -> String;
+}
+
+impl ToString for *const libc::c_char {
+    fn to_string(&self) -> String {
+        unsafe {
+            ffi::CStr::from_ptr(*self).to_string_lossy().into_owned()
+        }
+    }
+}

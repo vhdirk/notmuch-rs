@@ -2,14 +2,17 @@ use std;
 use std::{
     ops,
     marker,
-    ptr,
+    str,
+    result
 };
+use std::ffi::{CString, CStr};
 
 use error::Result;
 
 use ffi;
 use utils::{
     NewFromPtr,
+    ToStr
 };
 use Query;
 
@@ -26,6 +29,14 @@ impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_thread_t> for Thread<'q, 'd> {
 }
 
 impl<'q, 'd> Thread<'q, 'd>{
+
+    pub fn id(self: &Self) -> result::Result<&'q str, str::Utf8Error>{
+        let tid = unsafe {
+            ffi::notmuch_thread_get_thread_id(self.0)
+        };
+        tid.to_str()
+    }
+
 
     pub fn total_messages(self: &Self) -> i32{
         unsafe {

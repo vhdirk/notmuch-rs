@@ -54,7 +54,7 @@ impl<'d> Query<'d> {
     pub fn search_messages(self: &Self) -> Result<Option<Messages>>
     {
         let mut msgs = ptr::null_mut();
-        let ret = try!(unsafe {
+        try!(unsafe {
             ffi::notmuch_query_search_messages(
                 self.0, &mut msgs,
             )
@@ -69,22 +69,19 @@ impl<'d> Query<'d> {
     pub fn count_messages(self: &Self) -> Result<u32>
     {
         let mut cnt = 0;
-        let ret = try!(unsafe {
+        try!(unsafe {
             ffi::notmuch_query_count_messages(
                 self.0, &mut cnt,
             )
         }.as_result());
 
-        // if ret.is_err(){
-        //     return ret;
-        // }
         return Ok(cnt);
     }
 
     pub fn search_threads(self: &Self) -> Result<Option<Threads>>
     {
         let mut thrds = ptr::null_mut();
-        let ret = try!(unsafe {
+        try!(unsafe {
             ffi::notmuch_query_search_threads(
                 self.0, &mut thrds,
             )
@@ -99,15 +96,12 @@ impl<'d> Query<'d> {
     pub fn count_threads(self: &Self) -> Result<u32>
     {
         let mut cnt = 0;
-        let ret = try!(unsafe {
+        try!(unsafe {
             ffi::notmuch_query_count_threads(
                 self.0, &mut cnt,
             )
         }.as_result());
 
-        // if ret.is_err(){
-        //     return ret;
-        // }
         return Ok(cnt);
     }
 }
