@@ -17,6 +17,7 @@ mod threads;
 mod thread;
 mod filenames;
 
+pub use error::Error;
 pub use database::Database;
 pub use query::Query;
 pub use messages::Messages;
