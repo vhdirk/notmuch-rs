@@ -55,8 +55,9 @@ impl<'d> iter::Iterator for Filenames<'d> {
         }
 
         let ctag = unsafe {
+            let t = ffi::notmuch_filenames_get(self.0);
             ffi::notmuch_filenames_move_to_next(self.0);
-            CStr::from_ptr(ffi::notmuch_filenames_get(self.0))
+            CStr::from_ptr(t)
         };
 
         Some(PathBuf::from(ctag.to_str().unwrap()))

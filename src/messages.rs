@@ -60,8 +60,9 @@ impl<'q, 'd> iter::Iterator for Messages<'q, 'd> {
         }
 
         let cmsg = unsafe {
+            let msg = ffi::notmuch_messages_get(self.0);
             ffi::notmuch_messages_move_to_next(self.0);
-            ffi::notmuch_messages_get(self.0)
+            msg
         };
 
         Some(Self::Item::new(cmsg))

@@ -46,8 +46,9 @@ impl<'q, 'd> iter::Iterator for Threads<'q, 'd> {
         }
 
         let cthread = unsafe {
+            let t = ffi::notmuch_threads_get(self.0);
             ffi::notmuch_threads_move_to_next(self.0);
-            ffi::notmuch_threads_get(self.0)
+            t
         };
 
         Some(Self::Item::new(cthread))

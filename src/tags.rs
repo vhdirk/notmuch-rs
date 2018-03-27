@@ -50,8 +50,10 @@ impl<'d> iter::Iterator for Tags<'d> {
         }
 
         let ctag = unsafe {
+            let t = ffi::notmuch_tags_get(self.0);
             ffi::notmuch_tags_move_to_next(self.0);
-            CStr::from_ptr(ffi::notmuch_tags_get(self.0))
+
+            CStr::from_ptr(t)
         };
 
         Some(ctag.to_str().unwrap().to_string())
