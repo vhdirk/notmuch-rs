@@ -114,5 +114,3 @@ impl<'q, 'd> ops::Drop for Thread<'q, 'd> {
         };
     }
 }
-
-unsafe impl<'q, 'd> Send for Thread<'q, 'd> {}

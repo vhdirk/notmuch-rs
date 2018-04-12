@@ -220,5 +220,3 @@ impl ops::Drop for Database {
         };
     }
 }
-
-unsafe impl Send for Database {}
