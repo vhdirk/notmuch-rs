@@ -5,12 +5,10 @@ use std::{
 };
 
 use std::path::{
-    PathBuf,
-    Path
+    PathBuf
 };
 
 use std::ffi::{
-    CString,
     CStr
 };
 

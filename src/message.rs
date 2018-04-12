@@ -81,3 +81,5 @@ impl<'q, 'd> ops::Drop for Message<'q, 'd> {
         };
     }
 }
+
+unsafe impl<'q, 'd> Send for Message<'q, 'd> {}
