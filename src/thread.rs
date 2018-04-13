@@ -46,7 +46,7 @@ impl<'q, 'd> Thread<'q, 'd>{
             ffi::notmuch_thread_get_total_messages(self.0)
         }
     }
-
+#[cfg(feature = "0.26")]
     pub fn total_files(self: &Self) -> i32{
         unsafe {
             ffi::notmuch_thread_get_total_files(self.0)

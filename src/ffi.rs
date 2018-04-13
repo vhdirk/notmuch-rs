@@ -102,7 +102,7 @@ notmuch_enum! {
         NOTMUCH_SORT_OLDEST_FIRST => OldestFirst,
         NOTMUCH_SORT_NEWEST_FIRST => NewestFirst,
         NOTMUCH_SORT_MESSAGE_ID => MessageID,
-        NOTMUCH_SORT_UNSORTED => ReadWrite
+        NOTMUCH_SORT_UNSORTED => Unsorted
     }
 }
 

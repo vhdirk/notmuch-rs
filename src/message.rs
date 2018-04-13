@@ -52,7 +52,7 @@ impl<'q, 'd> Message<'q, 'd>{
             ffi::notmuch_message_get_replies(self.0)
         })
     }
-
+#[cfg(feature = "0.26")]
     pub fn count_files(self: &Self) -> i32
     {
         unsafe {
