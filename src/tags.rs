@@ -59,3 +59,5 @@ impl<'d> iter::Iterator for Tags<'d> {
         Some(ctag.to_str().unwrap().to_string())
     }
 }
+
+unsafe impl<'d> Send for Tags<'d>{}

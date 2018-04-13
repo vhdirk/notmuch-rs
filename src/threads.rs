@@ -54,3 +54,5 @@ impl<'q, 'd> iter::Iterator for Threads<'q, 'd> {
         Some(Self::Item::new(cthread))
     }
 }
+
+unsafe impl<'q, 'd> Send for Threads<'q, 'd>{}

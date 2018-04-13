@@ -61,3 +61,6 @@ impl<'d> iter::Iterator for Filenames<'d> {
         Some(PathBuf::from(ctag.to_str().unwrap()))
     }
 }
+
+
+unsafe impl<'d> Send for Filenames<'d>{}

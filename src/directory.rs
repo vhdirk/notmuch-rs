@@ -39,3 +39,5 @@ impl<'d> ops::Drop for Directory<'d> {
         };
     }
 }
+
+unsafe impl<'d> Send for Directory<'d>{}

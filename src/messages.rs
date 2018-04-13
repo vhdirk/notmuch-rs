@@ -68,3 +68,5 @@ impl<'q, 'd> iter::Iterator for Messages<'q, 'd> {
         Some(Self::Item::new(cmsg))
     }
 }
+
+unsafe impl<'q, 'd> Send for Messages<'q, 'd>{}
