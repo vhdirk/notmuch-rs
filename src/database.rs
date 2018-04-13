@@ -171,7 +171,7 @@ impl Database {
         Ok(())
     }
 
-    pub fn directory<'d, P: AsRef<path::Path>>(&self, path: &P) -> Result<Option<Directory<'d>>> {
+    pub fn directory<'d, P: AsRef<path::Path>>(&'d self, path: &P) -> Result<Option<Directory<'d>>> {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut dir = ptr::null_mut();
@@ -187,23 +187,22 @@ impl Database {
         }
     }
 
-    pub fn create_query<'d>(&self, query_string: &String) -> Result<Query<'d>> {
+    pub fn create_query<'d>(&'d self, query_string: &String) -> Result<Query<'d>> {
         let query_str = CString::new(query_string.as_str()).unwrap();
         println!("query {:?}", query_str);
-        let mut query = ptr::null_mut();
-        unsafe {
-            query = ffi::notmuch_query_create(self.0, query_str.as_ptr());
-        }
+
+        let mut query = unsafe {
+            ffi::notmuch_query_create(self.0, query_str.as_ptr())
+        };
 
         Ok(Query::new(query))
     }
 
-    pub fn all_tags<'d>(&self) -> Result<Tags<'d>> {
+    pub fn all_tags<'d>(&'d self) -> Result<Tags<'d>> {
 
-        let mut tags = ptr::null_mut();
-        unsafe {
-            tags = ffi::notmuch_database_get_all_tags(self.0);
-        }
+        let mut tags = unsafe {
+            ffi::notmuch_database_get_all_tags(self.0)
+        };
 
         Ok(Tags::new(tags))
     }
@@ -221,4 +220,5 @@ impl ops::Drop for Database {
     }
 }
 
-unsafe impl Send for Database{}
+unsafe impl Send for Database {}
+// unsafe impl Sync for Database {}

@@ -22,7 +22,7 @@ use ffi;
 #[derive(Debug)]
 pub struct Filenames<'d>(
     *mut ffi::notmuch_filenames_t,
-    marker::PhantomData<&'d mut database::Database>,
+    marker::PhantomData<&'d database::Database>,
 );
 
 impl<'d> NewFromPtr<*mut ffi::notmuch_filenames_t> for Filenames<'d> {
@@ -32,7 +32,7 @@ impl<'d> NewFromPtr<*mut ffi::notmuch_filenames_t> for Filenames<'d> {
 }
 
 impl<'d> ops::Drop for Filenames<'d> {
-    fn drop(&mut self) {
+    fn drop(self: &mut Self) {
         unsafe {
             ffi::notmuch_filenames_destroy(self.0)
         };
@@ -42,7 +42,7 @@ impl<'d> ops::Drop for Filenames<'d> {
 impl<'d> iter::Iterator for Filenames<'d> {
     type Item = PathBuf;
 
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(self: &mut Self) -> Option<Self::Item> {
 
         let valid = unsafe {
             ffi::notmuch_filenames_valid(self.0)
@@ -64,3 +64,4 @@ impl<'d> iter::Iterator for Filenames<'d> {
 
 
 unsafe impl<'d> Send for Filenames<'d>{}
+// unsafe impl<'d> Sync for Filenames<'d>{}

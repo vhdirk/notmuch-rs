@@ -19,7 +19,7 @@ pub struct Messages<'q, 'd:'q>(
     // TODO: is this lifetime specifier correct?
     // query may outlive messages.
     pub(crate) *mut ffi::notmuch_messages_t,
-    marker::PhantomData<&'q mut Query<'d>>,
+    marker::PhantomData<&'q Query<'d>>,
 );
 
 impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_messages_t> for Messages<'q, 'd> {
@@ -30,7 +30,7 @@ impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_messages_t> for Messages<'q, 'd> {
 
 impl<'q, 'd> Messages<'q, 'd>{
 
-    pub fn collect_tags(self: &Self) -> Tags{
+    pub fn collect_tags(self: &'d Self) -> Tags<'d>{
         Tags::new(unsafe {
             ffi::notmuch_messages_collect_tags(self.0)
         })
@@ -39,7 +39,7 @@ impl<'q, 'd> Messages<'q, 'd>{
 }
 
 impl<'q, 'd> ops::Drop for Messages<'q, 'd> {
-    fn drop(&mut self) {
+    fn drop(self: &mut Self) {
         unsafe {
             ffi::notmuch_messages_destroy(self.0)
         };
@@ -70,3 +70,4 @@ impl<'q, 'd> iter::Iterator for Messages<'q, 'd> {
 }
 
 unsafe impl<'q, 'd> Send for Messages<'q, 'd>{}
+// unsafe impl<'q, 'd> Sync for Messages<'q, 'd>{}

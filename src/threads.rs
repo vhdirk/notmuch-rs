@@ -15,7 +15,7 @@ use ffi;
 #[derive(Debug)]
 pub struct Threads<'q, 'd:'q>(
     *mut ffi::notmuch_threads_t,
-    marker::PhantomData<&'q mut Query<'d>>,
+    marker::PhantomData<&'q Query<'d>>,
 );
 
 impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_threads_t> for Threads<'q, 'd> {
@@ -55,4 +55,5 @@ impl<'q, 'd> iter::Iterator for Threads<'q, 'd> {
     }
 }
 
-unsafe impl<'q, 'd> Send for Threads<'q, 'd>{}
+unsafe impl<'q, 'd> Send for Threads<'q, 'd> {}
+// unsafe impl<'q, 'd> Sync for Threads<'q, 'd> {}

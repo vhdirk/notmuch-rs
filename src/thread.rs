@@ -5,6 +5,7 @@ use std::{
     str,
     result
 };
+use std::sync::atomic::AtomicPtr;
 
 use std::ffi::{CString, CStr};
 
@@ -22,7 +23,7 @@ use Tags;
 #[derive(Debug)]
 pub struct Thread<'q, 'd:'q>(
     pub(crate) *mut ffi::notmuch_thread_t,
-    marker::PhantomData<&'q mut Query<'d>>,
+    marker::PhantomData<&'q Query<'d>>,
 );
 
 impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_thread_t> for Thread<'q, 'd> {
@@ -115,4 +116,5 @@ impl<'q, 'd> ops::Drop for Thread<'q, 'd> {
     }
 }
 
-unsafe impl<'q, 'd> Send for Thread<'q, 'd>{}
+unsafe impl<'q, 'd> Send for Thread<'q, 'd> {}
+// unsafe impl<'q, 'd> Sync for Thread<'q, 'd> {}

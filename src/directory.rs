@@ -15,11 +15,11 @@ use ffi;
 #[derive(Debug)]
 pub struct Directory<'d>(
     *mut ffi::notmuch_directory_t,
-    marker::PhantomData<&'d mut Database>,
+    marker::PhantomData<&'d Database>,
 );
 
 impl<'d> Directory<'d>{
-    pub fn child_directories(self: &Self) -> Filenames<'d>{
+    pub fn child_directories(self: &'d Self) -> Filenames<'d>{
         Filenames::new(unsafe {
             ffi::notmuch_directory_get_child_directories(self.0)
         })
@@ -33,7 +33,7 @@ impl<'d> NewFromPtr<*mut ffi::notmuch_directory_t> for Directory<'d> {
 }
 
 impl<'d> ops::Drop for Directory<'d> {
-    fn drop(&mut self) {
+    fn drop(self: &mut Self) {
         unsafe {
             ffi::notmuch_directory_destroy(self.0)
         };
@@ -41,3 +41,4 @@ impl<'d> ops::Drop for Directory<'d> {
 }
 
 unsafe impl<'d> Send for Directory<'d>{}
+//unsafe impl<'d> Sync for Directory<'d>{}

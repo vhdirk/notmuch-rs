@@ -19,7 +19,7 @@ use ffi::Sort;
 #[derive(Debug)]
 pub struct Query<'d>(
     pub(crate) *mut ffi::notmuch_query_t,
-    marker::PhantomData<&'d mut Database>,
+    marker::PhantomData<&'d Database>,
 );
 
 
@@ -51,7 +51,7 @@ impl<'d> Query<'d> {
 
 
     /// Filter messages according to the query and return
-    pub fn search_messages<'q>(self: &Self) -> Result<Messages<'q, 'd>>
+    pub fn search_messages<'q>(self: &'d Self) -> Result<Messages<'q, 'd>>
     {
         let mut msgs = ptr::null_mut();
         try!(unsafe {
@@ -75,7 +75,7 @@ impl<'d> Query<'d> {
         return Ok(cnt);
     }
 
-    pub fn search_threads<'q>(self: &Self) -> Result<Threads<'q, 'd>>
+    pub fn search_threads<'q>(self: &'d Self) -> Result<Threads<'q, 'd>>
     {
         let mut thrds = ptr::null_mut();
         try!(unsafe {
@@ -115,4 +115,5 @@ impl<'d> ops::Drop for Query<'d> {
     }
 }
 
-unsafe impl<'d> Send for Query<'d>{}
+unsafe impl<'d> Send for Query<'d> {}
+// unsafe impl<'d> Sync for Query<'d> {}

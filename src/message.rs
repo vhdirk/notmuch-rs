@@ -22,7 +22,7 @@ use Filenames;
 #[derive(Debug)]
 pub struct Message<'q, 'd:'q>(
     pub(crate) *mut ffi::notmuch_message_t,
-    marker::PhantomData<&'q mut Query<'d>>,
+    marker::PhantomData<&'q Query<'d>>,
 );
 
 impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_message_t> for Message<'q, 'd> {
@@ -47,12 +47,13 @@ impl<'q, 'd> Message<'q, 'd>{
         tid.to_str().unwrap().to_string()
     }
 
-    pub fn replies(self: &Self) -> Messages<'q, 'd>{
+    pub fn replies(self: &'q Self) -> Messages<'q, 'd>{
         Messages::new(unsafe {
             ffi::notmuch_message_get_replies(self.0)
         })
     }
-#[cfg(feature = "0.26")]
+
+    #[cfg(feature = "0.26")]
     pub fn count_files(self: &Self) -> i32
     {
         unsafe {
@@ -60,7 +61,7 @@ impl<'q, 'd> Message<'q, 'd>{
         }
     }
 
-    pub fn filenames(self: &Self) -> Filenames<'d>{
+    pub fn filenames(self: &'d Self) -> Filenames<'d>{
         Filenames::new(unsafe {
             ffi::notmuch_message_get_filenames(self.0)
         })
@@ -75,7 +76,7 @@ impl<'q, 'd> Message<'q, 'd>{
 
 
 impl<'q, 'd> ops::Drop for Message<'q, 'd> {
-    fn drop(&mut self) {
+    fn drop(self: &mut Self) {
         unsafe {
             ffi::notmuch_message_destroy(self.0)
         };
@@ -83,3 +84,4 @@ impl<'q, 'd> ops::Drop for Message<'q, 'd> {
 }
 
 unsafe impl<'q, 'd> Send for Message<'q, 'd>{}
+// unsafe impl<'q, 'd> Sync for Message<'q, 'd>{}
