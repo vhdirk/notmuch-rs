@@ -4,7 +4,9 @@ notmuch-rs
 This is not much more than a wrapper for the [notmuch](https://notmuchmail.org/) C api.
 
 [![Build Status](https://travis-ci.org/vhdirk/notmuch-rs.svg?branch=master)](https://travis-ci.org/vhdirk/notmuch-rs)
-[![Crates.io](https://img.shields.io/crates/v/notmuch.svg)](https://crates.io/crates/notmuch)
+[![Crate version](https://img.shields.io/crates/v/notmuch.svg)](https://crates.io/crates/notmuch)
+[![Download statistics](https://img.shields.io/crates/d/notmuch.svg)](https://crates.io/crates/notmuch)
+[![License](https://img.shields.io/crates/l/notmuch.svg)](https://crates.io/crates/notmuch)
 
 ## Building
 **notmuch-rs** expects libnotmuch development files to be installed on your system.

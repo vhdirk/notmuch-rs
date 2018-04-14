@@ -8,6 +8,9 @@ description = "Rust interface and bindings for notmuch"
 license = "GPL-3.0+"
 readme = "README.md"
 
+[badges]
+travis-ci = { repository = "vhdirk/notmuch-rs" }
+
 [dependencies]
 libc = "0.2"
 
