@@ -1,0 +1,14 @@
+language: rust
+sudo: false
+rust:
+  - 1.16.0
+  - stable
+  - beta
+  - nightly
+
+matrix:
+  include:
+    - addons:
+        apt:
+          packages:
+          - notmuch
