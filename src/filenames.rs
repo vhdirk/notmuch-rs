@@ -64,4 +64,4 @@ impl<'d> iter::Iterator for Filenames<'d> {
 
 
 unsafe impl<'d> Send for Filenames<'d>{}
-// unsafe impl<'d> Sync for Filenames<'d>{}
+unsafe impl<'d> Sync for Filenames<'d>{}

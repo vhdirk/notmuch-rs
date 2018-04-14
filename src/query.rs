@@ -116,4 +116,4 @@ impl<'d> ops::Drop for Query<'d> {
 }
 
 unsafe impl<'d> Send for Query<'d> {}
-// unsafe impl<'d> Sync for Query<'d> {}
+unsafe impl<'d> Sync for Query<'d> {}

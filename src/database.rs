@@ -221,4 +221,4 @@ impl ops::Drop for Database {
 }
 
 unsafe impl Send for Database {}
-// unsafe impl Sync for Database {}
+unsafe impl Sync for Database {}

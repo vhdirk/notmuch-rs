@@ -35,7 +35,7 @@ impl<'q, 'd> ops::Drop for Threads<'q, 'd> {
 impl<'q, 'd> iter::Iterator for Threads<'q, 'd> {
     type Item = Thread<'q, 'd>;
 
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(self: &mut Self) -> Option<Self::Item> {
 
         let valid = unsafe {
             ffi::notmuch_threads_valid(self.0)
@@ -56,4 +56,4 @@ impl<'q, 'd> iter::Iterator for Threads<'q, 'd> {
 }
 
 unsafe impl<'q, 'd> Send for Threads<'q, 'd> {}
-// unsafe impl<'q, 'd> Sync for Threads<'q, 'd> {}
+unsafe impl<'q, 'd> Sync for Threads<'q, 'd> {}

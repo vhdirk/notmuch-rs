@@ -61,4 +61,4 @@ impl<'d> iter::Iterator for Tags<'d> {
 }
 
 unsafe impl<'d> Send for Tags<'d>{}
-// unsafe impl<'d> Sync for Tags<'d>{}
+unsafe impl<'d> Sync for Tags<'d>{}
