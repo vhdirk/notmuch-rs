@@ -3,6 +3,8 @@ notmuch-rs
 
 This is not much more than a wrapper for the [notmuch](https://notmuchmail.org/) C api.
 
+[![Build Status](https://travis-ci.org/vhdirk/notmuch-rs.svg?branch=master)](https://travis-ci.org/vhdirk/notmuch-rs)
+
 ## Building
 **notmuch-rs** expects libnotmuch development files to be installed on your system.
 

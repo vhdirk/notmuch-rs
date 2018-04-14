@@ -11,4 +11,4 @@ matrix:
     - addons:
         apt:
           packages:
-          - notmuch
+          - libnotmuch-dev
