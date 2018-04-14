@@ -6,9 +6,6 @@ rust:
   - beta
   - nightly
 
-matrix:
-  include:
-    - addons:
-        apt:
-          packages:
-          - libnotmuch-dev
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y libnotmuch-dev
