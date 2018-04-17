@@ -181,26 +181,23 @@ impl Database {
             )
         }.as_result());
 
-        match dir.is_null() {
-            true => Ok(None),
-            false => Ok(Some(Directory::new(dir))),
-        }
+        if dir.is_null() { Ok(None) } else { Ok(Some(Directory::new(dir))) }
     }
 
-    pub fn create_query<'d>(&'d self, query_string: &String) -> Result<Query<'d>> {
-        let query_str = CString::new(query_string.as_str()).unwrap();
+    pub fn create_query<'d>(&'d self, query_string: &str) -> Result<Query<'d>> {
+        let query_str = CString::new(query_string).unwrap();
         println!("query {:?}", query_str);
 
-        let mut query = unsafe {
+        let query = unsafe {
             ffi::notmuch_query_create(self.0, query_str.as_ptr())
         };
 
         Ok(Query::new(query))
     }
 
-    pub fn all_tags<'d>(&'d self) -> Result<Tags<'d>> {
+    pub fn all_tags<'d>(&self) -> Result<Tags<'d>> {
 
-        let mut tags = unsafe {
+        let tags = unsafe {
             ffi::notmuch_database_get_all_tags(self.0)
         };
 

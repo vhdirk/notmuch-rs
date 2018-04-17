@@ -1,4 +1,3 @@
-use std;
 use std::{
     ops,
     marker,
@@ -24,7 +23,7 @@ pub struct Query<'d>(
 
 
 impl<'d> Query<'d> {
-    pub fn create(db: &'d Database, query_string: &String) -> Result<Self> {
+    pub fn create(db: &'d Database, query_string: &str) -> Result<Self> {
         db.create_query(query_string)
     }
 
@@ -72,7 +71,7 @@ impl<'d> Query<'d> {
             )
         }.as_result());
 
-        return Ok(cnt);
+        Ok(cnt)
     }
 
     pub fn search_threads<'q>(self: &'d Self) -> Result<Threads<'q, 'd>>
@@ -96,7 +95,7 @@ impl<'d> Query<'d> {
             )
         }.as_result());
 
-        return Ok(cnt);
+        Ok(cnt)
     }
 }
 

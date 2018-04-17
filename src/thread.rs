@@ -1,15 +1,7 @@
-use std;
 use std::{
     ops,
-    marker,
-    str,
-    result
+    marker
 };
-use std::sync::atomic::AtomicPtr;
-
-use std::ffi::{CString, CStr};
-
-use error::Result;
 
 use ffi;
 use utils::{
@@ -89,7 +81,7 @@ impl<'q, 'd> Thread<'q, 'd>{
             ffi::notmuch_thread_get_authors(self.0)
         };
 
-        athrs.to_str().unwrap().split(",").map(|s| s.to_string()).collect()
+        athrs.to_str().unwrap().split(',').map(|s| s.to_string()).collect()
     }
 
     /// Get the date of the oldest message in 'thread' as a time_t value.

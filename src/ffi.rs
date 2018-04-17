@@ -59,10 +59,7 @@ impl notmuch_status_t {
     }
 
     pub fn as_result(self) -> Result<(), Self> {
-        match self.is_ok() {
-            true => Ok(()),
-            false => Err(self),
-        }
+        if self.is_ok() { Ok(()) } else { Err(self) }
     }
 }
 

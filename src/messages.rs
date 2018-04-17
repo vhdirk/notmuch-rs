@@ -4,8 +4,6 @@ use std::{
     iter
 };
 
-use error::Result;
-
 use ffi;
 use utils::{
     NewFromPtr,

@@ -1,14 +1,9 @@
-use std;
 use std::{
     ops,
-    marker,
-    str,
-    result
+    marker
 };
 
 use std::path::PathBuf;
-
-use error::Result;
 
 use ffi;
 use utils::{

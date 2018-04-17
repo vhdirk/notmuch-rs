@@ -5,7 +5,6 @@ use std::{
 };
 
 use std::ffi::{
-    CString,
     CStr
 };
 
