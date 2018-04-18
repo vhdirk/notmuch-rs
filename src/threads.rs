@@ -21,6 +21,14 @@ pub(crate) struct ThreadsPtr {
 
 impl ops::Drop for ThreadsPtr {
     fn drop(&mut self) {
+        let valid = unsafe {
+            ffi::notmuch_threads_valid(self.ptr)
+        };
+
+        if valid == 0{
+            return;
+        }
+
         unsafe {
             ffi::notmuch_threads_destroy(self.ptr)
         };

@@ -21,6 +21,15 @@ pub(crate) struct MessagesPtr {
 
 impl ops::Drop for MessagesPtr {
     fn drop(&mut self) {
+
+        let valid = unsafe {
+            ffi::notmuch_messages_valid(self.ptr)
+        };
+
+        if valid == 0{
+            return;
+        }
+
         unsafe {
             ffi::notmuch_messages_destroy(self.ptr)
         };
