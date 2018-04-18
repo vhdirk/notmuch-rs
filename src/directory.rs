@@ -6,47 +6,49 @@ use std::rc::Rc;
 
 use utils::{
     FromPtr,
+    NewFromPtr
 };
 
-use Database;
+use database::{Database, DatabasePtr};
 use Filenames;
 
 use ffi;
 
-// #[derive(Debug)]
-// pub struct Directory{
-//     ptr: *mut ffi::notmuch_directory_t,
-//     db: Rc<Database>,
-// }
-
 #[derive(Debug)]
-pub struct Directory<'d>(
-    *mut ffi::notmuch_directory_t,
-    marker::PhantomData<&'d Database>
-);
-
-
-impl<'d> Directory<'d>{
-
-    pub fn child_directories(self: &Self) -> Filenames{
-        Filenames::from_ptr(unsafe {
-            ffi::notmuch_directory_get_child_directories(self.0)
-        })
-    }
+pub(crate) struct DirectoryPtr {
+    pub ptr: *mut ffi::notmuch_directory_t
 }
 
-impl<'d> FromPtr<*mut ffi::notmuch_directory_t> for Directory<'d> {
-    fn from_ptr(ptr: *mut ffi::notmuch_directory_t) -> Directory<'d> {
-        Directory(ptr, marker::PhantomData)
-    }
-}
-
-impl<'d> ops::Drop for Directory<'d> {
-    fn drop(self: &mut Self) {
+impl ops::Drop for DirectoryPtr {
+    fn drop(&mut self) {
         unsafe {
-            ffi::notmuch_directory_destroy(self.0)
+            ffi::notmuch_directory_destroy(self.ptr)
         };
     }
 }
 
-unsafe impl<'d> Send for Directory<'d>{}
+#[derive(Debug)]
+pub struct Directory(pub(crate) Rc<DirectoryPtr>, Database);
+
+impl Directory{
+
+    pub fn child_directories(self: &Self) -> Filenames{
+        Filenames::new(unsafe {
+            ffi::notmuch_directory_get_child_directories(self.0.ptr)
+        }, self.clone())
+    }
+}
+
+impl NewFromPtr<*mut ffi::notmuch_directory_t, Database> for Directory {
+    fn new(ptr: *mut ffi::notmuch_directory_t, parent: Database) -> Directory {
+        Directory(Rc::new(DirectoryPtr{ptr}), parent)
+    }
+}
+
+impl Clone for Directory {
+    fn clone(&self) -> Self {
+        Directory(self.0.clone(), self.1.clone())
+    }
+}
+
+unsafe impl Send for Directory{}

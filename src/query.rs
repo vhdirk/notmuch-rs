@@ -10,21 +10,33 @@ use error::Result;
 use ffi;
 use utils::{
     FromPtr,
+    NewFromPtr
 };
-use Database;
-use Messages;
+use database::{Database, DatabasePtr};
+use messages::Messages;
 use Threads;
 use ffi::Sort;
 
 #[derive(Debug)]
-pub struct Query<'d>(
-    pub(crate) *mut ffi::notmuch_query_t,
-    marker::PhantomData<&'d Database>,
-);
+pub(crate) struct QueryPtr {
+    pub ptr: *mut ffi::notmuch_query_t
+}
+
+impl ops::Drop for QueryPtr {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::notmuch_query_destroy(self.ptr)
+        };
+    }
+}
 
 
-impl<'d> Query<'d> {
-    pub fn create(db: &'d Database, query_string: &str) -> Result<Self> {
+#[derive(Debug)]
+pub struct Query(Rc<QueryPtr>, Database);
+
+
+impl Query {
+    pub fn create(db: Database, query_string: &str) -> Result<Self> {
         db.create_query(query_string)
     }
 
@@ -33,7 +45,7 @@ impl<'d> Query<'d> {
     {
         unsafe {
             ffi::notmuch_query_set_sort(
-                self.0, sort.into(),
+                self.0.ptr, sort.into(),
             )
         }
     }
@@ -44,7 +56,7 @@ impl<'d> Query<'d> {
     {
         unsafe {
             ffi::notmuch_query_get_sort(
-                self.0,
+                self.0.ptr,
             )
         }.into()
     }
@@ -56,11 +68,11 @@ impl<'d> Query<'d> {
         let mut msgs = ptr::null_mut();
         try!(unsafe {
             ffi::notmuch_query_search_messages(
-                self.0, &mut msgs,
+                self.0.ptr, &mut msgs,
             )
         }.as_result());
 
-        Ok(Messages::from_ptr(msgs))
+        Ok(Messages::new(msgs, self.clone()))
     }
 
     pub fn count_messages(self: &Self) -> Result<u32>
@@ -68,7 +80,7 @@ impl<'d> Query<'d> {
         let mut cnt = 0;
         try!(unsafe {
             ffi::notmuch_query_count_messages(
-                self.0, &mut cnt,
+                self.0.ptr, &mut cnt,
             )
         }.as_result());
 
@@ -80,11 +92,11 @@ impl<'d> Query<'d> {
         let mut thrds = ptr::null_mut();
         try!(unsafe {
             ffi::notmuch_query_search_threads(
-                self.0, &mut thrds,
+                self.0.ptr, &mut thrds,
             )
         }.as_result());
 
-        Ok(Threads::from_ptr(thrds))
+        Ok(Threads::new(thrds, self.clone()))
     }
 
     pub fn count_threads(self: &Self) -> Result<u32>
@@ -92,7 +104,7 @@ impl<'d> Query<'d> {
         let mut cnt = 0;
         try!(unsafe {
             ffi::notmuch_query_count_threads(
-                self.0, &mut cnt,
+                self.0.ptr, &mut cnt,
             )
         }.as_result());
 
@@ -100,19 +112,23 @@ impl<'d> Query<'d> {
     }
 }
 
-impl<'d> FromPtr<*mut ffi::notmuch_query_t> for Query<'d> {
-    fn from_ptr(ptr: *mut ffi::notmuch_query_t) -> Query<'d> {
-        Query(ptr, marker::PhantomData)
+// impl FromPtr<*mut ffi::notmuch_query_t> for Query {
+//     fn from_ptr(ptr: *mut ffi::notmuch_query_t) -> Query {
+//         Query(ptr, marker::PhantomData)
+//     }
+// }
+
+impl NewFromPtr<*mut ffi::notmuch_query_t, Database> for Query {
+    fn new(ptr: *mut ffi::notmuch_query_t, parent: Database) -> Query {
+        Query(Rc::new(QueryPtr{ptr}), parent)
+    }
+}
+
+impl Clone for Query {
+    fn clone(&self) -> Self {
+        Query(self.0.clone(), self.1.clone())
     }
 }
 
 
-impl<'d> ops::Drop for Query<'d> {
-    fn drop(&mut self) {
-        unsafe {
-            ffi::notmuch_query_destroy(self.0)
-        };
-    }
-}
-
-unsafe impl<'d> Send for Query<'d> {}
+unsafe impl Send for Query {}

@@ -11,7 +11,7 @@ pub trait FromPtr<T> {
 }
 
 pub trait NewFromPtr<T, P> {
-    fn new(ptr: T, parent: Rc<P>) -> Self;
+    fn new(ptr: T, parent: P) -> Self;
 }
 
 pub trait ToStr {

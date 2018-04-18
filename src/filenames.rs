@@ -3,6 +3,7 @@ use std::{
     marker,
     iter
 };
+use std::rc::Rc;
 
 use std::path::{
     PathBuf
@@ -14,38 +15,57 @@ use std::ffi::{
 
 use utils::{
     FromPtr,
+    NewFromPtr
 };
 
-use database;
+use database::DatabasePtr;
+use directory::Directory;
+use message::Message;
 use ffi;
 
-#[derive(Debug)]
-pub struct Filenames<'d>(
-    *mut ffi::notmuch_filenames_t,
-    marker::PhantomData<&'d database::Database>,
-);
 
-impl<'d> FromPtr<*mut ffi::notmuch_filenames_t> for Filenames<'d> {
-    fn from_ptr(ptr: *mut ffi::notmuch_filenames_t) -> Filenames<'d> {
-        Filenames(ptr, marker::PhantomData)
-    }
+#[derive(Debug)]
+pub(crate) struct FilenamesPtr {
+    pub ptr: *mut ffi::notmuch_filenames_t
 }
 
-impl<'d> ops::Drop for Filenames<'d> {
-    fn drop(self: &mut Self) {
+impl ops::Drop for FilenamesPtr {
+    fn drop(&mut self) {
         unsafe {
-            ffi::notmuch_filenames_destroy(self.0)
+            ffi::notmuch_filenames_destroy(self.ptr)
         };
     }
 }
 
-impl<'d> iter::Iterator for Filenames<'d> {
+#[derive(Debug)]
+enum FilenamesParent{
+    Dir(Directory),
+    Msg(Message)
+}
+
+#[derive(Debug)]
+pub struct Filenames(pub(crate) Rc<FilenamesPtr>,  FilenamesParent);
+
+
+impl NewFromPtr<*mut ffi::notmuch_filenames_t, Directory> for Filenames {
+    fn new(ptr: *mut ffi::notmuch_filenames_t, parent: Directory) -> Filenames {
+        Filenames(Rc::new(FilenamesPtr{ptr}), FilenamesParent::Dir(parent))
+    }
+}
+
+impl NewFromPtr<*mut ffi::notmuch_filenames_t, Message> for Filenames {
+    fn new(ptr: *mut ffi::notmuch_filenames_t, parent: Message) -> Filenames {
+        Filenames(Rc::new(FilenamesPtr{ptr}), FilenamesParent::Msg(parent))
+    }
+}
+
+impl iter::Iterator for Filenames {
     type Item = PathBuf;
 
     fn next(self: &mut Self) -> Option<Self::Item> {
 
         let valid = unsafe {
-            ffi::notmuch_filenames_valid(self.0)
+            ffi::notmuch_filenames_valid(self.0.ptr)
         };
 
         if valid == 0{
@@ -53,8 +73,8 @@ impl<'d> iter::Iterator for Filenames<'d> {
         }
 
         let ctag = unsafe {
-            let t = ffi::notmuch_filenames_get(self.0);
-            ffi::notmuch_filenames_move_to_next(self.0);
+            let t = ffi::notmuch_filenames_get(self.0.ptr);
+            ffi::notmuch_filenames_move_to_next(self.0.ptr);
             CStr::from_ptr(t)
         };
 
@@ -63,4 +83,4 @@ impl<'d> iter::Iterator for Filenames<'d> {
 }
 
 
-unsafe impl<'d> Send for Filenames<'d>{}
+unsafe impl Send for Filenames{}

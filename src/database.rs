@@ -12,6 +12,7 @@ use error::Result;
 use utils::{
     FromPtr,
     ToStr,
+    NewFromPtr
 };
 
 use directory::Directory;
@@ -27,13 +28,29 @@ pub use ffi::DatabaseMode;
 pub struct Version(libc::c_uint);
 
 #[derive(Copy, Clone, Debug)]
-pub struct Revision(libc::c_ulong);
+pub struct Revision{
+    revision: libc::c_ulong
+}
 
 #[derive(Debug)]
-pub struct Database(*mut ffi::notmuch_database_t);
+pub(crate) struct DatabasePtr {
+    pub ptr: *mut ffi::notmuch_database_t
+}
+
+impl ops::Drop for DatabasePtr {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::notmuch_database_destroy(self.ptr)
+        };
+    }
+}
+
+
+#[derive(Debug)]
+pub struct Database(pub(crate) Rc<DatabasePtr>);
 
 impl Database {
-    pub fn create<P: AsRef<path::Path>>(path: &P) -> Result<Rc<Self>> {
+    pub fn create<P: AsRef<path::Path>>(path: &P) -> Result<Self> {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut db = ptr::null_mut();
@@ -41,10 +58,10 @@ impl Database {
             ffi::notmuch_database_create(path_str.as_ptr(), &mut db)
         }.as_result());
 
-        Ok(Rc::new(Database(db)))
+        Ok(Database(Rc::new(DatabasePtr{ptr: db})))
     }
 
-    pub fn open<P: AsRef<path::Path>>(path: &P, mode: DatabaseMode) -> Result<Rc<Self>> {
+    pub fn open<P: AsRef<path::Path>>(path: &P, mode: DatabaseMode) -> Result<Self> {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut db = ptr::null_mut();
@@ -56,12 +73,12 @@ impl Database {
             )
         }.as_result());
 
-        Ok(Rc::new(Database(db)))
+        Ok(Database(Rc::new(DatabasePtr{ptr: db})))
     }
 
     pub fn close(self) -> Result<()> {
         try!(unsafe {
-            ffi::notmuch_database_close(self.0)
+            ffi::notmuch_database_close(self.0.ptr)
         }.as_result());
 
         Ok(())
@@ -114,26 +131,26 @@ impl Database {
 
     pub fn path(&self) -> &path::Path {
         path::Path::new(unsafe {
-            ffi::notmuch_database_get_path(self.0)
+            ffi::notmuch_database_get_path(self.0.ptr)
         }.to_str().unwrap())
     }
 
     pub fn version(&self) -> Version {
         Version(unsafe {
-            ffi::notmuch_database_get_version(self.0)
+            ffi::notmuch_database_get_version(self.0.ptr)
         })
     }
 
     pub fn revision(&self) -> Revision {
         let uuid = ptr::null_mut();
-        Revision(unsafe {
-            ffi::notmuch_database_get_revision(self.0, uuid)
-        })
+        Revision{revision: unsafe {
+            ffi::notmuch_database_get_revision(self.0.ptr, uuid)
+        }}
     }
 
     pub fn needs_upgrade(&self) -> bool {
         unsafe {
-            ffi::notmuch_database_needs_upgrade(self.0) == 1
+            ffi::notmuch_database_needs_upgrade(self.0.ptr) == 1
         }
     }
 
@@ -160,7 +177,7 @@ impl Database {
 
         try!(unsafe {
             ffi::notmuch_database_upgrade(
-                self.0,
+                self.0.ptr,
                 if status.is_some() { Some(wrapper::<F>) } else { None },
                 status.map_or(ptr::null_mut(), |f| {
                     &f as *const _ as *mut libc::c_void
@@ -177,11 +194,11 @@ impl Database {
         let mut dir = ptr::null_mut();
         try!(unsafe {
             ffi::notmuch_database_get_directory(
-                self.0, path_str.as_ptr(), &mut dir,
+                self.0.ptr, path_str.as_ptr(), &mut dir,
             )
         }.as_result());
 
-        if dir.is_null() { Ok(None) } else { Ok(Some(Directory::from_ptr(dir))) }
+        if dir.is_null() { Ok(None) } else { Ok(Some(Directory::new(dir, self.clone()))) }
     }
 
     pub fn create_query(&self, query_string: &str) -> Result<Query> {
@@ -189,32 +206,27 @@ impl Database {
         println!("query {:?}", query_str);
 
         let query = unsafe {
-            ffi::notmuch_query_create(self.0, query_str.as_ptr())
+            ffi::notmuch_query_create(self.0.ptr, query_str.as_ptr())
         };
 
-        Ok(Query::from_ptr(query))
+        Ok(Query::new(query, self.clone()))
     }
 
     pub fn all_tags(&self) -> Result<Tags> {
 
         let tags = unsafe {
-            ffi::notmuch_database_get_all_tags(self.0)
+            ffi::notmuch_database_get_all_tags(self.0.ptr)
         };
 
         Ok(Tags::from_ptr(tags))
     }
-
-
-
-
 }
 
-impl ops::Drop for Database {
-    fn drop(&mut self) {
-        unsafe {
-            ffi::notmuch_database_destroy(self.0)
-        };
+impl Clone for Database {
+    fn clone(&self) -> Self {
+        Database(self.0.clone())
     }
 }
+
 
 unsafe impl Send for Database {}

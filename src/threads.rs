@@ -3,42 +3,58 @@ use std::{
     marker,
     iter
 };
+use std::rc::Rc;
 
 use utils::{
     FromPtr,
+    NewFromPtr
 };
 
-use Query;
+use query::{Query, QueryPtr};
 use Thread;
 use ffi;
 
 #[derive(Debug)]
-pub struct Threads<'q, 'd:'q>(
-    *mut ffi::notmuch_threads_t,
-    marker::PhantomData<&'q Query<'d>>,
-);
-
-impl<'q, 'd> FromPtr<*mut ffi::notmuch_threads_t> for Threads<'q, 'd> {
-    fn from_ptr(ptr: *mut ffi::notmuch_threads_t) -> Threads<'q, 'd> {
-        Threads(ptr, marker::PhantomData)
-    }
+pub(crate) struct ThreadsPtr {
+    pub ptr: *mut ffi::notmuch_threads_t
 }
 
-impl<'q, 'd> ops::Drop for Threads<'q, 'd> {
+impl ops::Drop for ThreadsPtr {
     fn drop(&mut self) {
         unsafe {
-            ffi::notmuch_threads_destroy(self.0)
+            ffi::notmuch_threads_destroy(self.ptr)
         };
     }
 }
 
-impl<'q, 'd> iter::Iterator for Threads<'q, 'd> {
-    type Item = Thread<'q, 'd>;
+
+#[derive(Debug)]
+pub struct Threads(pub(crate) Rc<ThreadsPtr>, Query);
+
+
+impl NewFromPtr<*mut ffi::notmuch_threads_t, Query> for Threads {
+    fn new(ptr: *mut ffi::notmuch_threads_t, parent: Query) -> Threads {
+        Threads(Rc::new(ThreadsPtr{ptr}), parent)
+    }
+}
+
+
+
+impl ops::Drop for Threads {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::notmuch_threads_destroy(self.0.ptr)
+        };
+    }
+}
+
+impl iter::Iterator for Threads {
+    type Item = Thread;
 
     fn next(self: &mut Self) -> Option<Self::Item> {
 
         let valid = unsafe {
-            ffi::notmuch_threads_valid(self.0)
+            ffi::notmuch_threads_valid(self.0.ptr)
         };
 
         if valid == 0{
@@ -46,13 +62,13 @@ impl<'q, 'd> iter::Iterator for Threads<'q, 'd> {
         }
 
         let cthread = unsafe {
-            let t = ffi::notmuch_threads_get(self.0);
-            ffi::notmuch_threads_move_to_next(self.0);
+            let t = ffi::notmuch_threads_get(self.0.ptr);
+            ffi::notmuch_threads_move_to_next(self.0.ptr);
             t
         };
 
-        Some(Self::Item::from_ptr(cthread))
+        Some(Self::Item::new(cthread, self.1.clone()))
     }
 }
 
-unsafe impl<'q, 'd> Send for Threads<'q, 'd> {}
+unsafe impl Send for Threads {}

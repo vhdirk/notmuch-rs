@@ -2,79 +2,89 @@ use std::{
     ops,
     marker
 };
-
+use std::rc::Rc;
 use std::path::PathBuf;
 
 use ffi;
 use utils::{
     FromPtr,
-    ToStr
+    ToStr,
+    NewFromPtr
 };
-use Query;
+use query::{Query, QueryPtr};
 use Messages;
 use Filenames;
 
 #[derive(Debug)]
-pub struct Message<'q, 'd:'q>(
-    pub(crate) *mut ffi::notmuch_message_t,
-    marker::PhantomData<&'q Query<'d>>,
-);
+pub(crate) struct MessagePtr {
+    pub ptr: *mut ffi::notmuch_message_t
+}
 
-impl<'q, 'd> FromPtr<*mut ffi::notmuch_message_t> for Message<'q, 'd> {
-    fn from_ptr(ptr: *mut ffi::notmuch_message_t) -> Message<'q, 'd> {
-        Message(ptr, marker::PhantomData)
+impl ops::Drop for MessagePtr {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::notmuch_message_destroy(self.ptr)
+        };
     }
 }
 
-impl<'q, 'd> Message<'q, 'd>{
+
+#[derive(Debug)]
+pub struct Message(pub(crate) Rc<MessagePtr>, Query);
+
+
+impl NewFromPtr<*mut ffi::notmuch_message_t, Query> for Message {
+    fn new(ptr: *mut ffi::notmuch_message_t, parent: Query) -> Message {
+        Message(Rc::new(MessagePtr{ptr}), parent)
+    }
+}
+
+impl Message{
 
     pub fn id(self: &Self) -> String{
         let mid = unsafe {
-            ffi::notmuch_message_get_message_id(self.0)
+            ffi::notmuch_message_get_message_id(self.0.ptr)
         };
         mid.to_str().unwrap().to_string()
     }
 
     pub fn thread_id(self: &Self) -> String{
         let tid = unsafe {
-            ffi::notmuch_message_get_thread_id(self.0)
+            ffi::notmuch_message_get_thread_id(self.0.ptr)
         };
         tid.to_str().unwrap().to_string()
     }
 
-    pub fn replies(self: &'q Self) -> Messages<'q, 'd>{
-        Messages::from_ptr(unsafe {
-            ffi::notmuch_message_get_replies(self.0)
-        })
+    pub fn replies(self: &Self) -> Messages{
+        Messages::new(unsafe {
+            ffi::notmuch_message_get_replies(self.0.ptr)
+        }, self.1.clone())
     }
 
     #[cfg(feature = "0.26")]
     pub fn count_files(self: &Self) -> i32{
         unsafe {
-            ffi::notmuch_message_count_files(self.0)
+            ffi::notmuch_message_count_files(self.0.ptr)
         }
     }
 
-    pub fn filenames(self: &'d Self) -> Filenames<'d>{
-        Filenames::from_ptr(unsafe {
-            ffi::notmuch_message_get_filenames(self.0)
-        })
+    pub fn filenames(self: &Self) -> Filenames{
+        Filenames::new(unsafe {
+            ffi::notmuch_message_get_filenames(self.0.ptr)
+        }, self.clone())
     }
 
     pub fn filename(self: &Self) -> PathBuf{
         PathBuf::from(unsafe {
-            ffi::notmuch_message_get_filename(self.0)
+            ffi::notmuch_message_get_filename(self.0.ptr)
         }.to_str().unwrap())
     }
 }
 
-
-impl<'q, 'd> ops::Drop for Message<'q, 'd> {
-    fn drop(self: &mut Self) {
-        unsafe {
-            ffi::notmuch_message_destroy(self.0)
-        };
+impl Clone for Message {
+    fn clone(&self) -> Self {
+        Message(self.0.clone(), self.1.clone())
     }
 }
 
-unsafe impl<'q, 'd> Send for Message<'q, 'd>{}
+unsafe impl Send for Message{}

@@ -3,54 +3,66 @@ use std::{
     marker,
     iter
 };
+use std::rc::Rc;
 
 use ffi;
 use utils::{
     FromPtr,
+    NewFromPtr
 };
-use Query;
+use query::{Query, QueryPtr};
 use Message;
 use Tags;
 
 #[derive(Debug)]
-pub struct Messages<'q, 'd:'q>(
-    // TODO: is this lifetime specifier correct?
-    // query may outlive messages.
-    pub(crate) *mut ffi::notmuch_messages_t,
-    marker::PhantomData<&'q Query<'d>>,
-);
+pub(crate) struct MessagesPtr {
+    pub ptr: *mut ffi::notmuch_messages_t
+}
 
-impl<'q, 'd> FromPtr<*mut ffi::notmuch_messages_t> for Messages<'q, 'd> {
-    fn from_ptr(ptr: *mut ffi::notmuch_messages_t) -> Messages<'q, 'd> {
-        Messages(ptr, marker::PhantomData)
+impl ops::Drop for MessagesPtr {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::notmuch_messages_destroy(self.ptr)
+        };
     }
 }
 
-impl<'q, 'd> Messages<'q, 'd>{
 
-    pub fn collect_tags(self: &'d Self) -> Tags<'d>{
+#[derive(Debug)]
+pub struct Messages(pub(crate) Rc<MessagesPtr>, Query);
+
+
+impl NewFromPtr<*mut ffi::notmuch_messages_t, Query> for Messages {
+    fn new(ptr: *mut ffi::notmuch_messages_t, parent: Query) -> Messages {
+        Messages(Rc::new(MessagesPtr{ptr}), parent)
+    }
+}
+
+impl Messages{
+
+    pub fn collect_tags(self: &Self) -> Tags{
         Tags::from_ptr(unsafe {
-            ffi::notmuch_messages_collect_tags(self.0)
+            ffi::notmuch_messages_collect_tags(self.0.ptr)
         })
     }
 
 }
 
-impl<'q, 'd> ops::Drop for Messages<'q, 'd> {
+impl ops::Drop for Messages {
     fn drop(self: &mut Self) {
         unsafe {
-            ffi::notmuch_messages_destroy(self.0)
+            ffi::notmuch_messages_destroy(self.0.ptr)
         };
     }
 }
 
-impl<'q, 'd> iter::Iterator for Messages<'q, 'd> {
-    type Item = Message<'q, 'd>;
+impl iter::Iterator for Messages {
+    type Item = Message;
 
     fn next(&mut self) -> Option<Self::Item> {
 
         let valid = unsafe {
-            ffi::notmuch_messages_valid(self.0)
+            ffi::notmuch_messages_valid(self.0.ptr)
         };
 
         if valid == 0{
@@ -58,13 +70,13 @@ impl<'q, 'd> iter::Iterator for Messages<'q, 'd> {
         }
 
         let cmsg = unsafe {
-            let msg = ffi::notmuch_messages_get(self.0);
-            ffi::notmuch_messages_move_to_next(self.0);
+            let msg = ffi::notmuch_messages_get(self.0.ptr);
+            ffi::notmuch_messages_move_to_next(self.0.ptr);
             msg
         };
 
-        Some(Self::Item::from_ptr(cmsg))
+        Some(Self::Item::new(cmsg, self.1.clone()))
     }
 }
 
-unsafe impl<'q, 'd> Send for Messages<'q, 'd>{}
+unsafe impl Send for Messages{}
