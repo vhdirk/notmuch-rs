@@ -3,14 +3,14 @@ use std::{
     path,
     ptr,
 };
-
+use std::rc::Rc;
 use std::ffi::CString;
 
 use libc;
 
 use error::Result;
 use utils::{
-    NewFromPtr,
+    FromPtr,
     ToStr,
 };
 
@@ -33,7 +33,7 @@ pub struct Revision(libc::c_ulong);
 pub struct Database(*mut ffi::notmuch_database_t);
 
 impl Database {
-    pub fn create<P: AsRef<path::Path>>(path: &P) -> Result<Self> {
+    pub fn create<P: AsRef<path::Path>>(path: &P) -> Result<Rc<Self>> {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut db = ptr::null_mut();
@@ -41,10 +41,10 @@ impl Database {
             ffi::notmuch_database_create(path_str.as_ptr(), &mut db)
         }.as_result());
 
-        Ok(Database(db))
+        Ok(Rc::new(Database(db)))
     }
 
-    pub fn open<P: AsRef<path::Path>>(path: &P, mode: DatabaseMode) -> Result<Self> {
+    pub fn open<P: AsRef<path::Path>>(path: &P, mode: DatabaseMode) -> Result<Rc<Self>> {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut db = ptr::null_mut();
@@ -56,7 +56,7 @@ impl Database {
             )
         }.as_result());
 
-        Ok(Database(db))
+        Ok(Rc::new(Database(db)))
     }
 
     pub fn close(self) -> Result<()> {
@@ -171,7 +171,7 @@ impl Database {
         Ok(())
     }
 
-    pub fn directory<'d, P: AsRef<path::Path>>(&'d self, path: &P) -> Result<Option<Directory<'d>>> {
+    pub fn directory< P: AsRef<path::Path>>(&self, path: &P) -> Result<Option<Directory>> {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut dir = ptr::null_mut();
@@ -181,10 +181,10 @@ impl Database {
             )
         }.as_result());
 
-        if dir.is_null() { Ok(None) } else { Ok(Some(Directory::new(dir))) }
+        if dir.is_null() { Ok(None) } else { Ok(Some(Directory::from_ptr(dir))) }
     }
 
-    pub fn create_query<'d>(&'d self, query_string: &str) -> Result<Query<'d>> {
+    pub fn create_query(&self, query_string: &str) -> Result<Query> {
         let query_str = CString::new(query_string).unwrap();
         println!("query {:?}", query_str);
 
@@ -192,16 +192,16 @@ impl Database {
             ffi::notmuch_query_create(self.0, query_str.as_ptr())
         };
 
-        Ok(Query::new(query))
+        Ok(Query::from_ptr(query))
     }
 
-    pub fn all_tags<'d>(&self) -> Result<Tags<'d>> {
+    pub fn all_tags(&self) -> Result<Tags> {
 
         let tags = unsafe {
             ffi::notmuch_database_get_all_tags(self.0)
         };
 
-        Ok(Tags::new(tags))
+        Ok(Tags::from_ptr(tags))
     }
 
 

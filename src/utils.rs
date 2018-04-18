@@ -2,11 +2,16 @@ use std::{
     ffi,
     str,
 };
+use std::rc::Rc;
 
 use libc;
 
-pub trait NewFromPtr<T> {
-    fn new(ptr: T) -> Self;
+pub trait FromPtr<T> {
+    fn from_ptr(ptr: T) -> Self;
+}
+
+pub trait NewFromPtr<T, P> {
+    fn new(ptr: T, parent: Rc<P>) -> Self;
 }
 
 pub trait ToStr {

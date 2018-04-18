@@ -3,12 +3,13 @@ use std::{
     marker,
     ptr,
 };
+use std::rc::Rc;
 
 use error::Result;
 
 use ffi;
 use utils::{
-    NewFromPtr,
+    FromPtr,
 };
 use Database;
 use Messages;
@@ -50,7 +51,7 @@ impl<'d> Query<'d> {
 
 
     /// Filter messages according to the query and return
-    pub fn search_messages<'q>(self: &'d Self) -> Result<Messages<'q, 'd>>
+    pub fn search_messages(self: &Self) -> Result<Messages>
     {
         let mut msgs = ptr::null_mut();
         try!(unsafe {
@@ -59,7 +60,7 @@ impl<'d> Query<'d> {
             )
         }.as_result());
 
-        Ok(Messages::new(msgs))
+        Ok(Messages::from_ptr(msgs))
     }
 
     pub fn count_messages(self: &Self) -> Result<u32>
@@ -74,7 +75,7 @@ impl<'d> Query<'d> {
         Ok(cnt)
     }
 
-    pub fn search_threads<'q>(self: &'d Self) -> Result<Threads<'q, 'd>>
+    pub fn search_threads(self: & Self) -> Result<Threads>
     {
         let mut thrds = ptr::null_mut();
         try!(unsafe {
@@ -83,7 +84,7 @@ impl<'d> Query<'d> {
             )
         }.as_result());
 
-        Ok(Threads::new(thrds))
+        Ok(Threads::from_ptr(thrds))
     }
 
     pub fn count_threads(self: &Self) -> Result<u32>
@@ -99,8 +100,8 @@ impl<'d> Query<'d> {
     }
 }
 
-impl<'d> NewFromPtr<*mut ffi::notmuch_query_t> for Query<'d> {
-    fn new(ptr: *mut ffi::notmuch_query_t) -> Query<'d> {
+impl<'d> FromPtr<*mut ffi::notmuch_query_t> for Query<'d> {
+    fn from_ptr(ptr: *mut ffi::notmuch_query_t) -> Query<'d> {
         Query(ptr, marker::PhantomData)
     }
 }

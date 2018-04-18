@@ -13,7 +13,7 @@ use std::ffi::{
 };
 
 use utils::{
-    NewFromPtr,
+    FromPtr,
 };
 
 use database;
@@ -25,8 +25,8 @@ pub struct Filenames<'d>(
     marker::PhantomData<&'d database::Database>,
 );
 
-impl<'d> NewFromPtr<*mut ffi::notmuch_filenames_t> for Filenames<'d> {
-    fn new(ptr: *mut ffi::notmuch_filenames_t) -> Filenames<'d> {
+impl<'d> FromPtr<*mut ffi::notmuch_filenames_t> for Filenames<'d> {
+    fn from_ptr(ptr: *mut ffi::notmuch_filenames_t) -> Filenames<'d> {
         Filenames(ptr, marker::PhantomData)
     }
 }

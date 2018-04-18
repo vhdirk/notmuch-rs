@@ -6,7 +6,7 @@ use std::{
 
 use ffi;
 use utils::{
-    NewFromPtr,
+    FromPtr,
 };
 use Query;
 use Message;
@@ -20,8 +20,8 @@ pub struct Messages<'q, 'd:'q>(
     marker::PhantomData<&'q Query<'d>>,
 );
 
-impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_messages_t> for Messages<'q, 'd> {
-    fn new(ptr: *mut ffi::notmuch_messages_t) -> Messages<'q, 'd> {
+impl<'q, 'd> FromPtr<*mut ffi::notmuch_messages_t> for Messages<'q, 'd> {
+    fn from_ptr(ptr: *mut ffi::notmuch_messages_t) -> Messages<'q, 'd> {
         Messages(ptr, marker::PhantomData)
     }
 }
@@ -29,7 +29,7 @@ impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_messages_t> for Messages<'q, 'd> {
 impl<'q, 'd> Messages<'q, 'd>{
 
     pub fn collect_tags(self: &'d Self) -> Tags<'d>{
-        Tags::new(unsafe {
+        Tags::from_ptr(unsafe {
             ffi::notmuch_messages_collect_tags(self.0)
         })
     }
@@ -63,7 +63,7 @@ impl<'q, 'd> iter::Iterator for Messages<'q, 'd> {
             msg
         };
 
-        Some(Self::Item::new(cmsg))
+        Some(Self::Item::from_ptr(cmsg))
     }
 }
 

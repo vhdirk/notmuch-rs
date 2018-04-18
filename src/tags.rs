@@ -9,7 +9,7 @@ use std::ffi::{
 };
 
 use utils::{
-    NewFromPtr,
+    FromPtr,
 };
 
 use database;
@@ -21,8 +21,8 @@ pub struct Tags<'d>(
     marker::PhantomData<&'d database::Database>,
 );
 
-impl<'d> NewFromPtr<*mut ffi::notmuch_tags_t> for Tags<'d> {
-    fn new(ptr: *mut ffi::notmuch_tags_t) -> Tags<'d> {
+impl<'d> FromPtr<*mut ffi::notmuch_tags_t> for Tags<'d> {
+    fn from_ptr(ptr: *mut ffi::notmuch_tags_t) -> Tags<'d> {
         Tags(ptr, marker::PhantomData)
     }
 }

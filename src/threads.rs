@@ -5,7 +5,7 @@ use std::{
 };
 
 use utils::{
-    NewFromPtr,
+    FromPtr,
 };
 
 use Query;
@@ -18,8 +18,8 @@ pub struct Threads<'q, 'd:'q>(
     marker::PhantomData<&'q Query<'d>>,
 );
 
-impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_threads_t> for Threads<'q, 'd> {
-    fn new(ptr: *mut ffi::notmuch_threads_t) -> Threads<'q, 'd> {
+impl<'q, 'd> FromPtr<*mut ffi::notmuch_threads_t> for Threads<'q, 'd> {
+    fn from_ptr(ptr: *mut ffi::notmuch_threads_t) -> Threads<'q, 'd> {
         Threads(ptr, marker::PhantomData)
     }
 }
@@ -51,7 +51,7 @@ impl<'q, 'd> iter::Iterator for Threads<'q, 'd> {
             t
         };
 
-        Some(Self::Item::new(cthread))
+        Some(Self::Item::from_ptr(cthread))
     }
 }
 

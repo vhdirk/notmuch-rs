@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use ffi;
 use utils::{
-    NewFromPtr,
+    FromPtr,
     ToStr
 };
 use Query;
@@ -20,8 +20,8 @@ pub struct Message<'q, 'd:'q>(
     marker::PhantomData<&'q Query<'d>>,
 );
 
-impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_message_t> for Message<'q, 'd> {
-    fn new(ptr: *mut ffi::notmuch_message_t) -> Message<'q, 'd> {
+impl<'q, 'd> FromPtr<*mut ffi::notmuch_message_t> for Message<'q, 'd> {
+    fn from_ptr(ptr: *mut ffi::notmuch_message_t) -> Message<'q, 'd> {
         Message(ptr, marker::PhantomData)
     }
 }
@@ -43,21 +43,20 @@ impl<'q, 'd> Message<'q, 'd>{
     }
 
     pub fn replies(self: &'q Self) -> Messages<'q, 'd>{
-        Messages::new(unsafe {
+        Messages::from_ptr(unsafe {
             ffi::notmuch_message_get_replies(self.0)
         })
     }
 
     #[cfg(feature = "0.26")]
-    pub fn count_files(self: &Self) -> i32
-    {
+    pub fn count_files(self: &Self) -> i32{
         unsafe {
             ffi::notmuch_message_count_files(self.0)
         }
     }
 
     pub fn filenames(self: &'d Self) -> Filenames<'d>{
-        Filenames::new(unsafe {
+        Filenames::from_ptr(unsafe {
             ffi::notmuch_message_get_filenames(self.0)
         })
     }

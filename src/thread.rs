@@ -5,7 +5,7 @@ use std::{
 
 use ffi;
 use utils::{
-    NewFromPtr,
+    FromPtr,
     ToStr
 };
 use Query;
@@ -18,8 +18,8 @@ pub struct Thread<'q, 'd:'q>(
     marker::PhantomData<&'q Query<'d>>,
 );
 
-impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_thread_t> for Thread<'q, 'd> {
-    fn new(ptr: *mut ffi::notmuch_thread_t) -> Thread<'q, 'd> {
+impl<'q, 'd> FromPtr<*mut ffi::notmuch_thread_t> for Thread<'q, 'd> {
+    fn from_ptr(ptr: *mut ffi::notmuch_thread_t) -> Thread<'q, 'd> {
         Thread(ptr, marker::PhantomData)
     }
 }
@@ -48,7 +48,7 @@ impl<'q, 'd> Thread<'q, 'd>{
 
 
     pub fn toplevel_messages(self: &Self) -> Messages{
-        Messages::new(unsafe {
+        Messages::from_ptr(unsafe {
             ffi::notmuch_thread_get_toplevel_messages(self.0)
         })
     }
@@ -56,14 +56,14 @@ impl<'q, 'd> Thread<'q, 'd>{
     /// Get a `Messages` iterator for all messages in 'thread' in
     /// oldest-first order.
     pub fn messages(self: &Self) -> Messages{
-        Messages::new(unsafe {
+        Messages::from_ptr(unsafe {
             ffi::notmuch_thread_get_messages(self.0)
         })
     }
 
 
     pub fn tags(self: &Self) -> Tags{
-        Tags::new(unsafe {
+        Tags::from_ptr(unsafe {
             ffi::notmuch_thread_get_tags(self.0)
         })
     }
