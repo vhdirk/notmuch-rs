@@ -68,4 +68,3 @@ impl<'q, 'd> iter::Iterator for Messages<'q, 'd> {
 }
 
 unsafe impl<'q, 'd> Send for Messages<'q, 'd>{}
-unsafe impl<'q, 'd> Sync for Messages<'q, 'd>{}

@@ -56,4 +56,3 @@ impl<'q, 'd> iter::Iterator for Threads<'q, 'd> {
 }
 
 unsafe impl<'q, 'd> Send for Threads<'q, 'd> {}
-unsafe impl<'q, 'd> Sync for Threads<'q, 'd> {}

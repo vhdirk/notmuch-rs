@@ -41,4 +41,3 @@ impl<'d> ops::Drop for Directory<'d> {
 }
 
 unsafe impl<'d> Send for Directory<'d>{}
-unsafe impl<'d> Sync for Directory<'d>{}
