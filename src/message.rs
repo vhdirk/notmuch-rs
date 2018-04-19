@@ -56,7 +56,7 @@ impl Message{
         }, self.1.clone())
     }
 
-    #[cfg(feature = "0.26")]
+    #[cfg(feature = "v0_26")]
     pub fn count_files(self: &Self) -> i32{
         unsafe {
             ffi::notmuch_message_count_files(self.0.ptr)

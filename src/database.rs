@@ -140,7 +140,7 @@ impl Database {
         })
     }
 
-    #[cfg(feature = "0.21")]
+    #[cfg(feature = "v0_21")]
     pub fn revision(&self) -> Revision {
         let uuid_p: *const libc::c_char = ptr::null();
         let revision = unsafe {
