@@ -25,8 +25,8 @@ pub struct Version(libc::c_uint);
 
 #[derive(Clone, Debug)]
 pub struct Revision{
-    revision: libc::c_ulong,
-    uuid: String
+    pub revision: libc::c_ulong,
+    pub uuid: String
 }
 
 #[derive(Debug)]
