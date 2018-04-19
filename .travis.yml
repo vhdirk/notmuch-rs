@@ -9,3 +9,7 @@ addons:
   apt:
     packages:
     - libnotmuch-dev
+
+script:
+  - cargo build --no-default-features --verbose --all
+  - cargo test --no-default-features --verbose --all

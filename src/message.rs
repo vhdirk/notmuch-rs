@@ -45,9 +45,8 @@ impl<'q, 'd> Message<'q, 'd>{
         })
     }
 
-    #[cfg(feature = "0.26")]
-    pub fn count_files(self: &Self) -> i32
-    {
+    #[cfg(feature = "v0_26")]
+    pub fn count_files(self: &Self) -> i32{
         unsafe {
             ffi::notmuch_message_count_files(self.0)
         }
