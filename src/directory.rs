@@ -26,6 +26,8 @@ impl ops::Drop for DirectoryPtr {
         };
     }
 }
+impl !Send for DirectoryPtr {}
+impl !Sync for DirectoryPtr {}
 
 #[derive(Debug)]
 pub struct Directory(pub(crate) Rc<DirectoryPtr>, Database);
@@ -51,4 +53,5 @@ impl Clone for Directory {
     }
 }
 
-unsafe impl Send for Directory{}
+// unsafe impl Send for Directory{}
+// impl !Sync for Directory {}

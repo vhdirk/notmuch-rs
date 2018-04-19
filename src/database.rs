@@ -45,6 +45,10 @@ impl ops::Drop for DatabasePtr {
     }
 }
 
+impl !Send for DatabasePtr {}
+impl !Sync for DatabasePtr {}
+
+
 
 #[derive(Debug)]
 pub struct Database(pub(crate) Rc<DatabasePtr>);

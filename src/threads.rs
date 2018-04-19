@@ -35,6 +35,9 @@ impl ops::Drop for ThreadsPtr {
     }
 }
 
+impl !Send for ThreadsPtr {}
+impl !Sync for ThreadsPtr {}
+
 
 #[derive(Debug)]
 pub struct Threads(pub(crate) Rc<ThreadsPtr>, Query);
@@ -79,4 +82,5 @@ impl iter::Iterator for Threads {
     }
 }
 
-unsafe impl Send for Threads {}
+// unsafe impl Send for Threads {}
+// impl !Sync for Threads{}

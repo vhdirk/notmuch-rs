@@ -30,6 +30,8 @@ impl ops::Drop for QueryPtr {
     }
 }
 
+impl !Send for QueryPtr {}
+impl !Sync for QueryPtr {}
 
 #[derive(Debug)]
 pub struct Query(Rc<QueryPtr>, Database);
@@ -131,4 +133,5 @@ impl Clone for Query {
 }
 
 
-unsafe impl Send for Query {}
+// unsafe impl Send for Query {}
+// impl !Sync for Query{}

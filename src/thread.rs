@@ -27,6 +27,8 @@ impl ops::Drop for ThreadPtr {
     }
 }
 
+impl !Send for ThreadPtr {}
+impl !Sync for ThreadPtr {}
 
 #[derive(Debug)]
 pub struct Thread(pub(crate) Rc<ThreadPtr>, Query);
@@ -120,4 +122,5 @@ impl Clone for Thread {
     }
 }
 
-unsafe impl Send for Thread {}
+// unsafe impl Send for Thread {}
+// impl !Sync for Thread{}

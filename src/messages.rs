@@ -36,6 +36,9 @@ impl ops::Drop for MessagesPtr {
     }
 }
 
+impl !Send for MessagesPtr {}
+impl !Sync for MessagesPtr {}
+
 
 #[derive(Debug)]
 pub struct Messages(pub(crate) Rc<MessagesPtr>, Query);
@@ -88,4 +91,5 @@ impl iter::Iterator for Messages {
     }
 }
 
-unsafe impl Send for Messages{}
+// unsafe impl Send for Messages{}
+// impl !Sync for Messages{}

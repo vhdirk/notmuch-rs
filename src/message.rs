@@ -27,6 +27,8 @@ impl ops::Drop for MessagePtr {
         };
     }
 }
+impl !Send for MessagePtr {}
+impl !Sync for MessagePtr {}
 
 
 #[derive(Debug)]
@@ -87,4 +89,5 @@ impl Clone for Message {
     }
 }
 
-unsafe impl Send for Message{}
+// unsafe impl Send for Message{}
+// impl !Sync for Message {}

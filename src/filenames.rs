@@ -37,6 +37,9 @@ impl ops::Drop for FilenamesPtr {
     }
 }
 
+impl !Send for FilenamesPtr {}
+impl !Sync for FilenamesPtr {}
+
 #[derive(Debug)]
 enum FilenamesParent{
     Dir(Directory),
@@ -83,4 +86,5 @@ impl iter::Iterator for Filenames {
 }
 
 
-unsafe impl Send for Filenames{}
+// unsafe impl Send for Filenames{}
+// impl !Sync for Filenames {}
