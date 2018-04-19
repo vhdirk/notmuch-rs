@@ -4,11 +4,7 @@ use std::rc::Rc;
 use std::path::PathBuf;
 use std::ffi::CStr;
 
-use utils::{
-    FromPtr,
-    NewFromPtr
-};
-
+use utils::NewFromPtr;
 use directory::Directory;
 use message::Message;
 use ffi;
