@@ -1,7 +1,7 @@
 use std::ops::Drop;
 use std::ptr;
 use std::path::Path;
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 
 use libc;
 
@@ -124,6 +124,7 @@ impl Database {
         })
     }
 
+    #[cfg(feature = "0.21")]
     pub fn revision(&self) -> Revision {
         let uuid_p: *const libc::c_char = ptr::null();
         let revision = unsafe {

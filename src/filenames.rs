@@ -4,10 +4,7 @@ use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::ffi::CStr;
 
-use utils::{
-    NewFromPtr,
-};
-
+use utils::NewFromPtr;
 use Database;
 use ffi;
 
