@@ -55,20 +55,23 @@ fn main() {
 
 ## Concurrency
 
-Notmuch makes no claims regarding thread safety. It does not seem to use any
-thread locals, but I did not spot any locks. So, as far as I am concerned, it is
-not thread safe.  
-So why do all structs implement ```Send``` and ```Sync```? Well, it _is_ safe to
-access pointers from different threads (as long as you know what you are doing :) ).
-But, more importantly, all structs are strictly linked together with their
-lifetime. The root of the tree is ```notmuch::Database```, which has a lifetime
-that must outlive any related objects, for instance ```notmuch::Query```. The
-```notmuch::Threads``` iterator that you can get from a ```notmuch::Query``` is
-always outlived by the parent query.  
-This means that you can only use these structs accross thread bounds if you
-figure out how to satisfy the lifetime requirements. Up until now, I haven't
-been able to do that (though my knowledge of Rust is still rather basic).  
-So, concurrency seems currently limited to scoped threads.
+Notmuch makes no claims regarding thread safety. The underlying Xapian database
+does not use any globals/thread locals, so it can be used safely accross thread
+bounds, although explicit locking may be needed.  
+
+As of v0.1.0, notmuch-rs uses an internal refcounting mechanism to keep track
+of the various pointers in the upward tree to the ```notmuch_database_t``` root.
+That is to ensure that these pointers are dropped when they are no longer used,
+while not explicitely stating lifetime requirements. The objects live on the
+heap anyway.
+
+The internal refcounting uses simple ```Rc```, so at this point notmuch-rs is
+inherently single threaded. As the reference where the object is dependent on is
+private - e.g. ```Rc<Query>``` is private within ```Message``` -, it might just
+work to replace Rc with an ``Arc```. Since this may generate weird segementation
+faults, I have opted for a simple ```Rc``` for now. This keeps the overhead a
+little lower and I have no inherent use for it anyway.
+
 
 ## Acknowledgements
 
