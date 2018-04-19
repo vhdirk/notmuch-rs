@@ -68,7 +68,7 @@ heap anyway.
 The internal refcounting uses simple ```Rc```, so at this point notmuch-rs is
 inherently single threaded. As the reference where the object is dependent on is
 private - e.g. ```Rc<Query>``` is private within ```Message``` -, it might just
-work to replace Rc with an ``Arc```. Since this may generate weird segementation
+work to replace Rc with an ```Arc```. Since this may generate weird segementation
 faults, I have opted for a simple ```Rc``` for now. This keeps the overhead a
 little lower and I have no inherent use for it anyway.
 
