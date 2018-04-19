@@ -1,9 +1,7 @@
-use std::{
-    ops,
-    path,
-    ptr,
-};
-
+use std::ops::Drop;
+use std::iter::Iterator;
+use std::ptr;
+use std::path::Path;
 use std::ffi::CString;
 
 use libc;
@@ -14,9 +12,9 @@ use utils::{
     ToStr,
 };
 
-use directory::Directory;
-use query::Query;
-use tags::Tags;
+use Directory;
+use Query;
+use Tags;
 
 use ffi;
 
@@ -26,14 +24,17 @@ pub use ffi::DatabaseMode;
 #[derive(Copy, Clone, Debug)]
 pub struct Version(libc::c_uint);
 
-#[derive(Copy, Clone, Debug)]
-pub struct Revision(libc::c_ulong);
+#[derive(Clone, Debug)]
+pub struct Revision{
+    revision: libc::c_ulong,
+    uuid: String
+}
 
 #[derive(Debug)]
 pub struct Database(*mut ffi::notmuch_database_t);
 
 impl Database {
-    pub fn create<P: AsRef<path::Path>>(path: &P) -> Result<Self> {
+    pub fn create<P: AsRef<Path>>(path: &P) -> Result<Self> {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut db = ptr::null_mut();
@@ -44,7 +45,7 @@ impl Database {
         Ok(Database(db))
     }
 
-    pub fn open<P: AsRef<path::Path>>(path: &P, mode: DatabaseMode) -> Result<Self> {
+    pub fn open<P: AsRef<Path>>(path: &P, mode: DatabaseMode) -> Result<Self> {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut db = ptr::null_mut();
@@ -67,20 +68,20 @@ impl Database {
         Ok(())
     }
 
-    pub fn compact<P: AsRef<path::Path>, F: FnMut(&str)>(
+    pub fn compact<P: AsRef<Path>, F: FnMut(&str)>(
         path: &P, backup_path: Option<&P>,
     ) -> Result<()> {
         let status: Option<F> = None;
         Database::_compact(path, backup_path, status)
     }
 
-    pub fn compact_with_status<P: AsRef<path::Path>, F: FnMut(&str)>(
+    pub fn compact_with_status<P: AsRef<Path>, F: FnMut(&str)>(
         path: &P, backup_path: Option<&P>, status: F,
     ) -> Result<()> {
         Database::_compact(path, backup_path, Some(status))
     }
 
-    fn _compact<P: AsRef<path::Path>, F: FnMut(&str)>(
+    fn _compact<P: AsRef<Path>, F: FnMut(&str)>(
         path: &P, backup_path: Option<&P>, status: Option<F>,
     ) -> Result<()> {
 
@@ -112,8 +113,8 @@ impl Database {
         Ok(())
     }
 
-    pub fn path(&self) -> &path::Path {
-        path::Path::new(unsafe {
+    pub fn path(&self) -> &Path {
+        Path::new(unsafe {
             ffi::notmuch_database_get_path(self.0)
         }.to_str().unwrap())
     }
@@ -125,10 +126,14 @@ impl Database {
     }
 
     pub fn revision(&self) -> Revision {
-        let uuid = ptr::null_mut();
-        Revision(unsafe {
-            ffi::notmuch_database_get_revision(self.0, uuid)
-        })
+        let uuid_p: *mut libc::c_char = ptr::null_mut();
+        let revision = unsafe {
+            ffi::notmuch_database_get_revision(self.0, (&uuid_p) as *const _ as *const *mut libc::c_char)
+        };
+
+        let uuid = unsafe { CString::from_raw(uuid_p) };
+
+        Revision{revision, uuid: uuid.to_str().unwrap().to_string()}
     }
 
     pub fn needs_upgrade(&self) -> bool {
@@ -171,7 +176,7 @@ impl Database {
         Ok(())
     }
 
-    pub fn directory<'d, P: AsRef<path::Path>>(&'d self, path: &P) -> Result<Option<Directory<'d>>> {
+    pub fn directory<'d, P: AsRef<Path>>(&'d self, path: &P) -> Result<Option<Directory<'d>>> {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut dir = ptr::null_mut();
@@ -186,7 +191,6 @@ impl Database {
 
     pub fn create_query<'d>(&'d self, query_string: &str) -> Result<Query<'d>> {
         let query_str = CString::new(query_string).unwrap();
-        println!("query {:?}", query_str);
 
         let query = unsafe {
             ffi::notmuch_query_create(self.0, query_str.as_ptr())
@@ -203,13 +207,9 @@ impl Database {
 
         Ok(Tags::new(tags))
     }
-
-
-
-
 }
 
-impl ops::Drop for Database {
+impl Drop for Database {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_database_destroy(self.0)

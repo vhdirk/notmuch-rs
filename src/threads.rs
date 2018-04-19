@@ -1,13 +1,8 @@
-use std::{
-    ops,
-    marker,
-    iter
-};
+use std::ops::Drop;
+use std::iter::Iterator;
+use std::marker::PhantomData;
 
-use utils::{
-    NewFromPtr,
-};
-
+use utils::NewFromPtr;
 use Query;
 use Thread;
 use ffi;
@@ -15,16 +10,16 @@ use ffi;
 #[derive(Debug)]
 pub struct Threads<'q, 'd:'q>(
     *mut ffi::notmuch_threads_t,
-    marker::PhantomData<&'q Query<'d>>,
+    PhantomData<&'q Query<'d>>,
 );
 
 impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_threads_t> for Threads<'q, 'd> {
     fn new(ptr: *mut ffi::notmuch_threads_t) -> Threads<'q, 'd> {
-        Threads(ptr, marker::PhantomData)
+        Threads(ptr, PhantomData)
     }
 }
 
-impl<'q, 'd> ops::Drop for Threads<'q, 'd> {
+impl<'q, 'd> Drop for Threads<'q, 'd> {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_threads_destroy(self.0)
@@ -32,7 +27,7 @@ impl<'q, 'd> ops::Drop for Threads<'q, 'd> {
     }
 }
 
-impl<'q, 'd> iter::Iterator for Threads<'q, 'd> {
+impl<'q, 'd> Iterator for Threads<'q, 'd> {
     type Item = Thread<'q, 'd>;
 
     fn next(self: &mut Self) -> Option<Self::Item> {

@@ -66,9 +66,7 @@ that must outlive any related objects, for instance ```notmuch::Query```. The
 ```notmuch::Threads``` iterator that you can get from a ```notmuch::Query``` is
 always outlived by the parent query.  
 This means that you can only use these structs accross thread bounds if you
-figure out how to satisfy the lifetime requirements. Up until now, I haven't
-been able to do that (though my knowledge of Rust is still rather basic).  
-So, concurrency seems currently limited to scoped threads.
+figure out how to satisfy the lifetime requirements.
 
 ## Acknowledgements
 

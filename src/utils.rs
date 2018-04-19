@@ -2,7 +2,6 @@ use std::{
     ffi,
     str,
 };
-
 use libc;
 
 pub trait NewFromPtr<T> {

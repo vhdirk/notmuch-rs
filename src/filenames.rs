@@ -1,45 +1,45 @@
-use std::{
-    ops,
-    marker,
-    iter
-};
-
-use std::path::{
-    PathBuf
-};
-
-use std::ffi::{
-    CStr
-};
+use std::ops::Drop;
+use std::iter::Iterator;
+use std::marker::PhantomData;
+use std::path::PathBuf;
+use std::ffi::CStr;
 
 use utils::{
     NewFromPtr,
 };
 
-use database;
+use Database;
+use Directory;
+use Message;
 use ffi;
 
 #[derive(Debug)]
 pub struct Filenames<'d>(
     *mut ffi::notmuch_filenames_t,
-    marker::PhantomData<&'d database::Database>,
+    PhantomData<&'d Database>,
 );
 
 impl<'d> NewFromPtr<*mut ffi::notmuch_filenames_t> for Filenames<'d> {
     fn new(ptr: *mut ffi::notmuch_filenames_t) -> Filenames<'d> {
-        Filenames(ptr, marker::PhantomData)
+        Filenames(ptr, PhantomData)
     }
 }
 
-impl<'d> ops::Drop for Filenames<'d> {
+impl<'d> Drop for Filenames<'d> {
     fn drop(self: &mut Self) {
-        unsafe {
-            ffi::notmuch_filenames_destroy(self.0)
+        let valid = unsafe {
+            ffi::notmuch_filenames_valid(self.0)
         };
+
+        if valid != 0 {
+            unsafe {
+                ffi::notmuch_filenames_destroy(self.0)
+            };
+        }
     }
 }
 
-impl<'d> iter::Iterator for Filenames<'d> {
+impl<'d> Iterator for Filenames<'d> {
     type Item = PathBuf;
 
     fn next(self: &mut Self) -> Option<Self::Item> {

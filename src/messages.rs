@@ -1,8 +1,6 @@
-use std::{
-    ops,
-    marker,
-    iter
-};
+use std::ops::Drop;
+use std::iter::Iterator;
+use std::marker::PhantomData;
 
 use ffi;
 use utils::{
@@ -17,12 +15,12 @@ pub struct Messages<'q, 'd:'q>(
     // TODO: is this lifetime specifier correct?
     // query may outlive messages.
     pub(crate) *mut ffi::notmuch_messages_t,
-    marker::PhantomData<&'q Query<'d>>,
+    PhantomData<&'q Query<'d>>,
 );
 
 impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_messages_t> for Messages<'q, 'd> {
     fn new(ptr: *mut ffi::notmuch_messages_t) -> Messages<'q, 'd> {
-        Messages(ptr, marker::PhantomData)
+        Messages(ptr, PhantomData)
     }
 }
 
@@ -36,15 +34,23 @@ impl<'q, 'd> Messages<'q, 'd>{
 
 }
 
-impl<'q, 'd> ops::Drop for Messages<'q, 'd> {
+impl<'q, 'd> Drop for Messages<'q, 'd> {
     fn drop(self: &mut Self) {
+        let valid = unsafe {
+            ffi::notmuch_messages_valid(self.0)
+        };
+
+        if valid == 0{
+            return;
+        }
+
         unsafe {
             ffi::notmuch_messages_destroy(self.0)
         };
     }
 }
 
-impl<'q, 'd> iter::Iterator for Messages<'q, 'd> {
+impl<'q, 'd> Iterator for Messages<'q, 'd> {
     type Item = Message<'q, 'd>;
 
     fn next(&mut self) -> Option<Self::Item> {

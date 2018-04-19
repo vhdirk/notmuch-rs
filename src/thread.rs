@@ -1,8 +1,5 @@
-use std::{
-    ops,
-    marker
-};
-
+use std::ops::Drop;
+use std::marker::PhantomData;
 use ffi;
 use utils::{
     NewFromPtr,
@@ -15,12 +12,12 @@ use Tags;
 #[derive(Debug)]
 pub struct Thread<'q, 'd:'q>(
     pub(crate) *mut ffi::notmuch_thread_t,
-    marker::PhantomData<&'q Query<'d>>,
+    PhantomData<&'q Query<'d>>,
 );
 
 impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_thread_t> for Thread<'q, 'd> {
     fn new(ptr: *mut ffi::notmuch_thread_t) -> Thread<'q, 'd> {
-        Thread(ptr, marker::PhantomData)
+        Thread(ptr, PhantomData)
     }
 }
 
@@ -39,7 +36,8 @@ impl<'q, 'd> Thread<'q, 'd>{
             ffi::notmuch_thread_get_total_messages(self.0)
         }
     }
-#[cfg(feature = "0.26")]
+
+    #[cfg(feature = "0.26")]
     pub fn total_files(self: &Self) -> i32{
         unsafe {
             ffi::notmuch_thread_get_total_files(self.0)
@@ -100,7 +98,7 @@ impl<'q, 'd> Thread<'q, 'd>{
 }
 
 
-impl<'q, 'd> ops::Drop for Thread<'q, 'd> {
+impl<'q, 'd> Drop for Thread<'q, 'd> {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_thread_destroy(self.0)

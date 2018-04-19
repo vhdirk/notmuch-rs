@@ -1,33 +1,28 @@
-use std::{
-    ops,
-    marker,
-    iter
-};
-
-use std::ffi::{
-    CStr
-};
+use std::ops::Drop;
+use std::iter::Iterator;
+use std::marker::PhantomData;
+use std::ffi::CStr;
 
 use utils::{
     NewFromPtr,
 };
 
-use database;
+use Database;
 use ffi;
 
 #[derive(Debug)]
 pub struct Tags<'d>(
     *mut ffi::notmuch_tags_t,
-    marker::PhantomData<&'d database::Database>,
+    PhantomData<&'d Database>,
 );
 
 impl<'d> NewFromPtr<*mut ffi::notmuch_tags_t> for Tags<'d> {
     fn new(ptr: *mut ffi::notmuch_tags_t) -> Tags<'d> {
-        Tags(ptr, marker::PhantomData)
+        Tags(ptr, PhantomData)
     }
 }
 
-impl<'d> ops::Drop for Tags<'d> {
+impl<'d> Drop for Tags<'d> {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_tags_destroy(self.0)
@@ -35,7 +30,7 @@ impl<'d> ops::Drop for Tags<'d> {
     }
 }
 
-impl<'d> iter::Iterator for Tags<'d> {
+impl<'d> Iterator for Tags<'d> {
     type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {

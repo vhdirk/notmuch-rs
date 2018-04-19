@@ -399,7 +399,7 @@ extern {
     /// this database.  Two revision numbers are only comparable if they
     /// have the same database UUID.
     pub fn notmuch_database_get_revision(notmuch: *mut notmuch_database_t,
-                                         uuid: *mut *const c_char)
+                                         uuid: *const *mut c_char)
                                          -> c_ulong;
 
     /// Retrieve a directory object from the database for 'path'.

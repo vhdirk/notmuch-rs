@@ -22,6 +22,7 @@ mod filenames;
 
 pub use error::Error;
 pub use database::Database;
+pub use directory::Directory;
 pub use query::Query;
 pub use messages::Messages;
 pub use message::Message;

@@ -1,14 +1,11 @@
-use std::{
-    ops,
-    marker
-};
-
+use std::ops::Drop;
+use std::marker::PhantomData;
 use std::path::PathBuf;
 
 use ffi;
 use utils::{
-    NewFromPtr,
-    ToStr
+    ToStr,
+    NewFromPtr
 };
 use Query;
 use Messages;
@@ -17,12 +14,12 @@ use Filenames;
 #[derive(Debug)]
 pub struct Message<'q, 'd:'q>(
     pub(crate) *mut ffi::notmuch_message_t,
-    marker::PhantomData<&'q Query<'d>>,
+    PhantomData<&'q Query<'d>>,
 );
 
 impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_message_t> for Message<'q, 'd> {
     fn new(ptr: *mut ffi::notmuch_message_t) -> Message<'q, 'd> {
-        Message(ptr, marker::PhantomData)
+        Message(ptr, PhantomData)
     }
 }
 
@@ -70,7 +67,7 @@ impl<'q, 'd> Message<'q, 'd>{
 }
 
 
-impl<'q, 'd> ops::Drop for Message<'q, 'd> {
+impl<'q, 'd> Drop for Message<'q, 'd> {
     fn drop(self: &mut Self) {
         unsafe {
             ffi::notmuch_message_destroy(self.0)
