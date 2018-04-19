@@ -3,7 +3,7 @@ use std::iter::Iterator;
 use std::rc::Rc;
 use std::ptr;
 use std::path::Path;
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 
 use libc;
 
@@ -142,14 +142,14 @@ impl Database {
     }
 
     pub fn revision(&self) -> Revision {
-        let uuid_p: *mut libc::c_char = ptr::null_mut();
+        let uuid_p: *const libc::c_char = ptr::null();
         let revision = unsafe {
-            ffi::notmuch_database_get_revision(self.0.ptr, (&uuid_p) as *const _ as *const *mut libc::c_char)
+            ffi::notmuch_database_get_revision(self.0.ptr, (&uuid_p) as *const _ as *mut *const libc::c_char)
         };
 
-        let uuid = unsafe { CString::from_raw(uuid_p) };
+        let uuid = unsafe { CStr::from_ptr(uuid_p) };
 
-        Revision{revision, uuid: uuid.to_str().unwrap().to_string()}
+        Revision{revision, uuid: uuid.to_string_lossy().into_owned()}
     }
 
     pub fn needs_upgrade(&self) -> bool {
