@@ -1,8 +1,5 @@
-use std::{
-    ops,
-    marker,
-    iter
-};
+use std::ops::Drop;
+use std::iter::Iterator;
 use std::rc::Rc;
 
 use ffi;
@@ -10,7 +7,7 @@ use utils::{
     FromPtr,
     NewFromPtr
 };
-use query::{Query, QueryPtr};
+use query::Query;
 use Message;
 use Tags;
 
@@ -19,20 +16,18 @@ pub(crate) struct MessagesPtr {
     pub(crate) ptr: *mut ffi::notmuch_messages_t
 }
 
-impl ops::Drop for MessagesPtr {
+impl Drop for MessagesPtr {
     fn drop(&mut self) {
 
         let valid = unsafe {
             ffi::notmuch_messages_valid(self.ptr)
         };
 
-        if valid == 0{
-            return;
+        if valid != 0 {
+            unsafe {
+                ffi::notmuch_messages_destroy(self.ptr)
+            };
         }
-
-        unsafe {
-            ffi::notmuch_messages_destroy(self.ptr)
-        };
     }
 }
 
@@ -57,15 +52,7 @@ impl Messages{
 
 }
 
-impl ops::Drop for Messages {
-    fn drop(self: &mut Self) {
-        unsafe {
-            ffi::notmuch_messages_destroy(self.0.ptr)
-        };
-    }
-}
-
-impl iter::Iterator for Messages {
+impl Iterator for Messages {
     type Item = Message;
 
     fn next(&mut self) -> Option<Self::Item> {

@@ -1,17 +1,13 @@
-use std::{
-    ops,
-    marker
-};
+use std::ops::Drop;
 use std::rc::Rc;
 use std::path::PathBuf;
 
 use ffi;
 use utils::{
-    FromPtr,
     ToStr,
     NewFromPtr
 };
-use query::{Query, QueryPtr};
+use query::Query;
 use Messages;
 use Filenames;
 
@@ -20,7 +16,7 @@ pub(crate) struct MessagePtr {
     pub(crate) ptr: *mut ffi::notmuch_message_t
 }
 
-impl ops::Drop for MessagePtr {
+impl Drop for MessagePtr {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_message_destroy(self.ptr)

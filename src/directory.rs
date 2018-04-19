@@ -1,15 +1,9 @@
-use std::{
-    ops,
-    marker,
-};
+use std::ops::Drop;
 use std::rc::Rc;
 
-use utils::{
-    FromPtr,
-    NewFromPtr
-};
+use utils::NewFromPtr;
 
-use database::{Database, DatabasePtr};
+use database::{Database};
 use Filenames;
 
 use ffi;
@@ -19,7 +13,7 @@ pub(crate) struct DirectoryPtr {
     pub(crate) ptr: *mut ffi::notmuch_directory_t
 }
 
-impl ops::Drop for DirectoryPtr {
+impl Drop for DirectoryPtr {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_directory_destroy(self.ptr)

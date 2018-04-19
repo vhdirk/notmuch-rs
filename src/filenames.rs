@@ -1,24 +1,14 @@
-use std::{
-    ops,
-    marker,
-    iter
-};
+use std::ops::Drop;
+use std::iter::Iterator;
 use std::rc::Rc;
-
-use std::path::{
-    PathBuf
-};
-
-use std::ffi::{
-    CStr
-};
+use std::path::PathBuf;
+use std::ffi::CStr;
 
 use utils::{
     FromPtr,
     NewFromPtr
 };
 
-use database::DatabasePtr;
 use directory::Directory;
 use message::Message;
 use ffi;
@@ -29,11 +19,17 @@ pub(crate) struct FilenamesPtr {
     pub(crate) ptr: *mut ffi::notmuch_filenames_t
 }
 
-impl ops::Drop for FilenamesPtr {
+impl Drop for FilenamesPtr {
     fn drop(&mut self) {
-        unsafe {
-            ffi::notmuch_filenames_destroy(self.ptr)
+        let valid = unsafe {
+            ffi::notmuch_filenames_valid(self.ptr)
         };
+
+        if valid != 0 {
+            unsafe {
+                ffi::notmuch_filenames_destroy(self.ptr)
+            };
+        }
     }
 }
 
@@ -59,7 +55,7 @@ impl NewFromPtr<*mut ffi::notmuch_filenames_t, Message> for Filenames {
     }
 }
 
-impl iter::Iterator for Filenames {
+impl Iterator for Filenames {
     type Item = PathBuf;
 
     fn next(self: &mut Self) -> Option<Self::Item> {

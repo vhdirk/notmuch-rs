@@ -1,16 +1,9 @@
-use std::{
-    ops,
-    marker,
-    iter
-};
+use std::ops::Drop;
+use std::iter::Iterator;
+use std::marker;
+use std::ffi::CStr;
 
-use std::ffi::{
-    CStr
-};
-
-use utils::{
-    FromPtr,
-};
+use utils::FromPtr;
 
 use database;
 use ffi;
@@ -27,7 +20,7 @@ impl<'d> FromPtr<*mut ffi::notmuch_tags_t> for Tags<'d> {
     }
 }
 
-impl<'d> ops::Drop for Tags<'d> {
+impl<'d> Drop for Tags<'d> {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_tags_destroy(self.0)
@@ -35,7 +28,7 @@ impl<'d> ops::Drop for Tags<'d> {
     }
 }
 
-impl<'d> iter::Iterator for Tags<'d> {
+impl<'d> Iterator for Tags<'d> {
     type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {

@@ -1,18 +1,13 @@
-use std::{
-    ops,
-    marker,
-    ptr,
-};
+use std::ops::Drop;
+use std::ptr;
 use std::rc::Rc;
 
 use error::Result;
 
 use ffi;
-use utils::{
-    FromPtr,
-    NewFromPtr
-};
-use database::{Database, DatabasePtr};
+use utils::NewFromPtr;
+
+use database::Database;
 use messages::Messages;
 use Threads;
 use ffi::Sort;
@@ -22,7 +17,7 @@ pub(crate) struct QueryPtr {
     pub(crate) ptr: *mut ffi::notmuch_query_t
 }
 
-impl ops::Drop for QueryPtr {
+impl Drop for QueryPtr {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_query_destroy(self.ptr)

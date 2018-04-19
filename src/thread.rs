@@ -1,7 +1,4 @@
-use std::{
-    ops,
-    marker
-};
+use std::ops::Drop;
 use std::rc::Rc;
 use ffi;
 use utils::{
@@ -19,7 +16,7 @@ pub(crate) struct ThreadPtr {
     pub ptr: *mut ffi::notmuch_thread_t
 }
 
-impl ops::Drop for ThreadPtr {
+impl Drop for ThreadPtr {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_thread_destroy(self.ptr)

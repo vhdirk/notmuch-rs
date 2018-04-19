@@ -1,16 +1,9 @@
-use std::{
-    ops,
-    marker,
-    iter
-};
+use std::ops::Drop;
+use std::iter::Iterator;
 use std::rc::Rc;
 
-use utils::{
-    FromPtr,
-    NewFromPtr
-};
-
-use query::{Query, QueryPtr};
+use utils::NewFromPtr;
+use query::Query;
 use Thread;
 use ffi;
 
@@ -19,19 +12,17 @@ pub(crate) struct ThreadsPtr {
     pub ptr: *mut ffi::notmuch_threads_t
 }
 
-impl ops::Drop for ThreadsPtr {
+impl Drop for ThreadsPtr {
     fn drop(&mut self) {
         let valid = unsafe {
             ffi::notmuch_threads_valid(self.ptr)
         };
 
-        if valid == 0{
-            return;
+        if valid != 0 {
+            unsafe {
+                ffi::notmuch_threads_destroy(self.ptr)
+            };
         }
-
-        unsafe {
-            ffi::notmuch_threads_destroy(self.ptr)
-        };
     }
 }
 
@@ -46,17 +37,7 @@ impl NewFromPtr<*mut ffi::notmuch_threads_t, Query> for Threads {
     }
 }
 
-
-
-impl ops::Drop for Threads {
-    fn drop(&mut self) {
-        unsafe {
-            ffi::notmuch_threads_destroy(self.0.ptr)
-        };
-    }
-}
-
-impl iter::Iterator for Threads {
+impl Iterator for Threads {
     type Item = Thread;
 
     fn next(self: &mut Self) -> Option<Self::Item> {
