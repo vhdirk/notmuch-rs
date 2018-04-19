@@ -17,7 +17,7 @@ use Filenames;
 
 #[derive(Debug)]
 pub(crate) struct MessagePtr {
-    pub ptr: *mut ffi::notmuch_message_t
+    pub(crate) ptr: *mut ffi::notmuch_message_t
 }
 
 impl ops::Drop for MessagePtr {
@@ -27,9 +27,6 @@ impl ops::Drop for MessagePtr {
         };
     }
 }
-impl !Send for MessagePtr {}
-impl !Sync for MessagePtr {}
-
 
 #[derive(Debug)]
 pub struct Message(pub(crate) Rc<MessagePtr>, Query);
@@ -88,6 +85,3 @@ impl Clone for Message {
         Message(self.0.clone(), self.1.clone())
     }
 }
-
-// unsafe impl Send for Message{}
-// impl !Sync for Message {}

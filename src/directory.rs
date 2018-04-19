@@ -16,7 +16,7 @@ use ffi;
 
 #[derive(Debug)]
 pub(crate) struct DirectoryPtr {
-    pub ptr: *mut ffi::notmuch_directory_t
+    pub(crate) ptr: *mut ffi::notmuch_directory_t
 }
 
 impl ops::Drop for DirectoryPtr {
@@ -26,8 +26,7 @@ impl ops::Drop for DirectoryPtr {
         };
     }
 }
-impl !Send for DirectoryPtr {}
-impl !Sync for DirectoryPtr {}
+
 
 #[derive(Debug)]
 pub struct Directory(pub(crate) Rc<DirectoryPtr>, Database);
@@ -52,6 +51,3 @@ impl Clone for Directory {
         Directory(self.0.clone(), self.1.clone())
     }
 }
-
-// unsafe impl Send for Directory{}
-// impl !Sync for Directory {}

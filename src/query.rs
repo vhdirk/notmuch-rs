@@ -19,7 +19,7 @@ use ffi::Sort;
 
 #[derive(Debug)]
 pub(crate) struct QueryPtr {
-    pub ptr: *mut ffi::notmuch_query_t
+    pub(crate) ptr: *mut ffi::notmuch_query_t
 }
 
 impl ops::Drop for QueryPtr {
@@ -29,9 +29,6 @@ impl ops::Drop for QueryPtr {
         };
     }
 }
-
-impl !Send for QueryPtr {}
-impl !Sync for QueryPtr {}
 
 #[derive(Debug)]
 pub struct Query(Rc<QueryPtr>, Database);
@@ -114,12 +111,6 @@ impl Query {
     }
 }
 
-// impl FromPtr<*mut ffi::notmuch_query_t> for Query {
-//     fn from_ptr(ptr: *mut ffi::notmuch_query_t) -> Query {
-//         Query(ptr, marker::PhantomData)
-//     }
-// }
-
 impl NewFromPtr<*mut ffi::notmuch_query_t, Database> for Query {
     fn new(ptr: *mut ffi::notmuch_query_t, parent: Database) -> Query {
         Query(Rc::new(QueryPtr{ptr}), parent)
@@ -131,7 +122,3 @@ impl Clone for Query {
         Query(self.0.clone(), self.1.clone())
     }
 }
-
-
-// unsafe impl Send for Query {}
-// impl !Sync for Query{}

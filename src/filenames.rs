@@ -26,7 +26,7 @@ use ffi;
 
 #[derive(Debug)]
 pub(crate) struct FilenamesPtr {
-    pub ptr: *mut ffi::notmuch_filenames_t
+    pub(crate) ptr: *mut ffi::notmuch_filenames_t
 }
 
 impl ops::Drop for FilenamesPtr {
@@ -36,9 +36,6 @@ impl ops::Drop for FilenamesPtr {
         };
     }
 }
-
-impl !Send for FilenamesPtr {}
-impl !Sync for FilenamesPtr {}
 
 #[derive(Debug)]
 enum FilenamesParent{
@@ -84,7 +81,3 @@ impl iter::Iterator for Filenames {
         Some(PathBuf::from(ctag.to_str().unwrap()))
     }
 }
-
-
-// unsafe impl Send for Filenames{}
-// impl !Sync for Filenames {}

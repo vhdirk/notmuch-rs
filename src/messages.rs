@@ -16,7 +16,7 @@ use Tags;
 
 #[derive(Debug)]
 pub(crate) struct MessagesPtr {
-    pub ptr: *mut ffi::notmuch_messages_t
+    pub(crate) ptr: *mut ffi::notmuch_messages_t
 }
 
 impl ops::Drop for MessagesPtr {
@@ -35,9 +35,6 @@ impl ops::Drop for MessagesPtr {
         };
     }
 }
-
-impl !Send for MessagesPtr {}
-impl !Sync for MessagesPtr {}
 
 
 #[derive(Debug)]
@@ -90,6 +87,3 @@ impl iter::Iterator for Messages {
         Some(Self::Item::new(cmsg, self.1.clone()))
     }
 }
-
-// unsafe impl Send for Messages{}
-// impl !Sync for Messages{}
