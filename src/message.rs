@@ -1,6 +1,9 @@
 use std::ops::Drop;
 use std::rc::Rc;
 use std::path::PathBuf;
+use std::ffi::CString;
+
+use error::{Error, Result};
 
 use ffi;
 use utils::{
@@ -73,6 +76,18 @@ impl Message{
         PathBuf::from(unsafe {
             ffi::notmuch_message_get_filename(self.0.ptr)
         }.to_str().unwrap())
+    }
+
+    pub fn header(&self, name: &str) -> Result<&str> {
+        let ret = unsafe {
+            ffi::notmuch_message_get_header(self.0.ptr,
+                CString::new(name).unwrap().as_ptr())
+        };
+        if ret.is_null() {
+            Err(Error::UnspecifiedError)
+        } else {
+            Ok(ret.to_str().unwrap())
+        }
     }
 }
 
