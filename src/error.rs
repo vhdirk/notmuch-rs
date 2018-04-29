@@ -14,6 +14,7 @@ pub type Result<T> = result::Result<T, Error>;
 pub enum Error {
     IoError(io::Error),
     NotmuchError(ffi::Status),
+    UnspecifiedError,
 }
 
 impl fmt::Display for Error {
@@ -27,6 +28,7 @@ impl std::error::Error for Error {
         match *self {
             Error::IoError(ref e) => error::Error::description(e),
             Error::NotmuchError(ref e) => e.description(),
+            Error::UnspecifiedError => "Generic notmuch error",
         }
     }
 
@@ -34,6 +36,7 @@ impl std::error::Error for Error {
         match *self {
             Error::IoError(ref e) => Some(e),
             Error::NotmuchError(ref e) => Some(e),
+            Error::UnspecifiedError => None
         }
     }
 }
