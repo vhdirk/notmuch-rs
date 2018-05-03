@@ -14,8 +14,10 @@ travis-ci = { repository = "vhdirk/notmuch-rs" }
 [dependencies]
 libc = "0.2"
 clippy = { version = "0.0.193", optional = true }
+glib = { version = "0.4.0", optional = true }
 
 [features]
+mt = []
 v0_21 = []
 v0_26 = ["v0_21"]
 default = ["v0_26"]

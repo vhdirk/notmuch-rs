@@ -1,8 +1,9 @@
 use std::ops::Drop;
 use std::ptr;
 use std::rc::Rc;
-
-use error::Result;
+use std::sync::{Arc, RwLock};
+use std::result;
+use error::{Result, Error};
 
 use ffi;
 use utils::NewFromPtr;
@@ -26,7 +27,7 @@ impl Drop for QueryPtr {
 }
 
 #[derive(Debug)]
-pub struct Query(Rc<QueryPtr>, Database);
+pub struct Query(Arc<RwLock<QueryPtr>>, Database);
 
 
 impl Query {
@@ -35,62 +36,74 @@ impl Query {
     }
 
     /// Specify the sorting desired for this query.
-    pub fn set_sort(self: &Self, sort: Sort)
+    pub fn set_sort(self: &Self, sort: Sort) -> Result<()>
     {
-        unsafe {
-            ffi::notmuch_query_set_sort(
-                self.0.ptr, sort.into(),
-            )
+        match self.0.try_write(){
+            Ok(guard) => Ok(unsafe {
+                ffi::notmuch_query_set_sort(guard.ptr, sort.into())
+            }),
+            Err(err) => Err(err.into())
         }
     }
 
     /// Return the sort specified for this query. See
     /// `set_sort`.
-    pub fn sort(self: &Self) -> Sort
+    pub fn sort(self: &Self) -> Result<Sort>
     {
-        unsafe {
-            ffi::notmuch_query_get_sort(
-                self.0.ptr,
-            )
-        }.into()
+        match self.0.try_read(){
+            Ok(guard) => Ok(unsafe {
+                    ffi::notmuch_query_get_sort(guard.ptr)
+                }.into()
+            ),
+            Err(err) => Err(err.into())
+        }
     }
 
 
     /// Filter messages according to the query and return
     pub fn search_messages(self: &Self) -> Result<Messages>
     {
-        let mut msgs = ptr::null_mut();
-        try!(unsafe {
-            ffi::notmuch_query_search_messages(
-                self.0.ptr, &mut msgs,
-            )
-        }.as_result());
+        match self.0.try_read(){
+            Ok(guard) => {
+                let mut msgs = ptr::null_mut();
+                unsafe {
+                    ffi::notmuch_query_search_messages(guard.ptr, &mut msgs)
+                }.as_result();
 
-        Ok(Messages::new(msgs, self.clone()))
+                Ok(Messages::new(msgs, self.clone()))
+            },
+            Err(err) => Err(err.into())
+        }
     }
 
     pub fn count_messages(self: &Self) -> Result<u32>
     {
-        let mut cnt = 0;
-        try!(unsafe {
-            ffi::notmuch_query_count_messages(
-                self.0.ptr, &mut cnt,
-            )
-        }.as_result());
+        match self.0.try_read(){
+            Ok(guard) => {
+                let mut cnt = 0;
+                unsafe {
+                    ffi::notmuch_query_count_messages(guard.ptr, &mut cnt)
+                }.as_result();
 
-        Ok(cnt)
+                Ok(cnt)
+            },
+            Err(err) => Err(err.into())
+        }
     }
 
     pub fn search_threads(self: & Self) -> Result<Threads>
     {
-        let mut thrds = ptr::null_mut();
-        try!(unsafe {
-            ffi::notmuch_query_search_threads(
-                self.0.ptr, &mut thrds,
-            )
-        }.as_result());
+        match self.0.try_read(){
+            Ok(guard) => {
+                let mut thrds = ptr::null_mut();
+                try!(unsafe {
+                    ffi::notmuch_query_search_threads(guard.ptr, &mut thrds)
+                }.as_result());
 
-        Ok(Threads::new(thrds, self.clone()))
+                Ok(Threads::new(thrds, self.clone()))
+            },
+            Err(err) => Err(err.into())
+        }
     }
 
     pub fn count_threads(self: &Self) -> Result<u32>
