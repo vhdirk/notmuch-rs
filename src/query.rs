@@ -1,7 +1,7 @@
 use std::ops::Drop;
 use std::ptr;
 use std::rc::Rc;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex};
 use std::result;
 use error::{Result};
 
@@ -27,7 +27,7 @@ impl Drop for QueryPtr {
 }
 
 #[derive(Debug)]
-pub struct Query(Arc<RwLock<QueryPtr>>, Database);
+pub struct Query(pub(crate) Arc<Mutex<QueryPtr>>, Database);
 
 
 impl Query {
@@ -38,7 +38,7 @@ impl Query {
     /// Specify the sorting desired for this query.
     pub fn set_sort(self: &Self, sort: Sort) -> Result<()>
     {
-        let guard = self.0.try_write()?;
+        let guard = self.0.try_lock()?;
 
         Ok(unsafe {
             ffi::notmuch_query_set_sort(guard.ptr, sort.into())
@@ -49,7 +49,7 @@ impl Query {
     /// `set_sort`.
     pub fn sort(self: &Self) -> Result<Sort>
     {
-        let guard = self.0.try_read()?;
+        let guard = self.0.try_lock()?;
 
         Ok(unsafe {
                 ffi::notmuch_query_get_sort(guard.ptr)
@@ -61,7 +61,7 @@ impl Query {
     /// Filter messages according to the query and return
     pub fn search_messages(self: &Self) -> Result<Messages>
     {
-        let guard = self.0.try_read()?;
+        let guard = self.0.try_lock()?;
 
         let mut msgs = ptr::null_mut();
         try!(unsafe {
@@ -73,7 +73,7 @@ impl Query {
 
     pub fn count_messages(self: &Self) -> Result<u32>
     {
-        let guard = self.0.try_read()?;
+        let guard = self.0.try_lock()?;
 
         let mut cnt = 0;
         try!(unsafe {
@@ -85,7 +85,7 @@ impl Query {
 
     pub fn search_threads(self: & Self) -> Result<Threads>
     {
-        let guard = self.0.try_read()?;
+        let guard = self.0.try_lock()?;
 
         let mut thrds = ptr::null_mut();
         try!(unsafe {
@@ -97,7 +97,7 @@ impl Query {
 
     pub fn count_threads(self: &Self) -> Result<u32>
     {
-        let guard = self.0.try_read()?;
+        let guard = self.0.try_lock()?;
 
         let mut cnt = 0;
         try!(unsafe {
@@ -112,7 +112,7 @@ impl Query {
 
 impl NewFromPtr<*mut ffi::notmuch_query_t, Database> for Query {
     fn new(ptr: *mut ffi::notmuch_query_t, parent: Database) -> Query {
-        Query(Arc::new(RwLock::new(QueryPtr{ptr})), parent)
+        Query(Arc::new(Mutex::new(QueryPtr{ptr})), parent)
     }
 }
 

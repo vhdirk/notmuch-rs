@@ -42,6 +42,11 @@ impl Iterator for Threads {
 
     fn next(self: &mut Self) -> Option<Self::Item> {
 
+        let guard = (self.1).0.lock();
+        if guard.is_err(){
+            return None;
+        }
+
         let valid = unsafe {
             ffi::notmuch_threads_valid(self.0.ptr)
         };

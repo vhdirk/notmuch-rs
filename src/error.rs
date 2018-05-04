@@ -11,11 +11,6 @@ use ffi;
 
 pub type Result<T> = result::Result<T, Error>;
 
-#[derive(Debug)]
-enum LockErrorType{
-    Poisioned,
-    WouldBlock
-}
 
 #[derive(Debug)]
 pub struct LockError{
