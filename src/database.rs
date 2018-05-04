@@ -1,5 +1,6 @@
 use std::ops::Drop;
 use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 use std::ptr;
 use std::path::Path;
 use std::ffi::{CStr, CString};
@@ -46,7 +47,7 @@ impl Drop for DatabasePtr {
 
 
 #[derive(Debug)]
-pub struct Database(pub(crate) Rc<DatabasePtr>);
+pub struct Database(pub(crate) Arc<RwLock<DatabasePtr>>);
 
 impl Database {
     pub fn create<P: AsRef<Path>>(path: &P) -> Result<Self> {
@@ -57,7 +58,7 @@ impl Database {
             ffi::notmuch_database_create(path_str.as_ptr(), &mut db)
         }.as_result());
 
-        Ok(Database(Rc::new(DatabasePtr{ptr: db})))
+        Ok(Database(Arc::new(RwLock::new(DatabasePtr{ptr: db}))))
     }
 
     pub fn open<P: AsRef<Path>>(path: &P, mode: DatabaseMode) -> Result<Self> {
@@ -72,12 +73,14 @@ impl Database {
             )
         }.as_result());
 
-        Ok(Database(Rc::new(DatabasePtr{ptr: db})))
+        Ok(Database(Arc::new(RwLock::new(DatabasePtr{ptr: db}))))
     }
 
     pub fn close(self) -> Result<()> {
+        let guard = self.0.try_write()?;
+
         try!(unsafe {
-            ffi::notmuch_database_close(self.0.ptr)
+            ffi::notmuch_database_close(guard.ptr)
         }.as_result());
 
         Ok(())
@@ -128,34 +131,47 @@ impl Database {
         Ok(())
     }
 
-    pub fn path(&self) -> &Path {
-        Path::new(unsafe {
-            ffi::notmuch_database_get_path(self.0.ptr)
-        }.to_str().unwrap())
+    pub fn path(&self) -> Result<&Path> {
+        let guard = self.0.try_read()?;
+
+        Ok(Path::new(unsafe {
+            ffi::notmuch_database_get_path(guard.ptr)
+        }.to_str().unwrap()))
     }
 
-    pub fn version(&self) -> Version {
-        Version(unsafe {
-            ffi::notmuch_database_get_version(self.0.ptr)
-        })
+    pub fn version(&self) -> Result<Version> {
+        let guard = self.0.try_read()?;
+
+        Ok(Version(unsafe {
+            ffi::notmuch_database_get_version(guard.ptr)
+        }))
     }
 
     #[cfg(feature = "v0_21")]
-    pub fn revision(&self) -> Revision {
+    pub fn revision(&self) -> Result<Revision>
+    {
+        let guard = self.0.try_read()?;
+
         let uuid_p: *const libc::c_char = ptr::null();
         let revision = unsafe {
-            ffi::notmuch_database_get_revision(self.0.ptr, (&uuid_p) as *const _ as *mut *const libc::c_char)
+            ffi::notmuch_database_get_revision(guard.ptr, (&uuid_p) as *const _ as *mut *const libc::c_char)
         };
 
         let uuid = unsafe { CStr::from_ptr(uuid_p) };
 
-        Revision{revision, uuid: uuid.to_string_lossy().into_owned()}
+        Ok(Revision{
+            revision,
+            uuid: uuid.to_string_lossy().into_owned()
+        })
     }
 
-    pub fn needs_upgrade(&self) -> bool {
-        unsafe {
-            ffi::notmuch_database_needs_upgrade(self.0.ptr) == 1
-        }
+    pub fn needs_upgrade(&self) -> Result<bool>
+    {
+        let guard = self.0.try_read()?;
+
+        Ok(unsafe {
+            ffi::notmuch_database_needs_upgrade(guard.ptr) == 1
+        })
     }
 
     pub fn upgrade<F: FnMut(f64)>(&mut self) -> Result<()> {
@@ -167,8 +183,8 @@ impl Database {
         self._upgrade(Some(status))
     }
 
-    fn _upgrade<F: FnMut(f64)>(&mut self, status: Option<F>) -> Result<()> {
-
+    fn _upgrade<F: FnMut(f64)>(&mut self, status: Option<F>) -> Result<()>
+    {
         #[allow(trivial_numeric_casts)]
         extern fn wrapper<F: FnMut(f64)>(
             closure: *mut libc::c_void, progress: libc::c_double,
@@ -179,9 +195,11 @@ impl Database {
             }
         }
 
+        let guard = self.0.try_write()?;
+
         try!(unsafe {
             ffi::notmuch_database_upgrade(
-                self.0.ptr,
+                guard.ptr,
                 if status.is_some() { Some(wrapper::<F>) } else { None },
                 status.map_or(ptr::null_mut(), |f| {
                     &f as *const _ as *mut libc::c_void
@@ -192,33 +210,40 @@ impl Database {
         Ok(())
     }
 
-    pub fn directory< P: AsRef<Path>>(&self, path: &P) -> Result<Option<Directory>> {
+    pub fn directory< P: AsRef<Path>>(&self, path: &P) -> Result<Option<Directory>>
+    {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
+
+        let guard = self.0.try_read()?;
 
         let mut dir = ptr::null_mut();
         try!(unsafe {
             ffi::notmuch_database_get_directory(
-                self.0.ptr, path_str.as_ptr(), &mut dir,
+                guard.ptr, path_str.as_ptr(), &mut dir,
             )
         }.as_result());
 
         if dir.is_null() { Ok(None) } else { Ok(Some(Directory::new(dir, self.clone()))) }
     }
 
-    pub fn create_query(&self, query_string: &str) -> Result<Query> {
+    pub fn create_query(&self, query_string: &str) -> Result<Query>
+    {
         let query_str = CString::new(query_string).unwrap();
+        let guard = self.0.try_read()?;
 
         let query = unsafe {
-            ffi::notmuch_query_create(self.0.ptr, query_str.as_ptr())
+            ffi::notmuch_query_create(guard.ptr, query_str.as_ptr())
         };
 
         Ok(Query::new(query, self.clone()))
     }
 
-    pub fn all_tags(&self) -> Result<Tags> {
+    pub fn all_tags(&self) -> Result<Tags>
+    {
+        let guard = self.0.try_read()?;
 
         let tags = unsafe {
-            ffi::notmuch_database_get_all_tags(self.0.ptr)
+            ffi::notmuch_database_get_all_tags(guard.ptr)
         };
 
         Ok(Tags::from_ptr(tags))
@@ -233,3 +258,4 @@ impl Clone for Database {
 
 
 unsafe impl Send for Database {}
+unsafe impl Sync for Database {}

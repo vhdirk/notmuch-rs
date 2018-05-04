@@ -1,5 +1,5 @@
 use std::ops::Drop;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use ffi;
 use utils::{
@@ -26,12 +26,12 @@ impl Drop for ThreadPtr {
 }
 
 #[derive(Debug)]
-pub struct Thread(pub(crate) Rc<ThreadPtr>, Query);
+pub struct Thread(pub(crate) Arc<ThreadPtr>, Query);
 
 
 impl NewFromPtr<*mut ffi::notmuch_thread_t, Query> for Thread {
     fn new(ptr: *mut ffi::notmuch_thread_t, parent: Query) -> Thread {
-        Thread(Rc::new(ThreadPtr{ptr}), parent)
+        Thread(Arc::new(ThreadPtr{ptr}), parent)
     }
 }
 
@@ -39,18 +39,19 @@ impl NewFromPtr<*mut ffi::notmuch_thread_t, Query> for Thread {
 impl Thread{
 
     pub fn id(self: &Self) -> String{
+
         let tid = unsafe {
             ffi::notmuch_thread_get_thread_id(self.0.ptr)
         };
         tid.to_str().unwrap().to_string()
     }
 
-
     pub fn total_messages(self: &Self) -> i32{
         unsafe {
             ffi::notmuch_thread_get_total_messages(self.0.ptr)
         }
     }
+
 #[cfg(feature = "0.26")]
     pub fn total_files(self: &Self) -> i32{
         unsafe {
