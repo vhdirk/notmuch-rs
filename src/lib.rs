@@ -1,10 +1,13 @@
 #![cfg_attr(feature="clippy", feature(plugin))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
- 
-#[macro_use]
-mod macros;
 
 extern crate libc;
+
+#[macro_use]
+extern crate log;
+
+#[macro_use]
+mod macros;
 
 mod utils;
 mod ffi;

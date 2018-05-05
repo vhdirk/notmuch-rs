@@ -38,6 +38,7 @@ pub(crate) struct DatabasePtr {
 
 impl Drop for DatabasePtr {
     fn drop(&mut self) {
+        debug!("Dropping database ptr {:?}", self.ptr);
         unsafe {
             ffi::notmuch_database_destroy(self.ptr)
         };
