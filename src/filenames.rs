@@ -9,8 +9,6 @@ use utils::{
 };
 
 use Database;
-use Directory;
-use Message;
 use ffi;
 
 #[derive(Debug)]

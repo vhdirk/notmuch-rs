@@ -1,5 +1,4 @@
 use std::ops::Drop;
-use std::iter::Iterator;
 use std::ptr;
 use std::path::Path;
 use std::ffi::{CStr, CString};
