@@ -8,18 +8,18 @@ use Thread;
 use ffi;
 
 #[derive(Debug)]
-pub struct Threads<'q, 'd:'q>(
+pub struct Threads<'d:'q, 'q>(
     *mut ffi::notmuch_threads_t,
     PhantomData<&'q Query<'d>>,
 );
 
-impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_threads_t> for Threads<'q, 'd> {
-    fn new(ptr: *mut ffi::notmuch_threads_t) -> Threads<'q, 'd> {
+impl<'d, 'q> NewFromPtr<*mut ffi::notmuch_threads_t> for Threads<'d, 'q> {
+    fn new(ptr: *mut ffi::notmuch_threads_t) -> Threads<'d, 'q> {
         Threads(ptr, PhantomData)
     }
 }
 
-impl<'q, 'd> Drop for Threads<'q, 'd> {
+impl<'d, 'q> Drop for Threads<'d, 'q> {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_threads_destroy(self.0)
@@ -27,8 +27,8 @@ impl<'q, 'd> Drop for Threads<'q, 'd> {
     }
 }
 
-impl<'q, 'd> Iterator for Threads<'q, 'd> {
-    type Item = Thread<'q, 'd>;
+impl<'d, 'q> Iterator for Threads<'d, 'q> {
+    type Item = Thread<'d, 'q>;
 
     fn next(self: &mut Self) -> Option<Self::Item> {
 
@@ -50,5 +50,5 @@ impl<'q, 'd> Iterator for Threads<'q, 'd> {
     }
 }
 
-unsafe impl<'q, 'd> Send for Threads<'q, 'd> {}
-unsafe impl<'q, 'd> Sync for Threads<'q, 'd> {}
+unsafe impl<'d, 'q> Send for Threads<'d, 'q> {}
+unsafe impl<'d, 'q> Sync for Threads<'d, 'q> {}

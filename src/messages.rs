@@ -11,20 +11,20 @@ use Message;
 use Tags;
 
 #[derive(Debug)]
-pub struct Messages<'q, 'd:'q>(
+pub struct Messages<'d:'q, 'q>(
     // TODO: is this lifetime specifier correct?
     // query may outlive messages.
     pub(crate) *mut ffi::notmuch_messages_t,
     PhantomData<&'q Query<'d>>,
 );
 
-impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_messages_t> for Messages<'q, 'd> {
-    fn new(ptr: *mut ffi::notmuch_messages_t) -> Messages<'q, 'd> {
+impl<'d, 'q> NewFromPtr<*mut ffi::notmuch_messages_t> for Messages<'d, 'q> {
+    fn new(ptr: *mut ffi::notmuch_messages_t) -> Messages<'d, 'q> {
         Messages(ptr, PhantomData)
     }
 }
 
-impl<'q, 'd> Messages<'q, 'd>{
+impl<'d, 'q> Messages<'d, 'q>{
 
     pub fn collect_tags(self: &'d Self) -> Tags<'d>{
         Tags::new(unsafe {
@@ -34,7 +34,7 @@ impl<'q, 'd> Messages<'q, 'd>{
 
 }
 
-impl<'q, 'd> Drop for Messages<'q, 'd> {
+impl<'d, 'q> Drop for Messages<'d, 'q> {
     fn drop(self: &mut Self) {
         let valid = unsafe {
             ffi::notmuch_messages_valid(self.0)
@@ -50,8 +50,8 @@ impl<'q, 'd> Drop for Messages<'q, 'd> {
     }
 }
 
-impl<'q, 'd> Iterator for Messages<'q, 'd> {
-    type Item = Message<'q, 'd>;
+impl<'d, 'q> Iterator for Messages<'d, 'q> {
+    type Item = Message<'d, 'q>;
 
     fn next(&mut self) -> Option<Self::Item> {
 
@@ -73,5 +73,5 @@ impl<'q, 'd> Iterator for Messages<'q, 'd> {
     }
 }
 
-unsafe impl<'q, 'd> Send for Messages<'q, 'd>{}
-unsafe impl<'q, 'd> Sync for Messages<'q, 'd>{}
+unsafe impl<'d, 'q> Send for Messages<'d, 'q>{}
+unsafe impl<'d, 'q> Sync for Messages<'d, 'q>{}

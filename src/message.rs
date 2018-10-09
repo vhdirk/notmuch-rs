@@ -12,18 +12,18 @@ use Messages;
 use Filenames;
 
 #[derive(Debug)]
-pub struct Message<'q, 'd:'q>(
+pub struct Message<'d:'q, 'q>(
     pub(crate) *mut ffi::notmuch_message_t,
     PhantomData<&'q Query<'d>>,
 );
 
-impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_message_t> for Message<'q, 'd> {
-    fn new(ptr: *mut ffi::notmuch_message_t) -> Message<'q, 'd> {
+impl<'d, 'q> NewFromPtr<*mut ffi::notmuch_message_t> for Message<'d, 'q> {
+    fn new(ptr: *mut ffi::notmuch_message_t) -> Message<'d, 'q> {
         Message(ptr, PhantomData)
     }
 }
 
-impl<'q, 'd> Message<'q, 'd>{
+impl<'d, 'q> Message<'d, 'q>{
 
     pub fn id(self: &Self) -> String{
         let mid = unsafe {
@@ -39,7 +39,7 @@ impl<'q, 'd> Message<'q, 'd>{
         tid.to_str().unwrap().to_string()
     }
 
-    pub fn replies(self: &'q Self) -> Messages<'q, 'd>{
+    pub fn replies(self: &'q Self) -> Messages<'d, 'q>{
         Messages::new(unsafe {
             ffi::notmuch_message_get_replies(self.0)
         })
@@ -66,7 +66,7 @@ impl<'q, 'd> Message<'q, 'd>{
 }
 
 
-impl<'q, 'd> Drop for Message<'q, 'd> {
+impl<'d, 'q> Drop for Message<'d, 'q> {
     fn drop(self: &mut Self) {
         unsafe {
             ffi::notmuch_message_destroy(self.0)
@@ -74,5 +74,5 @@ impl<'q, 'd> Drop for Message<'q, 'd> {
     }
 }
 
-unsafe impl<'q, 'd> Send for Message<'q, 'd>{}
-unsafe impl<'q, 'd> Sync for Message<'q, 'd>{}
+unsafe impl<'d, 'q> Send for Message<'d, 'q>{}
+unsafe impl<'d, 'q> Sync for Message<'d, 'q>{}

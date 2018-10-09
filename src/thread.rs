@@ -10,18 +10,18 @@ use Messages;
 use Tags;
 
 #[derive(Debug)]
-pub struct Thread<'q, 'd:'q>(
+pub struct Thread<'d:'q, 'q>(
     pub(crate) *mut ffi::notmuch_thread_t,
     PhantomData<&'q Query<'d>>,
 );
 
-impl<'q, 'd> NewFromPtr<*mut ffi::notmuch_thread_t> for Thread<'q, 'd> {
-    fn new(ptr: *mut ffi::notmuch_thread_t) -> Thread<'q, 'd> {
+impl<'d, 'q> NewFromPtr<*mut ffi::notmuch_thread_t> for Thread<'d, 'q> {
+    fn new(ptr: *mut ffi::notmuch_thread_t) -> Thread<'d, 'q> {
         Thread(ptr, PhantomData)
     }
 }
 
-impl<'q, 'd> Thread<'q, 'd>{
+impl<'d, 'q> Thread<'d, 'q>{
 
     pub fn id(self: &Self) -> String{
         let tid = unsafe {
@@ -98,7 +98,7 @@ impl<'q, 'd> Thread<'q, 'd>{
 }
 
 
-impl<'q, 'd> Drop for Thread<'q, 'd> {
+impl<'d, 'q> Drop for Thread<'d, 'q> {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_thread_destroy(self.0)
@@ -106,5 +106,5 @@ impl<'q, 'd> Drop for Thread<'q, 'd> {
     }
 }
 
-unsafe impl<'q, 'd> Send for Thread<'q, 'd> {}
-unsafe impl<'q, 'd> Sync for Thread<'q, 'd> {}
+unsafe impl<'d, 'q> Send for Thread<'d, 'q> {}
+unsafe impl<'d, 'q> Sync for Thread<'d, 'q> {}
