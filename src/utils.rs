@@ -4,9 +4,13 @@ use std::{
 };
 use libc;
 
-pub trait NewFromPtr<T> {
-    fn new(ptr: T) -> Self;
+pub trait FromPtr<T> {
+    fn from_ptr(ptr: T) -> Self;
 }
+
+// pub trait NewFromPtr<T, P> {
+//     fn new(ptr: T, parent: Rc<P>) -> Self;
+// }
 
 pub trait ToStr {
     fn to_str<'a>(&self) -> Result<&'a str, str::Utf8Error>;
@@ -31,3 +35,5 @@ impl ToString for *const libc::c_char {
         }
     }
 }
+
+

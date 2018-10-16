@@ -8,22 +8,39 @@ use error::{Error, Result};
 use ffi;
 use utils::{
     ToStr,
-    NewFromPtr
+    FromPtr
 };
 use Query;
 use Messages;
 use Filenames;
 use Tags;
 
-#[derive(Debug)]
-pub struct Message<'d:'q, 'q>(
-    pub(crate) *mut ffi::notmuch_message_t,
-    PhantomData<&'q Query<'d>>,
-);
 
-impl<'d, 'q> NewFromPtr<*mut ffi::notmuch_message_t> for Message<'d, 'q> {
-    fn new(ptr: *mut ffi::notmuch_message_t) -> Message<'d, 'q> {
-        Message(ptr, PhantomData)
+#[derive(Debug)]
+pub(crate) struct MessagePtr {
+    pub ptr: *mut ffi::notmuch_message_t
+}
+
+impl Drop for MessagePtr {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::notmuch_message_destroy(self.ptr)
+        };
+    }
+}
+ 
+#[derive(Debug)]
+pub struct Message<'d:'q, 'q>{
+    pub(crate) handle: MessagePtr,
+    phantom: PhantomData<&'q Query<'d>>,
+}
+
+impl<'d, 'q> FromPtr<*mut ffi::notmuch_message_t> for Message<'d, 'q> {
+    fn from_ptr(ptr: *mut ffi::notmuch_message_t) -> Message<'d, 'q> {
+        Message{
+            handle: MessagePtr{ptr},
+            phantom: PhantomData
+        }
     }
 }
 
@@ -31,46 +48,46 @@ impl<'d, 'q> Message<'d, 'q>{
 
     pub fn id(self: &Self) -> String{
         let mid = unsafe {
-            ffi::notmuch_message_get_message_id(self.0)
+            ffi::notmuch_message_get_message_id(self.handle.ptr)
         };
         mid.to_str().unwrap().to_string()
     }
 
     pub fn thread_id(self: &Self) -> String{
         let tid = unsafe {
-            ffi::notmuch_message_get_thread_id(self.0)
+            ffi::notmuch_message_get_thread_id(self.handle.ptr)
         };
         tid.to_str().unwrap().to_string()
     }
 
     pub fn replies(self: &'q Self) -> Messages<'d, 'q>{
-        Messages::new(unsafe {
-            ffi::notmuch_message_get_replies(self.0)
+        Messages::from_ptr(unsafe {
+            ffi::notmuch_message_get_replies(self.handle.ptr)
         })
     }
 
     #[cfg(feature = "v0_26")]
     pub fn count_files(self: &Self) -> i32{
         unsafe {
-            ffi::notmuch_message_count_files(self.0)
+            ffi::notmuch_message_count_files(self.handle.ptr)
         }
     }
 
     pub fn filenames(self: &'d Self) -> Filenames<'d>{
-        Filenames::new(unsafe {
-            ffi::notmuch_message_get_filenames(self.0)
+        Filenames::from_ptr(unsafe {
+            ffi::notmuch_message_get_filenames(self.handle.ptr)
         })
     }
 
     pub fn filename(self: &Self) -> PathBuf{
         PathBuf::from(unsafe {
-            ffi::notmuch_message_get_filename(self.0)
+            ffi::notmuch_message_get_filename(self.handle.ptr)
         }.to_str().unwrap())
     }
 
     pub fn header(&self, name: &str) -> Result<&str> {
         let ret = unsafe {
-            ffi::notmuch_message_get_header(self.0,
+            ffi::notmuch_message_get_header(self.handle.ptr,
                 CString::new(name).unwrap().as_ptr())
         };
         if ret.is_null() {
@@ -81,18 +98,9 @@ impl<'d, 'q> Message<'d, 'q>{
     }
 
     pub fn tags(self: &'d Self) -> Tags<'d>{
-        Tags::new(unsafe {
-            ffi::notmuch_message_get_tags(self.0)
+        Tags::from_ptr(unsafe {
+            ffi::notmuch_message_get_tags(self.handle.ptr)
         })
-    }
-}
-
-
-impl<'d, 'q> Drop for Message<'d, 'q> {
-    fn drop(self: &mut Self) {
-        unsafe {
-            ffi::notmuch_message_destroy(self.0)
-        };
     }
 }
 

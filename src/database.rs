@@ -7,7 +7,7 @@ use libc;
 
 use error::Result;
 use utils::{
-    NewFromPtr,
+    FromPtr,
     ToStr,
 };
 
@@ -30,7 +30,22 @@ pub struct Revision{
 }
 
 #[derive(Debug)]
-pub struct Database(*mut ffi::notmuch_database_t);
+pub(crate) struct DatabasePtr {
+    pub ptr: *mut ffi::notmuch_database_t
+}
+
+impl Drop for DatabasePtr {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::notmuch_database_destroy(self.ptr)
+        };
+    }
+}
+
+#[derive(Debug)]
+pub struct Database{ 
+    pub(crate) handle: DatabasePtr
+}
 
 impl Database {
     pub fn create<P: AsRef<Path>>(path: &P) -> Result<Self> {
@@ -41,7 +56,7 @@ impl Database {
             ffi::notmuch_database_create(path_str.as_ptr(), &mut db)
         }.as_result());
 
-        Ok(Database(db))
+        Ok(Database{handle:DatabasePtr{ptr:db}})
     }
 
     pub fn open<P: AsRef<Path>>(path: &P, mode: DatabaseMode) -> Result<Self> {
@@ -56,12 +71,12 @@ impl Database {
             )
         }.as_result());
 
-        Ok(Database(db))
+        Ok(Database{handle:DatabasePtr{ptr:db}})
     }
 
     pub fn close(self) -> Result<()> {
         try!(unsafe {
-            ffi::notmuch_database_close(self.0)
+            ffi::notmuch_database_close(self.handle.ptr)
         }.as_result());
 
         Ok(())
@@ -114,13 +129,13 @@ impl Database {
 
     pub fn path(&self) -> &Path {
         Path::new(unsafe {
-            ffi::notmuch_database_get_path(self.0)
+            ffi::notmuch_database_get_path(self.handle.ptr)
         }.to_str().unwrap())
     }
 
     pub fn version(&self) -> Version {
         Version(unsafe {
-            ffi::notmuch_database_get_version(self.0)
+            ffi::notmuch_database_get_version(self.handle.ptr)
         })
     }
 
@@ -128,7 +143,7 @@ impl Database {
     pub fn revision(&self) -> Revision {
         let uuid_p: *const libc::c_char = ptr::null();
         let revision = unsafe {
-            ffi::notmuch_database_get_revision(self.0, (&uuid_p) as *const _ as *mut *const libc::c_char)
+            ffi::notmuch_database_get_revision(self.handle.ptr, (&uuid_p) as *const _ as *mut *const libc::c_char)
         };
 
         let uuid = unsafe { CStr::from_ptr(uuid_p) };
@@ -138,7 +153,7 @@ impl Database {
 
     pub fn needs_upgrade(&self) -> bool {
         unsafe {
-            ffi::notmuch_database_needs_upgrade(self.0) == 1
+            ffi::notmuch_database_needs_upgrade(self.handle.ptr) == 1
         }
     }
 
@@ -165,7 +180,7 @@ impl Database {
 
         try!(unsafe {
             ffi::notmuch_database_upgrade(
-                self.0,
+                self.handle.ptr,
                 if status.is_some() { Some(wrapper::<F>) } else { None },
                 status.map_or(ptr::null_mut(), |f| {
                     &f as *const _ as *mut libc::c_void
@@ -182,38 +197,30 @@ impl Database {
         let mut dir = ptr::null_mut();
         try!(unsafe {
             ffi::notmuch_database_get_directory(
-                self.0, path_str.as_ptr(), &mut dir,
+                self.handle.ptr, path_str.as_ptr(), &mut dir,
             )
         }.as_result());
 
-        if dir.is_null() { Ok(None) } else { Ok(Some(Directory::new(dir))) }
+        if dir.is_null() { Ok(None) } else { Ok(Some(Directory::from_ptr(dir))) }
     }
 
     pub fn create_query<'d>(&'d self, query_string: &str) -> Result<Query<'d>> {
         let query_str = CString::new(query_string).unwrap();
 
         let query = unsafe {
-            ffi::notmuch_query_create(self.0, query_str.as_ptr())
+            ffi::notmuch_query_create(self.handle.ptr, query_str.as_ptr())
         };
 
-        Ok(Query::new(query))
+        Ok(Query::from_ptr(query))
     }
 
-    pub fn all_tags<'d>(&self) -> Result<Tags<'d>> {
+    pub fn all_tags<'d>(&self) -> Result<Tags> {
 
         let tags = unsafe {
-            ffi::notmuch_database_get_all_tags(self.0)
+            ffi::notmuch_database_get_all_tags(self.handle.ptr)
         };
 
-        Ok(Tags::new(tags))
-    }
-}
-
-impl Drop for Database {
-    fn drop(&mut self) {
-        unsafe {
-            ffi::notmuch_database_destroy(self.0)
-        };
+        Ok(Tags::from_ptr(tags))
     }
 }
 
