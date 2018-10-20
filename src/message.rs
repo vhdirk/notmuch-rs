@@ -13,6 +13,7 @@ use utils::{
 use Query;
 use Messages;
 use Filenames;
+use Tags;
 
 #[derive(Debug)]
 pub struct Message<'d:'q, 'q>(
@@ -77,6 +78,12 @@ impl<'d, 'q> Message<'d, 'q>{
         } else {
             Ok(ret.to_str().unwrap())
         }
+    }
+
+    pub fn tags(self: &'d Self) -> Tags<'d>{
+        Tags::new(unsafe {
+            ffi::notmuch_message_get_tags(self.0)
+        })
     }
 }
 
