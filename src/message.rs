@@ -14,7 +14,10 @@ use Query;
 use Messages;
 use Filenames;
 use Tags;
+use messages::MessagesOwner;
+use filenames::FilenamesOwner;
 
+pub trait MessageOwner{}
 
 #[derive(Debug)]
 pub(crate) struct MessagePtr {
@@ -30,13 +33,17 @@ impl Drop for MessagePtr {
 }
  
 #[derive(Debug)]
-pub struct Message<'d:'q, 'q>{
+pub struct Message<'o, Owner: MessageOwner>{
     pub(crate) handle: MessagePtr,
-    phantom: PhantomData<&'q Query<'d>>,
+    phantom: PhantomData<&'o Owner>,
 }
 
-impl<'d, 'q> FromPtr<*mut ffi::notmuch_message_t> for Message<'d, 'q> {
-    fn from_ptr(ptr: *mut ffi::notmuch_message_t) -> Message<'d, 'q> {
+impl<'o, Owner: MessageOwner> MessagesOwner for Message<'o, Owner>{}
+impl<'o, Owner: MessageOwner> FilenamesOwner for Message<'o, Owner>{}
+
+
+impl<'o, Owner: MessageOwner> FromPtr<*mut ffi::notmuch_message_t> for Message<'o, Owner> {
+    fn from_ptr(ptr: *mut ffi::notmuch_message_t) -> Message<'o, Owner> {
         Message{
             handle: MessagePtr{ptr},
             phantom: PhantomData
@@ -44,7 +51,7 @@ impl<'d, 'q> FromPtr<*mut ffi::notmuch_message_t> for Message<'d, 'q> {
     }
 }
 
-impl<'d, 'q> Message<'d, 'q>{
+impl<'o, Owner: MessageOwner> Message<'o, Owner>{
 
     pub fn id(self: &Self) -> String{
         let mid = unsafe {
@@ -60,7 +67,7 @@ impl<'d, 'q> Message<'d, 'q>{
         tid.to_str().unwrap().to_string()
     }
 
-    pub fn replies(self: &'q Self) -> Messages<'d, 'q>{
+    pub fn replies(self: &Self) -> Messages<'o, Self>{
         Messages::from_ptr(unsafe {
             ffi::notmuch_message_get_replies(self.handle.ptr)
         })
@@ -73,7 +80,7 @@ impl<'d, 'q> Message<'d, 'q>{
         }
     }
 
-    pub fn filenames(self: &'d Self) -> Filenames<'d>{
+    pub fn filenames(self: &Self) -> Filenames<Self>{
         Filenames::from_ptr(unsafe {
             ffi::notmuch_message_get_filenames(self.handle.ptr)
         })
@@ -97,12 +104,12 @@ impl<'d, 'q> Message<'d, 'q>{
         }
     }
 
-    pub fn tags(self: &'d Self) -> Tags<'d>{
+    pub fn tags(self: &Self) -> Tags{
         Tags::from_ptr(unsafe {
             ffi::notmuch_message_get_tags(self.handle.ptr)
         })
     }
 }
 
-unsafe impl<'d, 'q> Send for Message<'d, 'q>{}
-unsafe impl<'d, 'q> Sync for Message<'d, 'q>{}
+unsafe impl<'o, Owner: MessageOwner> Send for Message<'o, Owner>{}
+unsafe impl<'o, Owner: MessageOwner> Sync for Message<'o, Owner>{}

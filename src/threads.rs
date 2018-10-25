@@ -6,6 +6,10 @@ use utils::FromPtr;
 use Query;
 use Thread;
 use ffi;
+use thread::ThreadOwner;
+
+pub trait ThreadsOwner{}
+
 
 #[derive(Debug)]
 pub(crate) struct ThreadsPtr {
@@ -21,13 +25,16 @@ impl Drop for ThreadsPtr {
 }
 
 #[derive(Debug)]
-pub struct Threads<'d:'q, 'q>{
+pub struct Threads<'o, Owner: ThreadsOwner>{
     handle: ThreadsPtr,
-    phantom: PhantomData<&'q Query<'d>>,
+    phantom: PhantomData<&'o Owner>,
 }
 
-impl<'d, 'q> FromPtr<*mut ffi::notmuch_threads_t> for Threads<'d, 'q> {
-    fn from_ptr(ptr: *mut ffi::notmuch_threads_t) -> Threads<'d, 'q> {
+impl<'o, Owner: ThreadsOwner> ThreadOwner for Threads<'o, Owner>{}
+
+
+impl<'o, Owner: ThreadsOwner> FromPtr<*mut ffi::notmuch_threads_t> for Threads<'o, Owner> {
+    fn from_ptr(ptr: *mut ffi::notmuch_threads_t) -> Threads<'o, Owner> {
         Threads{
             handle: ThreadsPtr{ptr},
             phantom: PhantomData
@@ -35,8 +42,8 @@ impl<'d, 'q> FromPtr<*mut ffi::notmuch_threads_t> for Threads<'d, 'q> {
     }
 }
 
-impl<'d, 'q> Iterator for Threads<'d, 'q> {
-    type Item = Thread<'d, 'q>;
+impl<'o, Owner: ThreadsOwner> Iterator for Threads<'o, Owner> {
+    type Item = Thread<'o, Self>;
 
     fn next(self: &mut Self) -> Option<Self::Item> {
 
@@ -58,5 +65,5 @@ impl<'d, 'q> Iterator for Threads<'d, 'q> {
     }
 }
 
-unsafe impl<'d, 'q> Send for Threads<'d, 'q> {}
-unsafe impl<'d, 'q> Sync for Threads<'d, 'q> {}
+unsafe impl<'o, Owner: ThreadsOwner> Send for Threads<'o, Owner> {}
+unsafe impl<'o, Owner: ThreadsOwner> Sync for Threads<'o, Owner> {}

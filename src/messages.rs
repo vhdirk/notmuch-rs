@@ -9,7 +9,10 @@ use utils::{
 use Query;
 use Message;
 use Tags;
+use message::MessageOwner;
 
+pub trait MessagesOwner{
+}
 
 #[derive(Debug)]
 pub(crate) struct MessagesPtr {
@@ -34,13 +37,13 @@ impl Drop for MessagesPtr {
 
 
 #[derive(Debug)]
-pub struct Messages<'d:'q, 'q>{
+pub struct Messages<'o, Owner: MessagesOwner>{
     pub(crate) handle: MessagesPtr,
-    phantom: PhantomData<&'q Query<'d>>,
+    phantom: PhantomData<&'o Owner>,
 }
 
-impl<'d, 'q> FromPtr<*mut ffi::notmuch_messages_t> for Messages<'d, 'q> {
-    fn from_ptr(ptr: *mut ffi::notmuch_messages_t) -> Messages<'d, 'q> {
+impl<'o, Owner: MessagesOwner> FromPtr<*mut ffi::notmuch_messages_t> for Messages<'o, Owner> {
+    fn from_ptr(ptr: *mut ffi::notmuch_messages_t) -> Messages<'o, Owner> {
         Messages{
             handle: MessagesPtr{ptr},
             phantom: PhantomData
@@ -48,7 +51,10 @@ impl<'d, 'q> FromPtr<*mut ffi::notmuch_messages_t> for Messages<'d, 'q> {
     }
 }
 
-impl<'d, 'q> Messages<'d, 'q>{
+impl<'o, Owner: MessagesOwner> MessageOwner for Messages<'o, Owner>{}
+
+
+impl<'o, Owner: MessagesOwner> Messages<'o, Owner>{
 
     /**
      * Return a list of tags from all messages.
@@ -63,7 +69,7 @@ impl<'d, 'q> Messages<'d, 'q>{
      *
      * The function returns NULL on error.
      */
-    pub fn collect_tags(self: &'d Self) -> Tags{
+    pub fn collect_tags(self: &'o Self) -> Tags{
         Tags::from_ptr(unsafe {
             ffi::notmuch_messages_collect_tags(self.handle.ptr)
         })
@@ -72,8 +78,8 @@ impl<'d, 'q> Messages<'d, 'q>{
 
 
 
-impl<'d, 'q> Iterator for Messages<'d, 'q> {
-    type Item = Message<'d, 'q>;
+impl<'o, Owner: MessagesOwner> Iterator for Messages<'o, Owner> {
+    type Item = Message<'o, Self>;
 
     fn next(&mut self) -> Option<Self::Item> {
 
@@ -95,5 +101,5 @@ impl<'d, 'q> Iterator for Messages<'d, 'q> {
     }
 }
 
-unsafe impl<'d, 'q> Send for Messages<'d, 'q>{}
-unsafe impl<'d, 'q> Sync for Messages<'d, 'q>{}
+unsafe impl<'o, Owner: MessagesOwner> Send for Messages<'o, Owner>{}
+unsafe impl<'o, Owner: MessagesOwner> Sync for Messages<'o, Owner>{}

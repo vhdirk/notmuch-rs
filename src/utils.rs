@@ -37,3 +37,6 @@ impl ToString for *const libc::c_char {
 }
 
 
+pub struct Owner;
+
+

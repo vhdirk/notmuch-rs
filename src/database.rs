@@ -14,6 +14,7 @@ use utils::{
 use Directory;
 use Query;
 use Tags;
+use tags::TagsOwner;
 
 use ffi;
 
@@ -46,6 +47,8 @@ impl Drop for DatabasePtr {
 pub struct Database{ 
     pub(crate) handle: DatabasePtr
 }
+
+impl TagsOwner for Database{}
 
 impl Database {
     pub fn create<P: AsRef<Path>>(path: &P) -> Result<Self> {

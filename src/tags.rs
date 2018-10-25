@@ -10,6 +10,9 @@ use utils::{
 use Database;
 use ffi;
 
+pub trait TagsOwner{}
+
+
 #[derive(Debug)]
 pub struct Tags<'d>(
     *mut ffi::notmuch_tags_t,

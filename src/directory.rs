@@ -5,6 +5,7 @@ use utils::FromPtr;
 
 use Database;
 use Filenames;
+use filenames::{FilenamesPtr, FilenamesOwner};
 
 use ffi;
 
@@ -21,17 +22,32 @@ impl Drop for DirectoryPtr {
     }
 }
 
+impl DirectoryPtr {
+    pub fn child_directories(self: &Self) -> FilenamesPtr{
+        FilenamesPtr{
+            ptr: unsafe {
+                ffi::notmuch_directory_get_child_directories(self.ptr)
+            }
+        }
+    }
+}
+
+
+
 #[derive(Debug)]
 pub struct Directory<'d>{
     handle: DirectoryPtr,
     phantom: PhantomData<&'d Database>,
 }
 
+impl<'d> FilenamesOwner for Directory<'d>{}
+
 impl<'d> Directory<'d>{
-    pub fn child_directories(self: &'d Self) -> Filenames<'d>{
-        Filenames::from_ptr(unsafe {
-            ffi::notmuch_directory_get_child_directories(self.handle.ptr)
-        })
+    pub fn child_directories(self: &'d Self) -> Filenames<Self>{
+        Filenames{
+            handle: self.handle.child_directories(),
+            phantom: PhantomData
+        }
     }
 }
 

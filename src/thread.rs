@@ -8,6 +8,11 @@ use utils::{
 use Query;
 use Messages;
 use Tags;
+use messages::MessagesOwner;
+use tags::TagsOwner;
+
+pub trait ThreadOwner{}
+
 
 #[derive(Debug)]
 pub(crate) struct ThreadPtr {
@@ -24,13 +29,17 @@ impl Drop for ThreadPtr {
 
 
 #[derive(Debug)]
-pub struct Thread<'d:'q, 'q>{
+pub struct Thread<'o, Owner: ThreadOwner>{
     pub(crate) handle: ThreadPtr,
-    phantom: PhantomData<&'q Query<'d>>,
+    phantom: PhantomData<&'o Owner>,
 }
 
-impl<'d, 'q> FromPtr<*mut ffi::notmuch_thread_t> for Thread<'d, 'q> {
-    fn from_ptr(ptr: *mut ffi::notmuch_thread_t) -> Thread<'d, 'q> {
+impl<'o, Owner: ThreadOwner> MessagesOwner for Thread<'o, Owner>{}
+impl<'o, Owner: ThreadOwner> TagsOwner for Thread<'o, Owner>{}
+
+
+impl<'o, Owner: ThreadOwner> FromPtr<*mut ffi::notmuch_thread_t> for Thread<'o, Owner> {
+    fn from_ptr(ptr: *mut ffi::notmuch_thread_t) -> Thread<'o, Owner> {
         Thread{
             handle: ThreadPtr{ptr},
             phantom: PhantomData
@@ -38,7 +47,7 @@ impl<'d, 'q> FromPtr<*mut ffi::notmuch_thread_t> for Thread<'d, 'q> {
     }
 }
 
-impl<'d, 'q> Thread<'d, 'q>{
+impl<'o, Owner: ThreadOwner> Thread<'o, Owner>{
 
     pub fn id(self: &Self) -> String{
         let tid = unsafe {
@@ -62,7 +71,7 @@ impl<'d, 'q> Thread<'d, 'q>{
     }
 
 
-    pub fn toplevel_messages(self: &Self) -> Messages{
+    pub fn toplevel_messages(self: &Self) -> Messages<Self>{
         Messages::from_ptr(unsafe {
             ffi::notmuch_thread_get_toplevel_messages(self.handle.ptr)
         })
@@ -70,7 +79,7 @@ impl<'d, 'q> Thread<'d, 'q>{
 
     /// Get a `Messages` iterator for all messages in 'thread' in
     /// oldest-first order.
-    pub fn messages(self: &Self) -> Messages{
+    pub fn messages(self: &Self) -> Messages<Self>{
         Messages::from_ptr(unsafe {
             ffi::notmuch_thread_get_messages(self.handle.ptr)
         })
@@ -115,5 +124,5 @@ impl<'d, 'q> Thread<'d, 'q>{
 }
 
 
-unsafe impl<'d, 'q> Send for Thread<'d, 'q> {}
-unsafe impl<'d, 'q> Sync for Thread<'d, 'q> {}
+unsafe impl<'o, Owner: ThreadOwner> Send for Thread<'o, Owner> {}
+unsafe impl<'o, Owner: ThreadOwner> Sync for Thread<'o, Owner> {}

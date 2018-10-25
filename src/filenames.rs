@@ -8,6 +8,8 @@ use utils::FromPtr;
 use Database;
 use ffi;
 
+pub trait FilenamesOwner{}
+
 #[derive(Debug)]
 pub(crate) struct FilenamesPtr {
     pub ptr: *mut ffi::notmuch_filenames_t
@@ -28,13 +30,13 @@ impl Drop for FilenamesPtr {
 }
  
 #[derive(Debug)]
-pub struct Filenames<'d>{
+pub struct Filenames<'o, Owner: FilenamesOwner>{
     pub(crate) handle: FilenamesPtr,
-    phantom: PhantomData<&'d Database>
+    pub(crate) phantom: PhantomData<&'o Owner>
 }
 
-impl<'d> FromPtr<*mut ffi::notmuch_filenames_t> for Filenames<'d> {
-    fn from_ptr(ptr: *mut ffi::notmuch_filenames_t) -> Filenames<'d> {
+impl<'o, Owner: FilenamesOwner> FromPtr<*mut ffi::notmuch_filenames_t> for Filenames<'o, Owner> {
+    fn from_ptr(ptr: *mut ffi::notmuch_filenames_t) -> Filenames<'o, Owner> {
         Filenames{
             handle: FilenamesPtr{ptr},
             phantom: PhantomData
@@ -42,7 +44,7 @@ impl<'d> FromPtr<*mut ffi::notmuch_filenames_t> for Filenames<'d> {
     }
 }
 
-impl<'d> Iterator for Filenames<'d> {
+impl<'o, Owner: FilenamesOwner> Iterator for Filenames<'o, Owner> {
     type Item = PathBuf;
 
     fn next(self: &mut Self) -> Option<Self::Item> {
@@ -65,5 +67,5 @@ impl<'d> Iterator for Filenames<'d> {
     }
 }
 
-unsafe impl<'d> Send for Filenames<'d>{}
-unsafe impl<'d> Sync for Filenames<'d>{}
+unsafe impl<'o, Owner: FilenamesOwner> Send for Filenames<'o, Owner>{}
+unsafe impl<'o, Owner: FilenamesOwner> Sync for Filenames<'o, Owner>{}

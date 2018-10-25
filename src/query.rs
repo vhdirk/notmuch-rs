@@ -11,6 +11,8 @@ use Database;
 use Messages;
 use Threads;
 use ffi::Sort;
+use threads::ThreadsOwner;
+use messages::MessagesOwner;
 
 #[derive(Debug)]
 pub(crate) struct QueryPtr {
@@ -30,6 +32,10 @@ pub struct Query<'d>{
     pub(crate) handle: QueryPtr,
     phantom: PhantomData<&'d Database>,
 }
+
+impl<'d> ThreadsOwner for Query<'d>{}
+impl<'d> MessagesOwner for Query<'d>{}
+
 
 impl<'d> FromPtr<*mut ffi::notmuch_query_t> for Query<'d> {
     fn from_ptr(ptr: *mut ffi::notmuch_query_t) -> Query<'d> {
@@ -68,7 +74,7 @@ impl<'d> Query<'d> {
 
 
     /// Filter messages according to the query and return
-    pub fn search_messages<'q>(self: &'d Self) -> Result<Messages<'q, 'd>>
+    pub fn search_messages<'q>(self: &'d Self) -> Result<Messages<'q, Self>>
     {
         let mut msgs = ptr::null_mut();
         try!(unsafe {
@@ -92,7 +98,7 @@ impl<'d> Query<'d> {
         Ok(cnt)
     }
 
-    pub fn search_threads<'q>(self: &'d Self) -> Result<Threads<'q, 'd>>
+    pub fn search_threads<'q>(self: &'d Self) -> Result<Threads<'q, Self>>
     {
         let mut thrds = ptr::null_mut();
         try!(unsafe {
