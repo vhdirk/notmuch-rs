@@ -86,7 +86,7 @@ impl<'o, Owner: ThreadOwner> Thread<'o, Owner>{
     }
 
 
-    pub fn tags<'t>(self: &Self) -> Tags{
+    pub fn tags<'t>(self: &Self) -> Tags<'t, Self>{
         Tags::from_ptr(unsafe {
             ffi::notmuch_thread_get_tags(self.handle.ptr)
         })

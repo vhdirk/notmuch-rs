@@ -16,6 +16,7 @@ use Filenames;
 use Tags;
 use messages::MessagesOwner;
 use filenames::FilenamesOwner;
+use tags::TagsOwner;
 
 pub trait MessageOwner{}
 
@@ -40,6 +41,7 @@ pub struct Message<'o, Owner: MessageOwner>{
 
 impl<'o, Owner: MessageOwner> MessagesOwner for Message<'o, Owner>{}
 impl<'o, Owner: MessageOwner> FilenamesOwner for Message<'o, Owner>{}
+impl<'o, Owner: MessageOwner> TagsOwner for Message<'o, Owner>{}
 
 
 impl<'o, Owner: MessageOwner> FromPtr<*mut ffi::notmuch_message_t> for Message<'o, Owner> {
@@ -104,7 +106,7 @@ impl<'o, Owner: MessageOwner> Message<'o, Owner>{
         }
     }
 
-    pub fn tags(self: &Self) -> Tags{
+    pub fn tags<'m>(self: &Self) -> Tags<'m, Self>{
         Tags::from_ptr(unsafe {
             ffi::notmuch_message_get_tags(self.handle.ptr)
         })

@@ -1,8 +1,9 @@
 extern crate notmuch;
+extern crate dirs;
 
 fn main() {
 
-    let mut mail_path = std::env::home_dir().unwrap();
+    let mut mail_path = dirs::home_dir().unwrap();
     mail_path.push(".mail");
 
     match notmuch::Database::open(&mail_path.to_str().unwrap().to_string(), notmuch::DatabaseMode::ReadOnly){

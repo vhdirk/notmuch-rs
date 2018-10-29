@@ -77,7 +77,7 @@ impl Database {
         Ok(Database{handle:DatabasePtr{ptr:db}})
     }
 
-    pub fn close(self) -> Result<()> {
+    pub fn close(&mut self) -> Result<()> {
         try!(unsafe {
             ffi::notmuch_database_close(self.handle.ptr)
         }.as_result());
@@ -217,7 +217,7 @@ impl Database {
         Ok(Query::from_ptr(query))
     }
 
-    pub fn all_tags<'d>(&self) -> Result<Tags> {
+    pub fn all_tags<'d>(&self) -> Result<Tags<'d, Self>> {
 
         let tags = unsafe {
             ffi::notmuch_database_get_all_tags(self.handle.ptr)

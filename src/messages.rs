@@ -10,6 +10,7 @@ use Query;
 use Message;
 use Tags;
 use message::MessageOwner;
+use tags::TagsOwner;
 
 pub trait MessagesOwner{
 }
@@ -52,6 +53,7 @@ impl<'o, Owner: MessagesOwner> FromPtr<*mut ffi::notmuch_messages_t> for Message
 }
 
 impl<'o, Owner: MessagesOwner> MessageOwner for Messages<'o, Owner>{}
+impl<'o, Owner: MessagesOwner> TagsOwner for Messages<'o, Owner>{}
 
 
 impl<'o, Owner: MessagesOwner> Messages<'o, Owner>{
@@ -69,7 +71,7 @@ impl<'o, Owner: MessagesOwner> Messages<'o, Owner>{
      *
      * The function returns NULL on error.
      */
-    pub fn collect_tags(self: &'o Self) -> Tags{
+    pub fn collect_tags<'m>(self: &'o Self) -> Tags<'m, Self>{
         Tags::from_ptr(unsafe {
             ffi::notmuch_messages_collect_tags(self.handle.ptr)
         })
