@@ -24,11 +24,11 @@ pub use error::Error;
 pub use database::Database;
 pub use directory::Directory;
 pub use query::Query;
-pub use messages::Messages;
-pub use message::Message;
-pub use tags::Tags;
-pub use threads::Threads;
-pub use thread::Thread;
-pub use filenames::Filenames;
+pub use messages::{Messages, MessagesOwner};
+pub use message::{Message, MessageOwner};
+pub use tags::{Tags, TagsOwner};
+pub use threads::{Threads, ThreadsOwner};
+pub use thread::{Thread, ThreadOwner};
+pub use filenames::{Filenames, FilenamesOwner};
 
 pub use ffi::DatabaseMode;
