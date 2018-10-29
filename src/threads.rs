@@ -25,15 +25,15 @@ impl Drop for ThreadsPtr {
 }
 
 #[derive(Debug)]
-pub struct Threads<'o, Owner: ThreadsOwner>{
+pub struct Threads<'o, Owner: ThreadsOwner + 'o>{
     handle: ThreadsPtr,
     phantom: PhantomData<&'o Owner>,
 }
 
-impl<'o, Owner: ThreadsOwner> ThreadOwner for Threads<'o, Owner>{}
+impl<'o, Owner: ThreadsOwner + 'o> ThreadOwner for Threads<'o, Owner>{}
 
 
-impl<'o, Owner: ThreadsOwner> FromPtr<*mut ffi::notmuch_threads_t> for Threads<'o, Owner> {
+impl<'o, Owner: ThreadsOwner + 'o> FromPtr<*mut ffi::notmuch_threads_t> for Threads<'o, Owner> {
     fn from_ptr(ptr: *mut ffi::notmuch_threads_t) -> Threads<'o, Owner> {
         Threads{
             handle: ThreadsPtr{ptr},
@@ -42,7 +42,7 @@ impl<'o, Owner: ThreadsOwner> FromPtr<*mut ffi::notmuch_threads_t> for Threads<'
     }
 }
 
-impl<'o, Owner: ThreadsOwner> Iterator for Threads<'o, Owner> {
+impl<'o, Owner: ThreadsOwner + 'o> Iterator for Threads<'o, Owner> {
     type Item = Thread<'o, Self>;
 
     fn next(self: &mut Self) -> Option<Self::Item> {
@@ -65,5 +65,5 @@ impl<'o, Owner: ThreadsOwner> Iterator for Threads<'o, Owner> {
     }
 }
 
-unsafe impl<'o, Owner: ThreadsOwner> Send for Threads<'o, Owner> {}
-unsafe impl<'o, Owner: ThreadsOwner> Sync for Threads<'o, Owner> {}
+unsafe impl<'o, Owner: ThreadsOwner + 'o> Send for Threads<'o, Owner> {}
+unsafe impl<'o, Owner: ThreadsOwner + 'o> Sync for Threads<'o, Owner> {}

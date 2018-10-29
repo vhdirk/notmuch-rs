@@ -34,17 +34,17 @@ impl Drop for MessagePtr {
 }
  
 #[derive(Debug)]
-pub struct Message<'o, Owner: MessageOwner>{
+pub struct Message<'o, Owner: MessageOwner + 'o>{
     pub(crate) handle: MessagePtr,
     phantom: PhantomData<&'o Owner>,
 }
 
-impl<'o, Owner: MessageOwner> MessagesOwner for Message<'o, Owner>{}
-impl<'o, Owner: MessageOwner> FilenamesOwner for Message<'o, Owner>{}
-impl<'o, Owner: MessageOwner> TagsOwner for Message<'o, Owner>{}
+impl<'o, Owner: MessageOwner + 'o> MessagesOwner for Message<'o, Owner>{}
+impl<'o, Owner: MessageOwner + 'o> FilenamesOwner for Message<'o, Owner>{}
+impl<'o, Owner: MessageOwner + 'o> TagsOwner for Message<'o, Owner>{}
 
 
-impl<'o, Owner: MessageOwner> FromPtr<*mut ffi::notmuch_message_t> for Message<'o, Owner> {
+impl<'o, Owner: MessageOwner + 'o> FromPtr<*mut ffi::notmuch_message_t> for Message<'o, Owner> {
     fn from_ptr(ptr: *mut ffi::notmuch_message_t) -> Message<'o, Owner> {
         Message{
             handle: MessagePtr{ptr},
@@ -53,7 +53,7 @@ impl<'o, Owner: MessageOwner> FromPtr<*mut ffi::notmuch_message_t> for Message<'
     }
 }
 
-impl<'o, Owner: MessageOwner> Message<'o, Owner>{
+impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner>{
 
     pub fn id(self: &Self) -> String{
         let mid = unsafe {
@@ -113,5 +113,5 @@ impl<'o, Owner: MessageOwner> Message<'o, Owner>{
     }
 }
 
-unsafe impl<'o, Owner: MessageOwner> Send for Message<'o, Owner>{}
-unsafe impl<'o, Owner: MessageOwner> Sync for Message<'o, Owner>{}
+unsafe impl<'o, Owner: MessageOwner + 'o> Send for Message<'o, Owner>{}
+unsafe impl<'o, Owner: MessageOwner + 'o> Sync for Message<'o, Owner>{}

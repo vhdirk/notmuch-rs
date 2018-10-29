@@ -29,16 +29,16 @@ impl Drop for ThreadPtr {
 
 
 #[derive(Debug)]
-pub struct Thread<'o, Owner: ThreadOwner>{
+pub struct Thread<'o, Owner: ThreadOwner + 'o>{
     pub(crate) handle: ThreadPtr,
     phantom: PhantomData<&'o Owner>,
 }
 
-impl<'o, Owner: ThreadOwner> MessagesOwner for Thread<'o, Owner>{}
-impl<'o, Owner: ThreadOwner> TagsOwner for Thread<'o, Owner>{}
+impl<'o, Owner: ThreadOwner + 'o> MessagesOwner for Thread<'o, Owner>{}
+impl<'o, Owner: ThreadOwner + 'o> TagsOwner for Thread<'o, Owner>{}
 
 
-impl<'o, Owner: ThreadOwner> FromPtr<*mut ffi::notmuch_thread_t> for Thread<'o, Owner> {
+impl<'o, Owner: ThreadOwner + 'o> FromPtr<*mut ffi::notmuch_thread_t> for Thread<'o, Owner> {
     fn from_ptr(ptr: *mut ffi::notmuch_thread_t) -> Thread<'o, Owner> {
         Thread{
             handle: ThreadPtr{ptr},
@@ -47,7 +47,7 @@ impl<'o, Owner: ThreadOwner> FromPtr<*mut ffi::notmuch_thread_t> for Thread<'o, 
     }
 }
 
-impl<'o, Owner: ThreadOwner> Thread<'o, Owner>{
+impl<'o, Owner: ThreadOwner + 'o> Thread<'o, Owner>{
 
     pub fn id(self: &Self) -> String{
         let tid = unsafe {
@@ -124,5 +124,5 @@ impl<'o, Owner: ThreadOwner> Thread<'o, Owner>{
 }
 
 
-unsafe impl<'o, Owner: ThreadOwner> Send for Thread<'o, Owner> {}
-unsafe impl<'o, Owner: ThreadOwner> Sync for Thread<'o, Owner> {}
+unsafe impl<'o, Owner: ThreadOwner + 'o> Send for Thread<'o, Owner> {}
+unsafe impl<'o, Owner: ThreadOwner + 'o> Sync for Thread<'o, Owner> {}

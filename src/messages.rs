@@ -38,12 +38,12 @@ impl Drop for MessagesPtr {
 
 
 #[derive(Debug)]
-pub struct Messages<'o, Owner: MessagesOwner>{
+pub struct Messages<'o, Owner: MessagesOwner + 'o>{
     pub(crate) handle: MessagesPtr,
     phantom: PhantomData<&'o Owner>,
 }
 
-impl<'o, Owner: MessagesOwner> FromPtr<*mut ffi::notmuch_messages_t> for Messages<'o, Owner> {
+impl<'o, Owner: MessagesOwner + 'o> FromPtr<*mut ffi::notmuch_messages_t> for Messages<'o, Owner> {
     fn from_ptr(ptr: *mut ffi::notmuch_messages_t) -> Messages<'o, Owner> {
         Messages{
             handle: MessagesPtr{ptr},
@@ -52,11 +52,11 @@ impl<'o, Owner: MessagesOwner> FromPtr<*mut ffi::notmuch_messages_t> for Message
     }
 }
 
-impl<'o, Owner: MessagesOwner> MessageOwner for Messages<'o, Owner>{}
-impl<'o, Owner: MessagesOwner> TagsOwner for Messages<'o, Owner>{}
+impl<'o, Owner: MessagesOwner + 'o> MessageOwner for Messages<'o, Owner>{}
+impl<'o, Owner: MessagesOwner + 'o> TagsOwner for Messages<'o, Owner>{}
 
 
-impl<'o, Owner: MessagesOwner> Messages<'o, Owner>{
+impl<'o, Owner: MessagesOwner + 'o> Messages<'o, Owner>{
 
     /**
      * Return a list of tags from all messages.
@@ -80,7 +80,7 @@ impl<'o, Owner: MessagesOwner> Messages<'o, Owner>{
 
 
 
-impl<'o, Owner: MessagesOwner> Iterator for Messages<'o, Owner> {
+impl<'o, Owner: MessagesOwner + 'o> Iterator for Messages<'o, Owner> {
     type Item = Message<'o, Self>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -103,5 +103,5 @@ impl<'o, Owner: MessagesOwner> Iterator for Messages<'o, Owner> {
     }
 }
 
-unsafe impl<'o, Owner: MessagesOwner> Send for Messages<'o, Owner>{}
-unsafe impl<'o, Owner: MessagesOwner> Sync for Messages<'o, Owner>{}
+unsafe impl<'o, Owner: MessagesOwner + 'o> Send for Messages<'o, Owner>{}
+unsafe impl<'o, Owner: MessagesOwner + 'o> Sync for Messages<'o, Owner>{}

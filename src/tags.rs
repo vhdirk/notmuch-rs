@@ -14,18 +14,18 @@ pub trait TagsOwner{}
 
 
 #[derive(Debug)]
-pub struct Tags<'o, Owner: TagsOwner>(
+pub struct Tags<'o, Owner: TagsOwner + 'o>(
     *mut ffi::notmuch_tags_t,
     PhantomData<&'o Owner>,
 );
 
-impl<'o, Owner: TagsOwner> FromPtr<*mut ffi::notmuch_tags_t> for Tags<'o, Owner> {
+impl<'o, Owner: TagsOwner + 'o> FromPtr<*mut ffi::notmuch_tags_t> for Tags<'o, Owner> {
     fn from_ptr(ptr: *mut ffi::notmuch_tags_t) -> Tags<'o, Owner> {
         Tags(ptr, PhantomData)
     }
 }
 
-impl<'o, Owner: TagsOwner> Drop for Tags<'o, Owner> {
+impl<'o, Owner: TagsOwner + 'o> Drop for Tags<'o, Owner> {
     fn drop(&mut self) {
         unsafe {
             ffi::notmuch_tags_destroy(self.0)
@@ -33,7 +33,7 @@ impl<'o, Owner: TagsOwner> Drop for Tags<'o, Owner> {
     }
 }
 
-impl<'o, Owner: TagsOwner> Iterator for Tags<'o, Owner> {
+impl<'o, Owner: TagsOwner + 'o> Iterator for Tags<'o, Owner> {
     type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -57,5 +57,5 @@ impl<'o, Owner: TagsOwner> Iterator for Tags<'o, Owner> {
     }
 }
 
-unsafe impl<'o, Owner: TagsOwner> Send for Tags<'o, Owner>{}
-unsafe impl<'o, Owner: TagsOwner> Sync for Tags<'o, Owner>{}
+unsafe impl<'o, Owner: TagsOwner + 'o> Send for Tags<'o, Owner>{}
+unsafe impl<'o, Owner: TagsOwner + 'o> Sync for Tags<'o, Owner>{}
