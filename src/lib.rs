@@ -31,4 +31,4 @@ pub use threads::{Threads, ThreadsOwner};
 pub use thread::{Thread, ThreadOwner};
 pub use filenames::{Filenames, FilenamesOwner};
 
-pub use ffi::DatabaseMode;
+pub use ffi::{DatabaseMode, Sort};
