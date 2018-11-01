@@ -1,6 +1,8 @@
 extern crate notmuch;
 extern crate dirs;
 
+use notmuch::StreamingIterator;
+
 fn main() {
 
     let mut mail_path = dirs::home_dir().unwrap();
@@ -18,14 +20,10 @@ fn main() {
             let query = db.create_query(&"".to_string()).unwrap();
             let mut threads = query.search_threads().unwrap();
 
-            loop {
-                match threads.next() {
-                    Some(thread) => {
-                        println!("thread {:?} {:?}", thread.subject(), thread.authors());
-                    },
-                    None => { break }
-                }
+            while let Some(thread) = threads.next() {
+                println!("thread {:?} {:?}", thread.subject(), thread.authors());
             }
+
 
         },
         Err(err) =>{

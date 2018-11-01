@@ -1,34 +1,36 @@
-#![cfg_attr(feature="clippy", feature(plugin))]
-#![cfg_attr(feature="clippy", plugin(clippy))]
+#![cfg_attr(feature = "clippy", feature(plugin))]
+#![cfg_attr(feature = "clippy", plugin(clippy))]
 
 #[macro_use]
 mod macros;
 
 extern crate libc;
+extern crate supercow;
 
-mod utils;
 mod ffi;
+mod utils;
 
-mod error;
 mod database;
 mod directory;
-mod query;
-mod messages;
-mod message;
-mod tags;
-mod threads;
-mod thread;
+mod error;
 mod filenames;
+mod message;
+mod messages;
+mod query;
+mod tags;
+mod thread;
+mod threads;
 
-pub use error::Error;
 pub use database::Database;
 pub use directory::Directory;
-pub use query::Query;
-pub use messages::{Messages, MessagesOwner};
-pub use message::{Message, MessageOwner};
-pub use tags::{Tags, TagsOwner};
-pub use threads::{Threads, ThreadsOwner};
-pub use thread::{Thread, ThreadOwner};
+pub use error::Error;
 pub use filenames::{Filenames, FilenamesOwner};
+pub use message::{Message, MessageOwner};
+pub use messages::{Messages, MessagesOwner};
+pub use query::Query;
+pub use tags::{Tags, TagsOwner};
+pub use thread::{Thread, ThreadOwner};
+pub use threads::{Threads, ThreadsOwner};
 
 pub use ffi::{DatabaseMode, Sort};
+pub use utils::StreamingIterator;

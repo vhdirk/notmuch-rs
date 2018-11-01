@@ -14,6 +14,7 @@ travis-ci = { repository = "vhdirk/notmuch-rs" }
 [dependencies]
 libc = "0.2"
 clippy = { version = "0.0.193", optional = true }
+supercow = "0.1.0"
 
 [dev-dependencies]
 dirs = "1.0"

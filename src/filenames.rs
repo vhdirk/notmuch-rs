@@ -1,45 +1,43 @@
-use std::ops::Drop;
-use std::iter::Iterator;
-use std::marker::PhantomData;
-use std::path::PathBuf;
 use std::ffi::CStr;
+use std::iter::Iterator;
+use std::ops::Drop;
+use std::path::PathBuf;
 
-use utils::FromPtr;
-use Database;
+use supercow::Phantomcow;
+
 use ffi;
 
-pub trait FilenamesOwner{}
+pub trait FilenamesOwner {}
 
 #[derive(Debug)]
 pub(crate) struct FilenamesPtr {
-    pub ptr: *mut ffi::notmuch_filenames_t
+    pub ptr: *mut ffi::notmuch_filenames_t,
 }
 
 impl Drop for FilenamesPtr {
     fn drop(self: &mut Self) {
-        let valid = unsafe {
-            ffi::notmuch_filenames_valid(self.ptr)
-        };
+        let valid = unsafe { ffi::notmuch_filenames_valid(self.ptr) };
 
         if valid != 0 {
-            unsafe {
-                ffi::notmuch_filenames_destroy(self.ptr)
-            };
+            unsafe { ffi::notmuch_filenames_destroy(self.ptr) };
         }
     }
 }
- 
+
 #[derive(Debug)]
-pub struct Filenames<'o, Owner: FilenamesOwner + 'o>{
+pub struct Filenames<'o, Owner: FilenamesOwner + 'o> {
     pub(crate) handle: FilenamesPtr,
-    pub(crate) phantom: PhantomData<&'o Owner>
+    pub(crate) marker: Phantomcow<'o, Owner>,
 }
 
-impl<'o, Owner: FilenamesOwner + 'o> FromPtr<*mut ffi::notmuch_filenames_t> for Filenames<'o, Owner> {
-    fn from_ptr(ptr: *mut ffi::notmuch_filenames_t) -> Filenames<'o, Owner> {
-        Filenames{
-            handle: FilenamesPtr{ptr},
-            phantom: PhantomData
+impl<'o, Owner: FilenamesOwner + 'o> Filenames<'o, Owner> {
+    pub fn from_ptr<O: Into<Phantomcow<'o, Owner>>>(
+        ptr: *mut ffi::notmuch_filenames_t,
+        owner: O,
+    ) -> Filenames<'o, Owner> {
+        Filenames {
+            handle: FilenamesPtr { ptr },
+            marker: owner.into(),
         }
     }
 }
@@ -48,13 +46,10 @@ impl<'o, Owner: FilenamesOwner + 'o> Iterator for Filenames<'o, Owner> {
     type Item = PathBuf;
 
     fn next(self: &mut Self) -> Option<Self::Item> {
+        let valid = unsafe { ffi::notmuch_filenames_valid(self.handle.ptr) };
 
-        let valid = unsafe {
-            ffi::notmuch_filenames_valid(self.handle.ptr)
-        };
-
-        if valid == 0{
-            return None
+        if valid == 0 {
+            return None;
         }
 
         let ctag = unsafe {
@@ -67,5 +62,5 @@ impl<'o, Owner: FilenamesOwner + 'o> Iterator for Filenames<'o, Owner> {
     }
 }
 
-unsafe impl<'o, Owner: FilenamesOwner + 'o> Send for Filenames<'o, Owner>{}
-unsafe impl<'o, Owner: FilenamesOwner + 'o> Sync for Filenames<'o, Owner>{}
+unsafe impl<'o, Owner: FilenamesOwner + 'o> Send for Filenames<'o, Owner> {}
+unsafe impl<'o, Owner: FilenamesOwner + 'o> Sync for Filenames<'o, Owner> {}

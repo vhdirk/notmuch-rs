@@ -1,57 +1,52 @@
 use std::ops::Drop;
-use std::iter::Iterator;
-use std::marker::PhantomData;
 
-use utils::FromPtr;
-use Query;
-use Thread;
+use supercow::{Phantomcow, Supercow};
+use utils::StreamingIterator;
+
 use ffi;
 use thread::ThreadOwner;
+use Thread;
 
-pub trait ThreadsOwner{}
-
+pub trait ThreadsOwner {}
 
 #[derive(Debug)]
 pub(crate) struct ThreadsPtr {
-    pub ptr: *mut ffi::notmuch_threads_t
+    pub ptr: *mut ffi::notmuch_threads_t,
 }
 
 impl Drop for ThreadsPtr {
     fn drop(&mut self) {
-        unsafe {
-            ffi::notmuch_threads_destroy(self.ptr)
-        };
+        unsafe { ffi::notmuch_threads_destroy(self.ptr) };
     }
 }
 
 #[derive(Debug)]
-pub struct Threads<'o, Owner: ThreadsOwner + 'o>{
+pub struct Threads<'o, Owner: ThreadsOwner + 'o> {
     handle: ThreadsPtr,
-    phantom: PhantomData<&'o Owner>,
+    marker: Phantomcow<'o, Owner>,
 }
 
-impl<'o, Owner: ThreadsOwner + 'o> ThreadOwner for Threads<'o, Owner>{}
+impl<'o, Owner: ThreadsOwner + 'o> ThreadOwner for Threads<'o, Owner> {}
 
-
-impl<'o, Owner: ThreadsOwner + 'o> FromPtr<*mut ffi::notmuch_threads_t> for Threads<'o, Owner> {
-    fn from_ptr(ptr: *mut ffi::notmuch_threads_t) -> Threads<'o, Owner> {
-        Threads{
-            handle: ThreadsPtr{ptr},
-            phantom: PhantomData
+impl<'o, Owner: ThreadsOwner + 'o> Threads<'o, Owner> {
+    pub fn from_ptr<O: Into<Phantomcow<'o, Owner>>>(
+        ptr: *mut ffi::notmuch_threads_t,
+        owner: O,
+    ) -> Threads<'o, Owner> {
+        Threads {
+            handle: ThreadsPtr { ptr },
+            marker: owner.into(),
         }
     }
 }
 
-impl<'o, Owner: ThreadsOwner + 'o> Iterator for Threads<'o, Owner> {
-    type Item = Thread<'o, Self>;
+impl<'s, 'o: 's, Owner: ThreadsOwner + 'o> StreamingIterator<'s, Thread<'s, Self>>
+    for Threads<'o, Owner>
+{
+    fn next(&'s mut self) -> Option<Thread<'s, Self>> {
+        let valid = unsafe { ffi::notmuch_threads_valid(self.handle.ptr) };
 
-    fn next(self: &mut Self) -> Option<Self::Item> {
-
-        let valid = unsafe {
-            ffi::notmuch_threads_valid(self.handle.ptr)
-        };
-
-        if valid == 0{
+        if valid == 0 {
             return None;
         }
 
@@ -61,7 +56,7 @@ impl<'o, Owner: ThreadsOwner + 'o> Iterator for Threads<'o, Owner> {
             t
         };
 
-        Some(Self::Item::from_ptr(cthread))
+        Some(Thread::from_ptr(cthread, Supercow::borrowed(self)))
     }
 }
 

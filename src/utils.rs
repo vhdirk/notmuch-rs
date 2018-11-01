@@ -1,16 +1,5 @@
-use std::{
-    ffi,
-    str,
-};
 use libc;
-
-pub trait FromPtr<T> {
-    fn from_ptr(ptr: T) -> Self;
-}
-
-// pub trait NewFromPtr<T, P> {
-//     fn new(ptr: T, parent: Rc<P>) -> Self;
-// }
+use std::{ffi, str};
 
 pub trait ToStr {
     fn to_str<'a>(&self) -> Result<&'a str, str::Utf8Error>;
@@ -18,9 +7,7 @@ pub trait ToStr {
 
 impl ToStr for *const libc::c_char {
     fn to_str<'a>(&self) -> Result<&'a str, str::Utf8Error> {
-        str::from_utf8(unsafe {
-            ffi::CStr::from_ptr(*self)
-        }.to_bytes())
+        str::from_utf8(unsafe { ffi::CStr::from_ptr(*self) }.to_bytes())
     }
 }
 
@@ -30,13 +17,13 @@ pub trait ToString {
 
 impl ToString for *const libc::c_char {
     fn to_string(&self) -> String {
-        unsafe {
-            ffi::CStr::from_ptr(*self).to_string_lossy().into_owned()
-        }
+        unsafe { ffi::CStr::from_ptr(*self).to_string_lossy().into_owned() }
     }
 }
 
-
-pub struct Owner;
-
-
+/// A streaming iterator, as found in https://github.com/emk/rust-streaming
+pub trait StreamingIterator<'a, T> {
+    /// Return either the next item in the sequence, or `None` if all items
+    /// have been consumed.
+    fn next(&'a mut self) -> Option<T>;
+}

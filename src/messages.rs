@@ -1,63 +1,55 @@
 use std::ops::Drop;
-use std::iter::Iterator;
-use std::marker::PhantomData;
+
+use supercow::{Phantomcow, Supercow};
 
 use ffi;
-use utils::{
-    FromPtr,
-};
-use Query;
+use utils::StreamingIterator;
 use Message;
+use MessageOwner;
 use Tags;
-use message::MessageOwner;
-use tags::TagsOwner;
+use TagsOwner;
 
-pub trait MessagesOwner{
-}
+pub trait MessagesOwner {}
 
 #[derive(Debug)]
-pub(crate) struct MessagesPtr {
-    pub ptr: *mut ffi::notmuch_messages_t
+pub struct MessagesPtr {
+    pub ptr: *mut ffi::notmuch_messages_t,
 }
 
 impl Drop for MessagesPtr {
     fn drop(self: &mut Self) {
-        let valid = unsafe {
-            ffi::notmuch_messages_valid(self.ptr)
-        };
+        let valid = unsafe { ffi::notmuch_messages_valid(self.ptr) };
 
-        if valid == 0{
+        if valid == 0 {
             return;
         }
 
-        unsafe {
-            ffi::notmuch_messages_destroy(self.ptr)
-        };
+        unsafe { ffi::notmuch_messages_destroy(self.ptr) };
     }
 }
 
-
 #[derive(Debug)]
-pub struct Messages<'o, Owner: MessagesOwner + 'o>{
+pub struct Messages<'o, Owner: MessagesOwner + 'o> {
     pub(crate) handle: MessagesPtr,
-    phantom: PhantomData<&'o Owner>,
+    marker: Phantomcow<'o, Owner>,
 }
 
-impl<'o, Owner: MessagesOwner + 'o> FromPtr<*mut ffi::notmuch_messages_t> for Messages<'o, Owner> {
-    fn from_ptr(ptr: *mut ffi::notmuch_messages_t) -> Messages<'o, Owner> {
-        Messages{
-            handle: MessagesPtr{ptr},
-            phantom: PhantomData
+impl<'o, Owner: MessagesOwner + 'o> Messages<'o, Owner> {
+    pub fn from_ptr<O: Into<Phantomcow<'o, Owner>>>(
+        ptr: *mut ffi::notmuch_messages_t,
+        owner: O,
+    ) -> Messages<'o, Owner> {
+        Messages {
+            handle: MessagesPtr { ptr },
+            marker: owner.into(),
         }
     }
 }
 
-impl<'o, Owner: MessagesOwner + 'o> MessageOwner for Messages<'o, Owner>{}
-impl<'o, Owner: MessagesOwner + 'o> TagsOwner for Messages<'o, Owner>{}
+impl<'o, Owner: MessagesOwner + 'o> MessageOwner for Messages<'o, Owner> {}
+impl<'o, Owner: MessagesOwner + 'o> TagsOwner for Messages<'o, Owner> {}
 
-
-impl<'o, Owner: MessagesOwner + 'o> Messages<'o, Owner>{
-
+impl<'o, Owner: MessagesOwner + 'o> Messages<'o, Owner> {
     /**
      * Return a list of tags from all messages.
      *
@@ -71,26 +63,22 @@ impl<'o, Owner: MessagesOwner + 'o> Messages<'o, Owner>{
      *
      * The function returns NULL on error.
      */
-    pub fn collect_tags<'m>(self: &'o Self) -> Tags<'m, Self>{
-        Tags::from_ptr(unsafe {
-            ffi::notmuch_messages_collect_tags(self.handle.ptr)
-        })
+    pub fn collect_tags<'m>(self: &'o Self) -> Tags<'m, Self> {
+        Tags::from_ptr(
+            unsafe { ffi::notmuch_messages_collect_tags(self.handle.ptr) },
+            self,
+        )
     }
 }
 
+impl<'s, 'o: 's, Owner: MessagesOwner + 'o> StreamingIterator<'s, Message<'s, Self>>
+    for Messages<'o, Owner>
+{
+    fn next(&'s mut self) -> Option<Message<'s, Self>> {
+        let valid = unsafe { ffi::notmuch_messages_valid(self.handle.ptr) };
 
-
-impl<'o, Owner: MessagesOwner + 'o> Iterator for Messages<'o, Owner> {
-    type Item = Message<'o, Self>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-
-        let valid = unsafe {
-            ffi::notmuch_messages_valid(self.handle.ptr)
-        };
-
-        if valid == 0{
-            return None
+        if valid == 0 {
+            return None;
         }
 
         let cmsg = unsafe {
@@ -99,9 +87,9 @@ impl<'o, Owner: MessagesOwner + 'o> Iterator for Messages<'o, Owner> {
             msg
         };
 
-        Some(Self::Item::from_ptr(cmsg))
+        Some(Message::from_ptr(cmsg, Supercow::borrowed(self)))
     }
 }
 
-unsafe impl<'o, Owner: MessagesOwner + 'o> Send for Messages<'o, Owner>{}
-unsafe impl<'o, Owner: MessagesOwner + 'o> Sync for Messages<'o, Owner>{}
+unsafe impl<'o, Owner: MessagesOwner + 'o> Send for Messages<'o, Owner> {}
+unsafe impl<'o, Owner: MessagesOwner + 'o> Sync for Messages<'o, Owner> {}

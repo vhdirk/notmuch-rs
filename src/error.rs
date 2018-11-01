@@ -1,10 +1,5 @@
 use std;
-use std::{
-    error,
-    fmt,
-    io,
-    result,
-};
+use std::{error, fmt, io, result};
 
 use ffi;
 
@@ -36,7 +31,7 @@ impl std::error::Error for Error {
         match *self {
             Error::IoError(ref e) => Some(e),
             Error::NotmuchError(ref e) => Some(e),
-            Error::UnspecifiedError => None
+            Error::UnspecifiedError => None,
         }
     }
 }

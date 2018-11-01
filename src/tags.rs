@@ -1,35 +1,39 @@
-use std::ops::Drop;
-use std::iter::Iterator;
-use std::marker::PhantomData;
 use std::ffi::CStr;
+use std::iter::Iterator;
+use std::ops::Drop;
 
-use utils::{
-    FromPtr,
-};
+use supercow::Phantomcow;
 
-use Database;
 use ffi;
 
-pub trait TagsOwner{}
-
+pub trait TagsOwner {}
 
 #[derive(Debug)]
-pub struct Tags<'o, Owner: TagsOwner + 'o>(
-    *mut ffi::notmuch_tags_t,
-    PhantomData<&'o Owner>,
-);
+pub(crate) struct TagsPtr {
+    pub ptr: *mut ffi::notmuch_tags_t,
+}
 
-impl<'o, Owner: TagsOwner + 'o> FromPtr<*mut ffi::notmuch_tags_t> for Tags<'o, Owner> {
-    fn from_ptr(ptr: *mut ffi::notmuch_tags_t) -> Tags<'o, Owner> {
-        Tags(ptr, PhantomData)
+impl Drop for TagsPtr {
+    fn drop(&mut self) {
+        unsafe { ffi::notmuch_tags_destroy(self.ptr) };
     }
 }
 
-impl<'o, Owner: TagsOwner + 'o> Drop for Tags<'o, Owner> {
-    fn drop(&mut self) {
-        unsafe {
-            ffi::notmuch_tags_destroy(self.0)
-        };
+#[derive(Debug)]
+pub struct Tags<'o, Owner: TagsOwner + 'o> {
+    handle: TagsPtr,
+    marker: Phantomcow<'o, Owner>,
+}
+
+impl<'o, Owner: TagsOwner + 'o> Tags<'o, Owner> {
+    pub fn from_ptr<O: Into<Phantomcow<'o, Owner>>>(
+        ptr: *mut ffi::notmuch_tags_t,
+        owner: O,
+    ) -> Tags<'o, Owner> {
+        Tags {
+            handle: TagsPtr { ptr },
+            marker: owner.into(),
+        }
     }
 }
 
@@ -37,18 +41,15 @@ impl<'o, Owner: TagsOwner + 'o> Iterator for Tags<'o, Owner> {
     type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let valid = unsafe { ffi::notmuch_tags_valid(self.handle.ptr) };
 
-        let valid = unsafe {
-            ffi::notmuch_tags_valid(self.0)
-        };
-
-        if valid == 0{
-            return None
+        if valid == 0 {
+            return None;
         }
 
         let ctag = unsafe {
-            let t = ffi::notmuch_tags_get(self.0);
-            ffi::notmuch_tags_move_to_next(self.0);
+            let t = ffi::notmuch_tags_get(self.handle.ptr);
+            ffi::notmuch_tags_move_to_next(self.handle.ptr);
 
             CStr::from_ptr(t)
         };
@@ -57,5 +58,5 @@ impl<'o, Owner: TagsOwner + 'o> Iterator for Tags<'o, Owner> {
     }
 }
 
-unsafe impl<'o, Owner: TagsOwner + 'o> Send for Tags<'o, Owner>{}
-unsafe impl<'o, Owner: TagsOwner + 'o> Sync for Tags<'o, Owner>{}
+unsafe impl<'o, Owner: TagsOwner + 'o> Send for Tags<'o, Owner> {}
+unsafe impl<'o, Owner: TagsOwner + 'o> Sync for Tags<'o, Owner> {}
