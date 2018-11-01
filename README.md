@@ -1,5 +1,4 @@
-notmuch-rs
-==========
+# notmuch-rs
 
 This is not much more than a wrapper for the [notmuch](https://notmuchmail.org/) C api.
 
@@ -9,8 +8,8 @@ This is not much more than a wrapper for the [notmuch](https://notmuchmail.org/)
 [![License](https://img.shields.io/crates/l/notmuch.svg)](https://crates.io/crates/notmuch)
 
 ## Building
-**notmuch-rs** expects libnotmuch development files to be installed on your system.
 
+**notmuch-rs** expects libnotmuch development files to be installed on your system.
 
 ## Using
 
