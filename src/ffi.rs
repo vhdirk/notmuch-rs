@@ -47,14 +47,14 @@ notmuch_enum! {
 }
 
 impl notmuch_status_t {
-    pub fn is_ok(&self) -> bool {
-       match *self {
+    pub fn is_ok(self) -> bool {
+       match self {
             notmuch_status_t::NOTMUCH_STATUS_SUCCESS => true,
             _ => false,
         }
     }
 
-    pub fn is_err(&self) -> bool {
+    pub fn is_err(self) -> bool {
        !self.is_ok()
     }
 
