@@ -92,8 +92,9 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
     }
 
     pub fn header(&self, name: &str) -> Result<&str> {
+        let name = CString::new(name).unwrap();
         let ret = unsafe {
-            ffi::notmuch_message_get_header(self.handle.ptr, CString::new(name).unwrap().as_ptr())
+            ffi::notmuch_message_get_header(self.handle.ptr, name.as_ptr())
         };
         if ret.is_null() {
             Err(Error::UnspecifiedError)
@@ -110,14 +111,16 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
     }
 
     pub fn add_tag(self: &Self, tag: &str) -> Status {
+        let tag = CString::new(tag).unwrap();
         Status::from(unsafe {
-            ffi::notmuch_message_add_tag(self.handle.ptr, CString::new(tag).unwrap().as_ptr())
+            ffi::notmuch_message_add_tag(self.handle.ptr, tag.as_ptr())
         })
     }
 
     pub fn remove_tag(self: &Self, tag: &str) -> Status {
+        let tag = CString::new(tag).unwrap();
         Status::from(unsafe {
-            ffi::notmuch_message_remove_tag(self.handle.ptr, CString::new(tag).unwrap().as_ptr())
+            ffi::notmuch_message_remove_tag(self.handle.ptr, tag.as_ptr())
         })
     }
 
