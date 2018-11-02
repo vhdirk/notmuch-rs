@@ -58,7 +58,7 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
         tid.to_str().unwrap().to_string()
     }
 
-    pub fn replies<'s>(self: &'s Self) -> Messages<'s, Self> {
+    pub fn replies(self: &Self) -> Messages<Self> {
         Messages::from_ptr(
             unsafe { ffi::notmuch_message_get_replies(self.handle.ptr) },
             self,
@@ -102,7 +102,7 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
         }
     }
 
-    pub fn tags<'m>(&'m self) -> Tags<'m, Self> {
+    pub fn tags(&self) -> Tags<Self> {
         Tags::from_ptr(
             unsafe { ffi::notmuch_message_get_tags(self.handle.ptr) },
             self,
