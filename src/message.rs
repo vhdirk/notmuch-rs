@@ -5,6 +5,7 @@ use supercow::Phantomcow;
 
 use error::{Error, Result};
 use ffi;
+use ffi::Status;
 use utils::ToStr;
 use Filenames;
 use FilenamesOwner;
@@ -84,6 +85,12 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
         )
     }
 
+    pub fn date(&self) -> i64 {
+        unsafe {
+            ffi::notmuch_message_get_date(self.handle.ptr)
+        }
+    }
+
     pub fn header(&self, name: &str) -> Result<&str> {
         let ret = unsafe {
             ffi::notmuch_message_get_header(self.handle.ptr, CString::new(name).unwrap().as_ptr())
@@ -100,6 +107,24 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
             unsafe { ffi::notmuch_message_get_tags(self.handle.ptr) },
             self,
         )
+    }
+
+    pub fn add_tag(self: &Self, tag: &str) -> Status {
+        Status::from(unsafe {
+            ffi::notmuch_message_add_tag(self.handle.ptr, CString::new(tag).unwrap().as_ptr())
+        })
+    }
+
+    pub fn remove_tag(self: &Self, tag: &str) -> Status {
+        Status::from(unsafe {
+            ffi::notmuch_message_remove_tag(self.handle.ptr, CString::new(tag).unwrap().as_ptr())
+        })
+    }
+
+    pub fn remove_all_tags(self: &Self) -> Status {
+        Status::from(unsafe {
+            ffi::notmuch_message_remove_all_tags(self.handle.ptr)
+        })
     }
 }
 
