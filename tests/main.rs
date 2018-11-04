@@ -1,6 +1,8 @@
 extern crate notmuch;
 extern crate dirs;
 
+use std::sync::Arc;
+
 use notmuch::StreamingIterator;
 
 fn main() {
@@ -16,9 +18,18 @@ fn main() {
                 let rev = db.revision();
                 println!("db revision: {:?}", rev);
             }
-            
-            let query = db.create_query(&"".to_string()).unwrap();
+            let query = {
+                let dbr = Arc::new(db);
+
+                notmuch::Query::create(dbr.clone(), &"".to_string()).unwrap()
+            };
+
+
             let mut threads = query.search_threads().unwrap();
+
+
+            
+            //let mut threads = db.create_query(&"".to_string()).unwrap().search_threads().unwrap();
 
             while let Some(thread) = threads.next() {
                 println!("thread {:?} {:?}", thread.subject(), thread.authors());

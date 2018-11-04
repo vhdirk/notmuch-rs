@@ -27,7 +27,7 @@ pub use error::Error;
 pub use filenames::{Filenames, FilenamesOwner};
 pub use message::{Message, MessageOwner};
 pub use messages::{Messages, MessagesOwner};
-pub use query::Query;
+pub use query::{Query, QueryExt};
 pub use tags::{Tags, TagsOwner};
 pub use thread::{Thread, ThreadOwner};
 pub use threads::{Threads, ThreadsOwner};

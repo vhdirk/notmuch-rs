@@ -35,12 +35,22 @@ pub struct Messages<'o, Owner: MessagesOwner + 'o> {
 }
 
 impl<'o, Owner: MessagesOwner + 'o> Messages<'o, Owner> {
-    pub fn from_ptr<O: Into<Phantomcow<'o, Owner>>>(
+    pub(crate) fn from_ptr<O: Into<Phantomcow<'o, Owner>>>(
         ptr: *mut ffi::notmuch_messages_t,
         owner: O,
     ) -> Messages<'o, Owner> {
         Messages {
             handle: MessagesPtr { ptr },
+            marker: owner.into(),
+        }
+    }
+
+    pub(crate) fn from_handle<O: Into<Phantomcow<'o, Owner>>>(
+        handle: MessagesPtr,
+        owner: O,
+    ) -> Messages<'o, Owner> {
+        Messages {
+            handle,
             marker: owner.into(),
         }
     }

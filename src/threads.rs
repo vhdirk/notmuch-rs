@@ -38,6 +38,15 @@ impl<'o, Owner: ThreadsOwner + 'o> Threads<'o, Owner> {
             marker: owner.into(),
         }
     }
+    pub(crate) fn from_handle<O: Into<Phantomcow<'o, Owner>>>(
+        handle: ThreadsPtr,
+        owner: O,
+    ) -> Threads<'o, Owner> {
+        Threads {
+            handle,
+            marker: owner.into(),
+        }
+    }
 }
 
 impl<'s, 'o: 's, Owner: ThreadsOwner + 'o> StreamingIterator<'s, Thread<'s, Self>>

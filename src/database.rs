@@ -10,6 +10,7 @@ use ffi;
 use utils::ToStr;
 use Directory;
 use Query;
+use query::QueryPtr;
 use Tags;
 use TagsOwner;
 
@@ -33,6 +34,17 @@ pub(crate) struct DatabasePtr {
 impl Drop for DatabasePtr {
     fn drop(&mut self) {
         unsafe { ffi::notmuch_database_destroy(self.ptr) };
+    }
+}
+
+impl DatabasePtr {
+
+    pub(crate) fn create_query(&self, query_string: &str) -> Result<QueryPtr> {
+        let query_str = CString::new(query_string).unwrap();
+
+        let query = unsafe { ffi::notmuch_query_create(self.ptr, query_str.as_ptr()) };
+        
+        Ok(QueryPtr { ptr: query })
     }
 }
 
@@ -74,7 +86,7 @@ impl Database {
 
         Ok(())
     }
-
+ 
     pub fn compact<P: AsRef<Path>, F: FnMut(&str)>(
         path: &P,
         backup_path: Option<&P>,
@@ -214,11 +226,9 @@ impl Database {
     }
 
     pub fn create_query<'d>(&'d self, query_string: &str) -> Result<Query<'d>> {
-        let query_str = CString::new(query_string).unwrap();
-
-        let query = unsafe { ffi::notmuch_query_create(self.handle.ptr, query_str.as_ptr()) };
-
-        Ok(Query::from_ptr(query, self))
+        self.handle.create_query(query_string).map(move |handle|{
+            Query::from_handle(handle, self)
+        })
     }
 
     pub fn all_tags<'d>(&'d self) -> Result<Tags<'d, Self>> {
