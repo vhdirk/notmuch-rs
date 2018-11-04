@@ -94,7 +94,6 @@ impl<'d> Query<'d> {
 pub trait QueryExt<'d>{
     fn search_threads<'q, Q: Into<Supercow<'q, Query<'d>>>>(query: Q) -> Result<Threads<'q, Query<'d>>>;
     fn search_messages<'q, Q: Into<Supercow<'q, Query<'d>>>>(query: Q) -> Result<Messages<'q, Query<'d>>>;
-
 }
 
 impl<'d> QueryExt<'d> for Query<'d>{

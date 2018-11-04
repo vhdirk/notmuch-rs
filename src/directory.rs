@@ -72,5 +72,9 @@ impl<'d> Directory<'d> {
     }
 }
 
+pub trait DirectoryExt<'d>{
+
+}
+
 unsafe impl<'d> Send for Directory<'d> {}
 unsafe impl<'d> Sync for Directory<'d> {}

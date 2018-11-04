@@ -4,6 +4,7 @@ extern crate dirs;
 use std::sync::Arc;
 
 use notmuch::StreamingIterator;
+use notmuch::{Query, QueryExt};
 
 fn main() {
 
@@ -25,11 +26,14 @@ fn main() {
             };
 
 
-            let mut threads = query.search_threads().unwrap();
+            // let mut threads = query.search_threads().unwrap();
 
 
             
-            //let mut threads = db.create_query(&"".to_string()).unwrap().search_threads().unwrap();
+            // let mut threads = db.create_query(&"".to_string()).unwrap().search_threads().unwrap();
+
+            let mut threads = <Query as QueryExt>::search_threads(query).unwrap();
+
 
             while let Some(thread) = threads.next() {
                 println!("thread {:?} {:?}", thread.subject(), thread.authors());

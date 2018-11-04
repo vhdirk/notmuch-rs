@@ -69,5 +69,9 @@ impl<'s, 'o: 's, Owner: ThreadsOwner + 'o> StreamingIterator<'s, Thread<'s, Self
     }
 }
 
+pub trait ThreadsExt<'o, Owner: ThreadsOwner + 'o>{
+
+}
+
 unsafe impl<'o, Owner: ThreadsOwner + 'o> Send for Threads<'o, Owner> {}
 unsafe impl<'o, Owner: ThreadsOwner + 'o> Sync for Threads<'o, Owner> {}

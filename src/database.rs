@@ -238,5 +238,10 @@ impl Database {
     }
 }
 
+pub trait DatabaseExt{
+
+}
+
+
 unsafe impl Send for Database {}
 unsafe impl Sync for Database {}

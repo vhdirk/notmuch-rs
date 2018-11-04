@@ -106,5 +106,9 @@ impl<'o, Owner: ThreadOwner + 'o> Thread<'o, Owner> {
     }
 }
 
+pub trait ThreadExt<'o, Owner: ThreadOwner + 'o>{
+
+}
+
 unsafe impl<'o, Owner: ThreadOwner + 'o> Send for Thread<'o, Owner> {}
 unsafe impl<'o, Owner: ThreadOwner + 'o> Sync for Thread<'o, Owner> {}

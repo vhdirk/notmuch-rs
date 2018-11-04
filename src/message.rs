@@ -1,7 +1,7 @@
 use std::ffi::CString;
 use std::ops::Drop;
 use std::path::PathBuf;
-use supercow::Phantomcow;
+use supercow::{Supercow, Phantomcow};
 
 use error::{Error, Result};
 use ffi;
@@ -128,6 +128,26 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
         Status::from(unsafe {
             ffi::notmuch_message_remove_all_tags(self.handle.ptr)
         })
+    }
+}
+
+
+pub trait MessageExt<'o, Owner: MessageOwner + 'o>{
+
+    fn replies<'s, M: Into<Supercow<'s, Message<'o, Owner>>>>(message: M) -> Messages<'s, Message<'o, Owner>> {
+        let messageref = message.into();
+        Messages::from_ptr(
+            unsafe { ffi::notmuch_message_get_replies(messageref.handle.ptr) },
+            Supercow::phantom(messageref)
+        )
+    }
+
+    fn filenames<'s, M: Into<Supercow<'s, Message<'o, Owner>>>>(message: M) -> Filenames<'s, Message<'o, Owner>> {
+        let messageref = message.into();
+        Filenames::from_ptr(
+            unsafe { ffi::notmuch_message_get_filenames(messageref.handle.ptr) },
+            Supercow::phantom(messageref)
+        )
     }
 }
 
