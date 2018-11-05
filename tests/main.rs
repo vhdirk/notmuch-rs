@@ -32,9 +32,7 @@ fn main() {
 
             let threads = Arc::new(<Query as QueryExt>::search_threads(query).unwrap());
 
-            while let Some(thread) = <Threads<Query> as StreamingIteratorExt<
-                Thread<Threads<Query>>,
-            >>::next(threads.clone())
+            while let Some(thread) = <Threads<_> as StreamingIteratorExt<_>>::next(threads.clone())
             {
                 println!("thread {:?} {:?}", thread.subject(), thread.authors());
             }
