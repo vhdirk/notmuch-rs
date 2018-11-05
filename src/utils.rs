@@ -1,6 +1,8 @@
 use libc;
 use std::{ffi, str};
 
+use supercow::Supercow;
+
 pub trait ToStr {
     fn to_str<'a>(&self) -> Result<&'a str, str::Utf8Error>;
 }
@@ -27,3 +29,11 @@ pub trait StreamingIterator<'a, T> {
     /// have been consumed.
     fn next(&'a mut self) -> Option<T>;
 }
+
+pub trait StreamingIteratorExt<'a, T> {
+    /// Return either the next item in the sequence, or `None` if all items
+    /// have been consumed.
+    fn next<S: Into<Supercow<'a, Self>>>(s: S) -> Option<T>
+      where Self: Sized + 'a;
+}
+

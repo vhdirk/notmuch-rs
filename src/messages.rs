@@ -3,7 +3,7 @@ use std::ops::Drop;
 use supercow::{Phantomcow, Supercow};
 
 use ffi;
-use utils::StreamingIterator;
+use utils::{StreamingIterator, StreamingIteratorExt};
 use Message;
 use MessageOwner;
 use Tags;
@@ -56,15 +56,6 @@ impl<'o, Owner: MessagesOwner + 'o> Messages<'o, Owner> {
     }
 }
 
-
-pub trait MessagesExt<'o, Owner: MessagesOwner + 'o>{
-
-}
-
-impl<'o, Owner: MessagesOwner + 'o> MessagesExt<'o, Owner> for Messages<'o, Owner>{
-    
-}
-
 impl<'o, Owner: MessagesOwner + 'o> MessageOwner for Messages<'o, Owner> {}
 impl<'o, Owner: MessagesOwner + 'o> TagsOwner for Messages<'o, Owner> {}
 
@@ -94,19 +85,35 @@ impl<'s, 'o: 's, Owner: MessagesOwner + 'o> StreamingIterator<'s, Message<'s, Se
     for Messages<'o, Owner>
 {
     fn next(&'s mut self) -> Option<Message<'s, Self>> {
-        let valid = unsafe { ffi::notmuch_messages_valid(self.handle.ptr) };
+        <Self as StreamingIteratorExt<'s, Message<'s, Self>>>::next(Supercow::borrowed(self))
+    }
+}
+
+pub trait MessagesExt<'o, Owner: MessagesOwner + 'o> {
+
+}
+
+impl<'o, Owner: MessagesOwner + 'o> MessagesExt<'o, Owner> for Messages<'o, Owner>{
+    
+}
+
+impl<'s, 'o: 's, Owner: MessagesOwner + 'o> StreamingIteratorExt<'s, Message<'s, Self>> for Messages<'o, Owner>
+{
+    fn next<S: Into<Supercow<'s, Messages<'o, Owner>>>>(messages: S) -> Option<Message<'s, Self>>{
+        let messagesref = messages.into();
+        let valid = unsafe { ffi::notmuch_messages_valid(messagesref.handle.ptr) };
 
         if valid == 0 {
             return None;
         }
 
         let cmsg = unsafe {
-            let msg = ffi::notmuch_messages_get(self.handle.ptr);
-            ffi::notmuch_messages_move_to_next(self.handle.ptr);
+            let msg = ffi::notmuch_messages_get(messagesref.handle.ptr);
+            ffi::notmuch_messages_move_to_next(messagesref.handle.ptr);
             msg
         };
 
-        Some(Message::from_ptr(cmsg, Supercow::borrowed(self)))
+        Some(Message::from_ptr(cmsg, Supercow::phantom(messagesref)))
     }
 }
 

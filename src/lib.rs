@@ -21,16 +21,16 @@ mod tags;
 mod thread;
 mod threads;
 
-pub use database::Database;
-pub use directory::Directory;
+pub use database::{Database, DatabaseExt};
+pub use directory::{Directory, DirectoryExt};
 pub use error::Error;
 pub use filenames::{Filenames, FilenamesOwner};
-pub use message::{Message, MessageOwner};
-pub use messages::{Messages, MessagesOwner};
+pub use message::{Message, MessageExt, MessageOwner};
+pub use messages::{Messages, MessagesExt, MessagesOwner};
 pub use query::{Query, QueryExt};
-pub use tags::{Tags, TagsOwner};
-pub use thread::{Thread, ThreadOwner};
-pub use threads::{Threads, ThreadsOwner};
+pub use tags::{Tags, TagsExt, TagsOwner};
+pub use thread::{Thread, ThreadExt, ThreadOwner};
+pub use threads::{Threads, ThreadsExt, ThreadsOwner};
 
 pub use ffi::{DatabaseMode, Sort};
-pub use utils::StreamingIterator;
+pub use utils::{StreamingIterator, StreamingIteratorExt};

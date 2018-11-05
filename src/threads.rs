@@ -1,7 +1,7 @@
 use std::ops::Drop;
 
 use supercow::{Phantomcow, Supercow};
-use utils::StreamingIterator;
+use utils::{StreamingIterator, StreamingIteratorExt};
 
 use ffi;
 use thread::ThreadOwner;
@@ -38,34 +38,13 @@ impl<'o, Owner: ThreadsOwner + 'o> Threads<'o, Owner> {
             marker: owner.into(),
         }
     }
-    pub(crate) fn from_handle<O: Into<Phantomcow<'o, Owner>>>(
-        handle: ThreadsPtr,
-        owner: O,
-    ) -> Threads<'o, Owner> {
-        Threads {
-            handle,
-            marker: owner.into(),
-        }
-    }
 }
 
 impl<'s, 'o: 's, Owner: ThreadsOwner + 'o> StreamingIterator<'s, Thread<'s, Self>>
     for Threads<'o, Owner>
 {
     fn next(&'s mut self) -> Option<Thread<'s, Self>> {
-        let valid = unsafe { ffi::notmuch_threads_valid(self.handle.ptr) };
-
-        if valid == 0 {
-            return None;
-        }
-
-        let cthread = unsafe {
-            let t = ffi::notmuch_threads_get(self.handle.ptr);
-            ffi::notmuch_threads_move_to_next(self.handle.ptr);
-            t
-        };
-
-        Some(Thread::from_ptr(cthread, Supercow::borrowed(self)))
+        <Self as StreamingIteratorExt<'s, Thread<'s, Self>>>::next(Supercow::borrowed(self))
     }
 }
 
@@ -75,6 +54,26 @@ pub trait ThreadsExt<'o, Owner: ThreadsOwner + 'o>{
 
 impl<'o, Owner: ThreadsOwner + 'o> ThreadsExt<'o, Owner> for Threads<'o, Owner>{
     
+}
+
+impl<'s, 'o: 's, Owner: ThreadsOwner + 'o> StreamingIteratorExt<'s, Thread<'s, Self>> for Threads<'o, Owner>
+{
+    fn next<S: Into<Supercow<'s, Threads<'o, Owner>>>>(threads: S) -> Option<Thread<'s, Self>>{
+        let threadsref = threads.into();
+        let valid = unsafe { ffi::notmuch_threads_valid(threadsref.handle.ptr) };
+
+        if valid == 0 {
+            return None;
+        }
+
+        let cmsg = unsafe {
+            let msg = ffi::notmuch_threads_get(threadsref.handle.ptr);
+            ffi::notmuch_threads_move_to_next(threadsref.handle.ptr);
+            msg
+        };
+
+        Some(Thread::from_ptr(cmsg, Supercow::phantom(threadsref)))
+    }
 }
 
 unsafe impl<'o, Owner: ThreadsOwner + 'o> Send for Threads<'o, Owner> {}
