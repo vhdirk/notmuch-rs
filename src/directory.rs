@@ -2,7 +2,7 @@ use std::ffi::{CStr, CString};
 use std::ops::Drop;
 use std::path::Path;
 use std::ptr;
-use supercow::{Supercow, Phantomcow};
+use supercow::{Phantomcow, Supercow};
 
 use error::Result;
 use ffi;
@@ -45,8 +45,10 @@ impl<'d> Directory<'d> {
     }
 }
 
-pub trait DirectoryExt<'d>{
-    fn child_directories<'s, S: Into<Supercow<'s, Directory<'d>>>>(directory: S) -> Filenames<'s, Directory<'d>> {
+pub trait DirectoryExt<'d> {
+    fn child_directories<'s, S: Into<Supercow<'s, Directory<'d>>>>(
+        directory: S,
+    ) -> Filenames<'s, Directory<'d>> {
         let dir = directory.into();
         Filenames::from_ptr(
             unsafe { ffi::notmuch_directory_get_child_directories(dir.handle.ptr) },
@@ -55,10 +57,7 @@ pub trait DirectoryExt<'d>{
     }
 }
 
-impl<'d> DirectoryExt<'d> for Directory<'d>{
-
-}
-
+impl<'d> DirectoryExt<'d> for Directory<'d> {}
 
 unsafe impl<'d> Send for Directory<'d> {}
 unsafe impl<'d> Sync for Directory<'d> {}

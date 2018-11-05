@@ -2,26 +2,11 @@
 
 //! Re-presentation of the notmuch C API.
 
-use libc::{
-    c_char,
-    c_double,
-    c_int,
-    c_uint,
-    c_void,
-    c_ulong,
-    time_t,
-};
+use libc::{c_char, c_double, c_int, c_uint, c_ulong, c_void, time_t};
 
-use std::{
-    error,
-    fmt,
-    str,
-};
+use std::{error, fmt, str};
 
-use utils::{
-    ToStr,
-};
-
+use utils::ToStr;
 
 notmuch_enum! {
     #[repr(C)]
@@ -48,26 +33,28 @@ notmuch_enum! {
 
 impl notmuch_status_t {
     pub fn is_ok(self) -> bool {
-       match self {
+        match self {
             notmuch_status_t::NOTMUCH_STATUS_SUCCESS => true,
             _ => false,
         }
     }
 
     pub fn is_err(self) -> bool {
-       !self.is_ok()
+        !self.is_ok()
     }
 
     pub fn as_result(self) -> Result<(), Self> {
-        if self.is_ok() { Ok(()) } else { Err(self) }
+        if self.is_ok() {
+            Ok(())
+        } else {
+            Err(self)
+        }
     }
 }
 
 impl ToStr for Status {
     fn to_str<'a>(&self) -> Result<&'a str, str::Utf8Error> {
-        unsafe {
-            notmuch_status_to_string((*self).into())
-        }.to_str()
+        unsafe { notmuch_status_to_string((*self).into()) }.to_str()
     }
 }
 
@@ -124,19 +111,30 @@ notmuch_enum! {
     }
 }
 
-#[repr(C)] pub struct notmuch_database_t(c_void);
-#[repr(C)] pub struct notmuch_query_t(c_void);
-#[repr(C)] pub struct notmuch_threads_t(c_void);
-#[repr(C)] pub struct notmuch_thread_t(c_void);
-#[repr(C)] pub struct notmuch_messages_t(c_void);
-#[repr(C)] pub struct notmuch_message_t(c_void);
-#[repr(C)] pub struct notmuch_tags_t(c_void);
-#[repr(C)] pub struct notmuch_directory_t(c_void);
-#[repr(C)] pub struct notmuch_filenames_t(c_void);
-#[repr(C)] pub struct notmuch_message_properties_t(c_void);
-#[repr(C)] pub struct notmuch_config_list_t(c_void);
-#[repr(C)] pub struct notmuch_indexopts_t(c_void);
-
+#[repr(C)]
+pub struct notmuch_database_t(c_void);
+#[repr(C)]
+pub struct notmuch_query_t(c_void);
+#[repr(C)]
+pub struct notmuch_threads_t(c_void);
+#[repr(C)]
+pub struct notmuch_thread_t(c_void);
+#[repr(C)]
+pub struct notmuch_messages_t(c_void);
+#[repr(C)]
+pub struct notmuch_message_t(c_void);
+#[repr(C)]
+pub struct notmuch_tags_t(c_void);
+#[repr(C)]
+pub struct notmuch_directory_t(c_void);
+#[repr(C)]
+pub struct notmuch_filenames_t(c_void);
+#[repr(C)]
+pub struct notmuch_message_properties_t(c_void);
+#[repr(C)]
+pub struct notmuch_config_list_t(c_void);
+#[repr(C)]
+pub struct notmuch_indexopts_t(c_void);
 
 pub type notmuch_compact_status_cb_t = extern "C" fn(message: *const c_char, closure: *mut c_void);
 pub type notmuch_database_upgrade_cb_t = extern "C" fn(closure: *mut c_void, progress: c_double);
@@ -146,14 +144,12 @@ pub const TRUE: notmuch_bool_t = 1;
 pub const FALSE: notmuch_bool_t = 0;
 
 #[link(name = "notmuch")]
-extern {
+extern "C" {
 
     /// Get a string representation of a `notmuch_status_t` value.
     ///
     /// The result is read-only.
-    pub fn notmuch_status_to_string(
-        status: notmuch_status_t,
-    ) -> *const c_char;
+    pub fn notmuch_status_to_string(status: notmuch_status_t) -> *const c_char;
 
     /// Create a new, empty notmuch database located at 'path'.
     ///
@@ -195,10 +191,11 @@ extern {
     /// Like `notmuch_database_create`, except optionally return an error
     /// message. This message is allocated by malloc and should be freed by
     /// the caller.
-    pub fn notmuch_database_create_verbose(path: *const c_char,
-                                           database: *mut *mut notmuch_database_t,
-                                           error_message: *mut *const c_char)
-                                           -> notmuch_status_t;
+    pub fn notmuch_database_create_verbose(
+        path: *const c_char,
+        database: *mut *mut notmuch_database_t,
+        error_message: *mut *const c_char,
+    ) -> notmuch_status_t;
 
     /// Open an existing notmuch database located at 'path'.
     ///
@@ -239,11 +236,12 @@ extern {
     /// Like notmuch_database_open, except optionally return an error
     /// message. This message is allocated by malloc and should be freed by
     /// the caller.
-    pub fn notmuch_database_open_verbose(path: *const c_char,
-                                         mode: notmuch_database_mode_t,
-                                         database: *mut *mut notmuch_database_t,
-                                         error_message: *mut *mut c_char)
-                                         -> notmuch_status_t;
+    pub fn notmuch_database_open_verbose(
+        path: *const c_char,
+        mode: notmuch_database_mode_t,
+        database: *mut *mut notmuch_database_t,
+        error_message: *mut *mut c_char,
+    ) -> notmuch_status_t;
 
     /// Retrieve last status string for given database.
     pub fn notmuch_database_status_string(notmuch: *mut notmuch_database_t) -> *const c_char;
@@ -274,9 +272,7 @@ extern {
     /// * `notmuch_status_t::XAPIAN_EXCEPTION`: A Xapian exception occurred; the
     /// 	  database has been closed but there are no guarantees the
     /// 	  changes to the database, if any, have been flushed to disk.
-    pub fn notmuch_database_close(
-        database: *mut notmuch_database_t,
-    ) -> notmuch_status_t;
+    pub fn notmuch_database_close(database: *mut notmuch_database_t) -> notmuch_status_t;
 
     /// Compact a notmuch database, backing up the original database to the
     /// given path.
@@ -299,22 +295,16 @@ extern {
     ///
     /// Return value as in `notmuch_database_close` if the database was open;
     /// `notmuch_database_destroy` itself has no failure modes.
-    pub fn notmuch_database_destroy(
-        database: *mut notmuch_database_t,
-    ) -> notmuch_status_t;
+    pub fn notmuch_database_destroy(database: *mut notmuch_database_t) -> notmuch_status_t;
 
     /// Return the database path of the given database.
     ///
     /// The return value is a string owned by notmuch so should not be
     /// modified nor freed by the caller.
-    pub fn notmuch_database_get_path(
-        database: *mut notmuch_database_t,
-    ) -> *const c_char;
+    pub fn notmuch_database_get_path(database: *mut notmuch_database_t) -> *const c_char;
 
     /// Return the database format version of the given database.
-    pub fn notmuch_database_get_version(
-        database: *mut notmuch_database_t,
-    ) -> c_uint;
+    pub fn notmuch_database_get_version(database: *mut notmuch_database_t) -> c_uint;
 
     /// Can the database be upgraded to a newer database version?
     ///
@@ -324,9 +314,7 @@ extern {
     /// fail with `notmuch_status_t::UPGRADE_REQUIRED`.  This always returns
     /// FALSE for a read-only database because there's no way to upgrade a
     /// read-only database.
-    pub fn notmuch_database_needs_upgrade(
-        database: *mut notmuch_database_t,
-    ) -> notmuch_bool_t;
+    pub fn notmuch_database_needs_upgrade(database: *mut notmuch_database_t) -> notmuch_bool_t;
 
     /// Upgrade the current database to the latest supported version.
     ///
@@ -343,12 +331,11 @@ extern {
     /// the range of [0.0 .. 1.0] indicating the progress made so far in
     /// the upgrade process.  The argument 'closure' is passed verbatim to
     /// any callback invoked.
-    pub fn notmuch_database_upgrade(database: *mut notmuch_database_t,
-                                    progress_notify: Option<extern "C" fn(closure: *mut c_void,
-                                                                          progress: c_double)
-                                                                         >,
-                                    closure: *mut c_void)
-                                    -> notmuch_status_t;
+    pub fn notmuch_database_upgrade(
+        database: *mut notmuch_database_t,
+        progress_notify: Option<extern "C" fn(closure: *mut c_void, progress: c_double)>,
+        closure: *mut c_void,
+    ) -> notmuch_status_t;
 
     /// Begin an atomic database operation.
     ///
@@ -367,9 +354,7 @@ extern {
     ///
     /// * `notmuch_status_t::XAPIAN_EXCEPTION`: A Xapian exception occurred;
     /// 	  atomic section not entered.
-    pub fn notmuch_database_begin_atomic(
-        notmuch: *mut notmuch_database_t,
-    ) -> notmuch_status_t;
+    pub fn notmuch_database_begin_atomic(notmuch: *mut notmuch_database_t) -> notmuch_status_t;
 
     /// Indicate the end of an atomic database operation.
     ///
@@ -382,9 +367,7 @@ extern {
     ///
     /// * `notmuch_status_t::UNBALANCED_ATOMIC`: The database is not currently in
     /// 	  an atomic section.
-    pub fn notmuch_database_end_atomic(
-        notmuch: *mut notmuch_database_t,
-    ) -> notmuch_status_t;
+    pub fn notmuch_database_end_atomic(notmuch: *mut notmuch_database_t) -> notmuch_status_t;
 
     /// Return the committed database revision and UUID.
     ///
@@ -398,9 +381,10 @@ extern {
     /// The UUID is a NUL-terminated opaque string that uniquely identifies
     /// this database.  Two revision numbers are only comparable if they
     /// have the same database UUID.
-    pub fn notmuch_database_get_revision(notmuch: *mut notmuch_database_t,
-                                         uuid: *mut *const c_char)
-                                         -> c_ulong;
+    pub fn notmuch_database_get_revision(
+        notmuch: *mut notmuch_database_t,
+        uuid: *mut *const c_char,
+    ) -> c_ulong;
 
     /// Retrieve a directory object from the database for 'path'.
     ///
@@ -491,12 +475,11 @@ extern {
     ///
     /// @since libnotmuch 5.1 (notmuch 0.26)
     pub fn notmuch_database_index_file(
-         database: *mut notmuch_database_t,
-         filename: *const c_char,
-         indexopts: *mut notmuch_indexopts_t,
-         message: *mut *mut notmuch_message_t,
-     ) -> notmuch_status_t;
-
+        database: *mut notmuch_database_t,
+        filename: *const c_char,
+        indexopts: *mut notmuch_indexopts_t,
+        message: *mut *mut notmuch_message_t,
+    ) -> notmuch_status_t;
 
     /// Deprecated alias for notmuch_database_index_file called with
     /// NULL indexopts.
@@ -603,9 +586,7 @@ extern {
     /// resulting list contains all tags from all messages found in the database.
     ///
     /// On error this function returns NULL.
-    pub fn notmuch_database_get_all_tags(
-        db: *mut notmuch_database_t,
-    ) -> *mut notmuch_tags_t;
+    pub fn notmuch_database_get_all_tags(db: *mut notmuch_database_t) -> *mut notmuch_tags_t;
 
     /// Create a new query for 'database'.
     ///
@@ -636,9 +617,7 @@ extern {
     ) -> *mut notmuch_query_t;
 
     /// Return the query_string of this query. See `notmuch_query_create`.
-    pub fn notmuch_query_get_query_string(
-        query: *mut notmuch_query_t,
-    ) -> *const c_char;
+    pub fn notmuch_query_get_query_string(query: *mut notmuch_query_t) -> *const c_char;
 
     /// Return the notmuch database of this query. See `notmuch_query_create`.
     pub fn notmuch_query_get_database(query: *const notmuch_query_t) -> *mut notmuch_database_t;
@@ -674,24 +653,16 @@ extern {
     );
 
     /// Specify the sorting desired for this query.
-    pub fn notmuch_query_set_sort(
-        query: *mut notmuch_query_t,
-        sort: notmuch_sort_t,
-    );
+    pub fn notmuch_query_set_sort(query: *mut notmuch_query_t, sort: notmuch_sort_t);
 
     /// Return the sort specified for this query. See
     /// `notmuch_query_set_sort`.
-    pub fn notmuch_query_get_sort(
-        query: *mut notmuch_query_t,
-    ) -> notmuch_sort_t;
+    pub fn notmuch_query_get_sort(query: *mut notmuch_query_t) -> notmuch_sort_t;
 
     /// Add a tag that will be excluded from the query results by default.
     /// This exclusion will be overridden if this tag appears explicitly in
     /// the query.
-    pub fn notmuch_query_add_tag_exclude(
-        query: *mut notmuch_query_t,
-        tag: *const c_char,
-    );
+    pub fn notmuch_query_add_tag_exclude(query: *mut notmuch_query_t, tag: *const c_char);
 
     /// Execute a query for threads, returning a `notmuch_threads_t` object
     /// which can be used to iterate over the results. The returned threads
@@ -732,9 +703,10 @@ extern {
     /// to call it if the query is about to be destroyed).
     ///
     /// @since libnotmuch 4.2 (notmuch 0.20)
-    pub fn notmuch_query_search_threads(query: *mut notmuch_query_t,
-                                         out: *mut *mut notmuch_threads_t)
-                                         -> notmuch_status_t;
+    pub fn notmuch_query_search_threads(
+        query: *mut notmuch_query_t,
+        out: *mut *mut notmuch_threads_t,
+    ) -> notmuch_status_t;
 
     /// Execute a query for messages, returning a `notmuch_messages_t` object
     /// which can be used to iterate over the results. The returned
@@ -777,9 +749,10 @@ extern {
     /// If a Xapian exception occurs this function will return NULL.
     ///
     /// @since libnotmuch 5 (notmuch 0.25)
-    pub fn notmuch_query_search_messages(query: *mut notmuch_query_t,
-                                         out: *mut *mut notmuch_messages_t)
-                                         -> notmuch_status_t;
+    pub fn notmuch_query_search_messages(
+        query: *mut notmuch_query_t,
+        out: *mut *mut notmuch_messages_t,
+    ) -> notmuch_status_t;
 
     /// Destroy a `notmuch_query_t` along with any associated resources.
     ///
@@ -788,9 +761,7 @@ extern {
     /// turn any notmuch_thread_t and `notmuch_message_t` objects generated
     /// from those results, etc.), if such objects haven't already been
     /// destroyed.
-    pub fn notmuch_query_destroy(
-        query: *mut notmuch_query_t,
-    );
+    pub fn notmuch_query_destroy(query: *mut notmuch_query_t);
 
     /// Is the given 'threads' iterator pointing at a valid thread.
     ///
@@ -802,9 +773,7 @@ extern {
     ///
     /// See the documentation of `notmuch_query_search_threads` for example
     /// code showing how to iterate over a `notmuch_threads_t` object.
-    pub fn notmuch_threads_valid(
-        threads: *mut notmuch_threads_t,
-    ) -> notmuch_bool_t;
+    pub fn notmuch_threads_valid(threads: *mut notmuch_threads_t) -> notmuch_bool_t;
 
     /// Get the current thread from 'threads' as a `notmuch_thread_t`.
     ///
@@ -816,9 +785,7 @@ extern {
     ///
     /// If an out-of-memory situation occurs, this function will return
     /// NULL.
-    pub fn notmuch_threads_get(
-        threads: *mut notmuch_threads_t,
-    ) -> *mut notmuch_thread_t;
+    pub fn notmuch_threads_get(threads: *mut notmuch_threads_t) -> *mut notmuch_thread_t;
 
     /// Move the 'threads' iterator to the next thread.
     ///
@@ -829,18 +796,14 @@ extern {
     ///
     /// See the documentation of `notmuch_query_search_threads` for example
     /// code showing how to iterate over a `notmuch_threads_t` object.
-    pub fn notmuch_threads_move_to_next(
-        threads: *mut notmuch_threads_t,
-    );
+    pub fn notmuch_threads_move_to_next(threads: *mut notmuch_threads_t);
 
     /// Destroy a `notmuch_threads_t` object.
     ///
     /// It's not strictly necessary to call this function. All memory from
     /// the `notmuch_threads_t` object will be reclaimed when the
     /// containing query object is destroyed.
-    pub fn notmuch_threads_destroy(
-        threads: *mut notmuch_threads_t,
-    );
+    pub fn notmuch_threads_destroy(threads: *mut notmuch_threads_t);
 
     /// Return the number of messages matching a search.
     ///
@@ -857,9 +820,8 @@ extern {
     /// @since libnotmuch 4.3 (notmuch 0.21)
     pub fn notmuch_query_count_messages(
         query: *mut notmuch_query_t,
-        count: *mut c_uint
+        count: *mut c_uint,
     ) -> notmuch_status_t;
-
 
     /// Return the number of threads matching a search.
     ///
@@ -883,7 +845,7 @@ extern {
     /// @since libnotmuch 4.3 (notmuch 0.21)
     pub fn notmuch_query_count_threads(
         query: *mut notmuch_query_t,
-        count: *mut c_uint
+        count: *mut c_uint,
     ) -> notmuch_status_t;
 
     /// Get the thread ID of 'thread'.
@@ -892,17 +854,13 @@ extern {
     /// modified by the caller and will only be valid for as long as the
     /// thread is valid, (which is until `notmuch_thread_destroy` or until
     /// the query from which it derived is destroyed).
-    pub fn notmuch_thread_get_thread_id(
-        thread: *mut notmuch_thread_t,
-    ) -> *const c_char;
+    pub fn notmuch_thread_get_thread_id(thread: *mut notmuch_thread_t) -> *const c_char;
 
     /// Get the total number of messages in 'thread'.
     ///
     /// This count consists of all messages in the database belonging to
     /// this thread. Contrast with `notmuch_thread_get_matched_messages`().
-    pub fn notmuch_thread_get_total_messages(
-        thread: *mut notmuch_thread_t,
-    ) -> c_int;
+    pub fn notmuch_thread_get_total_messages(thread: *mut notmuch_thread_t) -> c_int;
 
     /// Get the total number of files in 'thread'.
     ///
@@ -911,9 +869,7 @@ extern {
     /// @returns Non-negative integer
     /// @since libnotmuch 5.0 (notmuch 0.25)
     ///
-    pub fn notmuch_thread_get_total_files(
-        thread: *mut notmuch_thread_t,
-    ) -> c_int;
+    pub fn notmuch_thread_get_total_files(thread: *mut notmuch_thread_t) -> c_int;
 
     /// Get a `notmuch_messages_t` iterator for the top-level messages in
     /// 'thread' in oldest-first order.
@@ -931,9 +887,7 @@ extern {
     /// oldest-first order.
     ///
     /// The returned list will be destroyed when the thread is destroyed.
-    pub fn notmuch_thread_get_messages(
-        thread: *mut notmuch_thread_t,
-    ) -> *mut notmuch_messages_t;
+    pub fn notmuch_thread_get_messages(thread: *mut notmuch_thread_t) -> *mut notmuch_messages_t;
 
     /// Get the number of messages in 'thread' that matched the search.
     ///
@@ -942,9 +896,7 @@ extern {
     /// not excluded by any exclude tags passed in with the query (see
     /// `notmuch_query_add_tag_exclude`). Contrast with
     /// `notmuch_thread_get_total_messages`() .
-    pub fn notmuch_thread_get_matched_messages(
-        thread: *mut notmuch_thread_t,
-    ) -> c_int;
+    pub fn notmuch_thread_get_matched_messages(thread: *mut notmuch_thread_t) -> c_int;
 
     /// Get the authors of 'thread' as a UTF-8 string.
     ///
@@ -960,9 +912,7 @@ extern {
     /// modified by the caller and will only be valid for as long as the
     /// thread is valid, (which is until `notmuch_thread_destroy` or until
     /// the query from which it derived is destroyed).
-    pub fn notmuch_thread_get_authors(
-        thread: *mut notmuch_thread_t,
-    ) -> *const c_char;
+    pub fn notmuch_thread_get_authors(thread: *mut notmuch_thread_t) -> *const c_char;
 
     /// Get the subject of 'thread' as a UTF-8 string.
     ///
@@ -974,19 +924,13 @@ extern {
     /// modified by the caller and will only be valid for as long as the
     /// thread is valid, (which is until `notmuch_thread_destroy` or until
     /// the query from which it derived is destroyed).
-    pub fn notmuch_thread_get_subject(
-        thread: *mut notmuch_thread_t,
-    ) -> *const c_char;
+    pub fn notmuch_thread_get_subject(thread: *mut notmuch_thread_t) -> *const c_char;
 
     /// Get the date of the oldest message in 'thread' as a time_t value.
-    pub fn notmuch_thread_get_oldest_date(
-        thread: *mut notmuch_thread_t,
-    ) -> time_t;
+    pub fn notmuch_thread_get_oldest_date(thread: *mut notmuch_thread_t) -> time_t;
 
     /// Get the date of the newest message in 'thread' as a time_t value.
-    pub fn notmuch_thread_get_newest_date(
-        thread: *mut notmuch_thread_t,
-    ) -> time_t;
+    pub fn notmuch_thread_get_newest_date(thread: *mut notmuch_thread_t) -> time_t;
 
     /// Get the tags for 'thread', returning a `notmuch_tags_t` object which
     /// can be used to iterate over all tags.
@@ -1025,14 +969,10 @@ extern {
     /// `notmuch_tags_t` object. (For consistency, we do provide a
     /// `notmuch_tags_destroy` function, but there's no good reason to call
     /// it if the message is about to be destroyed).
-    pub fn notmuch_thread_get_tags(
-        thread: *mut notmuch_thread_t,
-    ) -> *mut notmuch_tags_t;
+    pub fn notmuch_thread_get_tags(thread: *mut notmuch_thread_t) -> *mut notmuch_tags_t;
 
     /// Destroy a `notmuch_thread_t` object.
-    pub fn notmuch_thread_destroy(
-        thread: *mut notmuch_thread_t,
-    );
+    pub fn notmuch_thread_destroy(thread: *mut notmuch_thread_t);
 
     /// Is the given 'messages' iterator pointing at a valid message.
     ///
@@ -1042,9 +982,7 @@ extern {
     ///
     /// See the documentation of `notmuch_query_search_messages` for example
     /// code showing how to iterate over a `notmuch_messages_t` object.
-    pub fn notmuch_messages_valid(
-        messages: *mut notmuch_messages_t,
-    ) -> notmuch_bool_t;
+    pub fn notmuch_messages_valid(messages: *mut notmuch_messages_t) -> notmuch_bool_t;
 
     /// Get the current message from 'messages' as a `notmuch_message_t`.
     ///
@@ -1056,9 +994,7 @@ extern {
     ///
     /// If an out-of-memory situation occurs, this function will return
     /// NULL.
-    pub fn notmuch_messages_get(
-        messages: *mut notmuch_messages_t,
-    ) -> *mut notmuch_message_t;
+    pub fn notmuch_messages_get(messages: *mut notmuch_messages_t) -> *mut notmuch_message_t;
 
     /// Move the 'messages' iterator to the next message.
     ///
@@ -1069,18 +1005,14 @@ extern {
     ///
     /// See the documentation of `notmuch_query_search_messages` for example
     /// code showing how to iterate over a `notmuch_messages_t` object.
-    pub fn notmuch_messages_move_to_next(
-        messages: *mut notmuch_messages_t,
-    );
+    pub fn notmuch_messages_move_to_next(messages: *mut notmuch_messages_t);
 
     /// Destroy a `notmuch_messages_t` object.
     ///
     /// It's not strictly necessary to call this function. All memory from
     /// the `notmuch_messages_t` object will be reclaimed when the containing
     /// query object is destroyed.
-    pub fn notmuch_messages_destroy(
-        messages: *mut notmuch_messages_t,
-    );
+    pub fn notmuch_messages_destroy(messages: *mut notmuch_messages_t);
 
     /// Return a list of tags from all messages.
     ///
@@ -1093,10 +1025,7 @@ extern {
     /// message list.
     ///
     /// The function returns NULL on error.
-    pub fn notmuch_messages_collect_tags(
-        messages: *mut notmuch_messages_t,
-    ) -> *mut notmuch_tags_t;
-
+    pub fn notmuch_messages_collect_tags(messages: *mut notmuch_messages_t) -> *mut notmuch_tags_t;
 
     /// Get the message ID of 'message'.
     ///
@@ -1108,9 +1037,7 @@ extern {
     /// This function will not return NULL since Notmuch ensures that every
     /// message has a unique message ID, (Notmuch will generate an ID for a
     /// message if the original file does not contain one).
-    pub fn notmuch_message_get_message_id(
-        message: *mut notmuch_message_t,
-    ) -> *const c_char;
+    pub fn notmuch_message_get_message_id(message: *mut notmuch_message_t) -> *const c_char;
 
     /// Get the thread ID of 'message'.
     ///
@@ -1122,9 +1049,7 @@ extern {
     ///
     /// This function will not return NULL since Notmuch ensures that every
     /// message belongs to a single thread.
-    pub fn notmuch_message_get_thread_id(
-        message: *mut notmuch_message_t,
-    ) -> *const c_char;
+    pub fn notmuch_message_get_thread_id(message: *mut notmuch_message_t) -> *const c_char;
 
     /// Get a `notmuch_messages_t` iterator for all of the replies to
     /// 'message'.
@@ -1142,16 +1067,12 @@ extern {
     /// If there are no replies to 'message', this function will return
     /// NULL. (Note that `notmuch_messages_valid` will accept that NULL
     /// value as legitimate, and simply return FALSE for it.)
-    pub fn notmuch_message_get_replies(
-        message: *mut notmuch_message_t,
-    ) -> *mut notmuch_messages_t;
+    pub fn notmuch_message_get_replies(message: *mut notmuch_message_t) -> *mut notmuch_messages_t;
 
     /// Get the total number of files associated with a message.
     /// @returns Non-negative integer
     /// @since libnotmuch 5.0 (notmuch 0.25)
-    pub fn notmuch_message_count_files(
-        message: *mut notmuch_message_t,
-    ) -> c_int;
+    pub fn notmuch_message_count_files(message: *mut notmuch_message_t) -> c_int;
 
     /// Get a filename for the email corresponding to 'message'.
     ///
@@ -1167,9 +1088,7 @@ extern {
     /// this function will arbitrarily return a single one of those
     /// filenames. See `notmuch_message_get_filenames` for returning the
     /// complete list of filenames.
-    pub fn notmuch_message_get_filename(
-        message: *mut notmuch_message_t,
-    ) -> *const c_char;
+    pub fn notmuch_message_get_filename(message: *mut notmuch_message_t) -> *const c_char;
 
     /// Get all filenames for the email corresponding to 'message'.
     ///
@@ -1201,9 +1120,7 @@ extern {
     /// For the original textual representation of the Date header from the
     /// message call `notmuch_message_get_header`() with a header value of
     /// "date".
-    pub fn notmuch_message_get_date(
-        message: *mut notmuch_message_t,
-    ) -> time_t;
+    pub fn notmuch_message_get_date(message: *mut notmuch_message_t) -> time_t;
 
     /// Get the value of the specified header from 'message' as a UTF-8 string.
     ///
@@ -1255,9 +1172,7 @@ extern {
     /// `notmuch_tags_t` object. (For consistency, we do provide a
     /// `notmuch_tags_destroy` function, but there's no good reason to call
     /// it if the message is about to be destroyed).
-    pub fn notmuch_message_get_tags(
-        message: *mut notmuch_message_t,
-    ) -> *mut notmuch_tags_t;
+    pub fn notmuch_message_get_tags(message: *mut notmuch_message_t) -> *mut notmuch_tags_t;
 
     /// Add a tag to the given message.
     ///
@@ -1291,7 +1206,6 @@ extern {
         tag: *const c_char,
     ) -> notmuch_status_t;
 
-
     /// Remove all tags from the given message.
     ///
     /// See `notmuch_message_freeze` for an example showing how to safely
@@ -1299,10 +1213,7 @@ extern {
     ///
     /// `notmuch_status_t::READ_ONLY_DATABASE`: Database was opened in read-only
     /// 	mode so message cannot be modified.
-    pub fn notmuch_message_remove_all_tags(
-        message: *mut notmuch_message_t,
-    ) -> notmuch_status_t;
-
+    pub fn notmuch_message_remove_all_tags(message: *mut notmuch_message_t) -> notmuch_status_t;
 
     /// Add/remove tags according to maildir flags in the message filename(s).
     ///
@@ -1416,9 +1327,7 @@ extern {
     ///
     /// `notmuch_status_t::READ_ONLY_DATABASE`: Database was opened in read-only
     /// 	mode so message cannot be modified.
-    pub fn notmuch_message_freeze(
-        message: *mut notmuch_message_t,
-    ) -> notmuch_status_t;
+    pub fn notmuch_message_freeze(message: *mut notmuch_message_t) -> notmuch_status_t;
 
     /// Thaw the current 'message', synchronizing any changes that may have
     /// occurred while 'message' was frozen into the notmuch database.
@@ -1439,9 +1348,7 @@ extern {
     /// 	an unfrozen message. That is, there have been an unbalanced
     /// 	number of calls to `notmuch_message_freeze` and
     /// 	`notmuch_message_thaw`.
-    pub fn notmuch_message_thaw(
-        message: *mut notmuch_message_t,
-    ) -> notmuch_status_t;
+    pub fn notmuch_message_thaw(message: *mut notmuch_message_t) -> notmuch_status_t;
 
     /// Destroy a `notmuch_message_t` object.
     ///
@@ -1450,9 +1357,7 @@ extern {
     /// over the entire database). Otherwise, it's fine to never call this
     /// function and there will still be no memory leaks. (The memory from
     /// the messages get reclaimed when the containing query is destroyed.)
-    pub fn notmuch_message_destroy(
-        message: *mut notmuch_message_t,
-    );
+    pub fn notmuch_message_destroy(message: *mut notmuch_message_t);
 
     /// Retrieve the value for a single property key
     ///
@@ -1464,10 +1369,11 @@ extern {
     /// - `notmuch_status_t::NULL_POINTER`: *value* may not be NULL.
     /// - `notmuch_status_t::SUCCESS`: No error occured.
     /// @since libnotmuch 4.4 (notmuch 0.23)
-    pub fn notmuch_message_get_property(message: *mut notmuch_message_t,
-                                        key: *const c_char,
-                                        value: *mut *const c_char)
-                                        -> notmuch_status_t;
+    pub fn notmuch_message_get_property(
+        message: *mut notmuch_message_t,
+        key: *const c_char,
+        value: *mut *const c_char,
+    ) -> notmuch_status_t;
 
     /// Add a (key,value) pair to a message
     ///
@@ -1476,10 +1382,11 @@ extern {
     /// - `notmuch_status_t::NULL_POINTER`: Neither *key* nor *value* may be NULL.
     /// - `notmuch_status_t::SUCCESS`: No error occured.
     /// @since libnotmuch 4.4 (notmuch 0.23)
-    pub fn notmuch_message_add_property(message: *mut notmuch_message_t,
-                                        key: *const c_char,
-                                        value: *const c_char)
-                                        -> notmuch_status_t;
+    pub fn notmuch_message_add_property(
+        message: *mut notmuch_message_t,
+        key: *const c_char,
+        value: *const c_char,
+    ) -> notmuch_status_t;
 
     ///
     /// Remove a `(key,value)` pair from a message.
@@ -1491,10 +1398,11 @@ extern {
     /// - `notmuch_status_t::NULL_POINTER`: Neither `key` nor *value* may be NULL.
     /// - `notmuch_status_t::SUCCESS`: No error occured.
     /// @since libnotmuch 4.4 (notmuch 0.23)
-    pub fn notmuch_message_remove_property(message: *mut notmuch_message_t,
-                                           key: *const c_char,
-                                           value: *const c_char)
-                                           -> notmuch_status_t;
+    pub fn notmuch_message_remove_property(
+        message: *mut notmuch_message_t,
+        key: *const c_char,
+        value: *const c_char,
+    ) -> notmuch_status_t;
 
     /// Remove all `(key,value)` pairs from the given message.
     ///
@@ -1507,9 +1415,10 @@ extern {
     /// - `notmuch_status_t::SUCCESS`: No error occured.
     ///
     /// @since libnotmuch 4.4 (notmuch 0.23)
-    pub fn notmuch_message_remove_all_properties(message: *mut notmuch_message_t,
-                                                 key: *const c_char)
-                                                 -> notmuch_status_t;
+    pub fn notmuch_message_remove_all_properties(
+        message: *mut notmuch_message_t,
+        key: *const c_char,
+    ) -> notmuch_status_t;
 
     /// Get the properties for *message*, returning a
     /// `notmuch_message_properties_t` object which can be used to iterate over
@@ -1544,10 +1453,11 @@ extern {
     ///
     /// @since libnotmuch 4.4 (notmuch 0.23)
     ///
-    pub fn notmuch_message_get_properties(message: *mut notmuch_message_t,
-                                          key: *const c_char,
-                                          exact: notmuch_bool_t)
-                                          -> *mut notmuch_message_properties_t;
+    pub fn notmuch_message_get_properties(
+        message: *mut notmuch_message_t,
+        key: *const c_char,
+        exact: notmuch_bool_t,
+    ) -> *mut notmuch_message_properties_t;
 
     ///  Is the given *properties* iterator pointing at a valid `(key,value)` pair.
     ///
@@ -1560,7 +1470,9 @@ extern {
     ///  showing how to iterate over a `notmuch_message_properties_t` object.
     ///
     ///  @since libnotmuch 4.4 (notmuch 0.23)
-    pub fn notmuch_message_properties_valid(properties: *const notmuch_message_properties_t) -> notmuch_bool_t;
+    pub fn notmuch_message_properties_valid(
+        properties: *const notmuch_message_properties_t,
+    ) -> notmuch_bool_t;
 
     /// Move the *properties* iterator to the next `(key,value)` pair
     ///
@@ -1580,15 +1492,18 @@ extern {
     ///
     /// @since libnotmuch 4.4 (notmuch 0.23)
     ///
-    pub fn notmuch_message_properties_key(properties: *mut notmuch_message_properties_t) -> *const c_char;
+    pub fn notmuch_message_properties_key(
+        properties: *mut notmuch_message_properties_t,
+    ) -> *const c_char;
 
     /// Return the `value` from the current `(key,value)` pair.
     ///
     /// This could be useful if iterating for a prefix.
     ///
     /// @since libnotmuch 4.4 (notmuch 0.23)
-    pub fn notmuch_message_properties_value(properties: *const notmuch_message_properties_t) -> *const c_char;
-
+    pub fn notmuch_message_properties_value(
+        properties: *const notmuch_message_properties_t,
+    ) -> *const c_char;
 
     /// Destroy a `notmuch_message_properties_t` object.
     ///
@@ -1669,9 +1584,10 @@ extern {
     ///
     /// * `notmuch_status_t::READ_ONLY_DATABASE`: Database was opened in read-only mode so
     ///    directory mtime cannot be modified.
-    pub fn notmuch_directory_set_mtime(directory: *mut notmuch_directory_t,
-                                       mtime: time_t)
-                                       -> notmuch_status_t;
+    pub fn notmuch_directory_set_mtime(
+        directory: *mut notmuch_directory_t,
+        mtime: time_t,
+    ) -> notmuch_status_t;
 
     /// Get the mtime of a directory, (as previously stored with
     /// `notmuch_directory_set_mtime`).
@@ -1685,16 +1601,18 @@ extern {
     ///
     /// The returned filenames will be the basename-entries only (not
     /// complete paths).
-    pub fn notmuch_directory_get_child_files(directory: *mut notmuch_directory_t)
-                                             -> *mut notmuch_filenames_t;
+    pub fn notmuch_directory_get_child_files(
+        directory: *mut notmuch_directory_t,
+    ) -> *mut notmuch_filenames_t;
 
     /// Get a `notmuch_filenames_t` iterator listing all the filenames of
     /// sub-directories in the database within the given directory.
     ///
     /// The returned filenames will be the basename-entries only (not
     /// complete paths).
-    pub fn notmuch_directory_get_child_directories(directory: *mut notmuch_directory_t)
-                                                   -> *mut notmuch_filenames_t;
+    pub fn notmuch_directory_get_child_directories(
+        directory: *mut notmuch_directory_t,
+    ) -> *mut notmuch_filenames_t;
 
     /// Delete directory document from the database, and destroy the
     /// `notmuch_directory_t` object. Assumes any child directories and files
@@ -1746,14 +1664,14 @@ extern {
     /// function will do nothing.
     pub fn notmuch_filenames_destroy(filenames: *mut notmuch_filenames_t);
 
-
     /// set config 'key' to 'value'
     ///
     /// @since libnotmuch 4.4 (notmuch 0.23)
-    pub fn notmuch_database_set_config(db: *mut notmuch_database_t,
-                                       key: *const c_char,
-                                       value: *const c_char)
-                                       -> notmuch_status_t;
+    pub fn notmuch_database_set_config(
+        db: *mut notmuch_database_t,
+        key: *const c_char,
+        value: *const c_char,
+    ) -> notmuch_status_t;
 
     /// retrieve config item 'key', assign to  'value'
     ///
@@ -1764,24 +1682,25 @@ extern {
     /// caller.
     ///
     /// @since libnotmuch 4.4 (notmuch 0.23)
-    pub fn notmuch_database_get_config(db: *mut notmuch_database_t,
-                                       key: *const c_char,
-                                       value: *mut *mut c_char)
-                                       -> notmuch_status_t;
+    pub fn notmuch_database_get_config(
+        db: *mut notmuch_database_t,
+        key: *const c_char,
+        value: *mut *mut c_char,
+    ) -> notmuch_status_t;
 
     /// Create an iterator for all config items with keys matching a given prefix
     ///
     /// @since libnotmuch 4.4 (notmuch 0.23)
-    pub fn notmuch_database_get_config_list(db: *mut notmuch_database_t,
-                                            prefix: *const c_char,
-                                            out: *mut *mut notmuch_config_list_t)
-                                            -> notmuch_status_t;
+    pub fn notmuch_database_get_config_list(
+        db: *mut notmuch_database_t,
+        prefix: *const c_char,
+        out: *mut *mut notmuch_config_list_t,
+    ) -> notmuch_status_t;
 
     /// Is 'config_list' iterator valid (i.e. _key, _value, _move_to_next can be called).
     ///
     /// @since libnotmuch 4.4 (notmuch 0.23)
-    pub fn notmuch_config_list_valid(config_list: *mut notmuch_config_list_t)
-                                     -> notmuch_bool_t;
+    pub fn notmuch_config_list_valid(config_list: *mut notmuch_config_list_t) -> notmuch_bool_t;
 
     /// return key for current config pair
     ///
@@ -1789,8 +1708,7 @@ extern {
     /// next call to `notmuch_config_list_key` or `notmuch_config_list_destroy`.
     ///
     /// @since libnotmuch 4.4 (notmuch 0.23)
-    pub fn notmuch_config_list_key (config_list: *mut notmuch_config_list_t)
-                                    -> *const c_char;
+    pub fn notmuch_config_list_key(config_list: *mut notmuch_config_list_t) -> *const c_char;
 
     /// return 'value' for current config pair
     ///

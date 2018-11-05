@@ -1,7 +1,7 @@
 use std::ffi::CString;
 use std::ops::Drop;
 use std::path::PathBuf;
-use supercow::{Supercow, Phantomcow};
+use supercow::{Phantomcow, Supercow};
 
 use error::{Error, Result};
 use ffi;
@@ -80,16 +80,12 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
     }
 
     pub fn date(&self) -> i64 {
-        unsafe {
-            ffi::notmuch_message_get_date(self.handle.ptr)
-        }
+        unsafe { ffi::notmuch_message_get_date(self.handle.ptr) }
     }
 
     pub fn header(&self, name: &str) -> Result<&str> {
         let name = CString::new(name).unwrap();
-        let ret = unsafe {
-            ffi::notmuch_message_get_header(self.handle.ptr, name.as_ptr())
-        };
+        let ret = unsafe { ffi::notmuch_message_get_header(self.handle.ptr, name.as_ptr()) };
         if ret.is_null() {
             Err(Error::UnspecifiedError)
         } else {
@@ -103,56 +99,52 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
 
     pub fn add_tag(self: &Self, tag: &str) -> Status {
         let tag = CString::new(tag).unwrap();
-        Status::from(unsafe {
-            ffi::notmuch_message_add_tag(self.handle.ptr, tag.as_ptr())
-        })
+        Status::from(unsafe { ffi::notmuch_message_add_tag(self.handle.ptr, tag.as_ptr()) })
     }
 
     pub fn remove_tag(self: &Self, tag: &str) -> Status {
         let tag = CString::new(tag).unwrap();
-        Status::from(unsafe {
-            ffi::notmuch_message_remove_tag(self.handle.ptr, tag.as_ptr())
-        })
+        Status::from(unsafe { ffi::notmuch_message_remove_tag(self.handle.ptr, tag.as_ptr()) })
     }
 
     pub fn remove_all_tags(self: &Self) -> Status {
-        Status::from(unsafe {
-            ffi::notmuch_message_remove_all_tags(self.handle.ptr)
-        })
+        Status::from(unsafe { ffi::notmuch_message_remove_all_tags(self.handle.ptr) })
     }
 }
 
-
-pub trait MessageExt<'o, Owner: MessageOwner + 'o>{
-
-    fn tags<'s, S: Into<Supercow<'s, Message<'o, Owner>>>>(message: S) -> Tags<'s, Message<'o, Owner>> {
+pub trait MessageExt<'o, Owner: MessageOwner + 'o> {
+    fn tags<'s, S: Into<Supercow<'s, Message<'o, Owner>>>>(
+        message: S,
+    ) -> Tags<'s, Message<'o, Owner>> {
         let messageref = message.into();
         Tags::from_ptr(
             unsafe { ffi::notmuch_message_get_tags(messageref.handle.ptr) },
-            Supercow::phantom(messageref)
+            Supercow::phantom(messageref),
         )
     }
 
-    fn replies<'s, S: Into<Supercow<'s, Message<'o, Owner>>>>(message: S) -> Messages<'s, Message<'o, Owner>> {
+    fn replies<'s, S: Into<Supercow<'s, Message<'o, Owner>>>>(
+        message: S,
+    ) -> Messages<'s, Message<'o, Owner>> {
         let messageref = message.into();
         Messages::from_ptr(
             unsafe { ffi::notmuch_message_get_replies(messageref.handle.ptr) },
-            Supercow::phantom(messageref)
+            Supercow::phantom(messageref),
         )
     }
 
-    fn filenames<'s, S: Into<Supercow<'s, Message<'o, Owner>>>>(message: S) -> Filenames<'s, Message<'o, Owner>> {
+    fn filenames<'s, S: Into<Supercow<'s, Message<'o, Owner>>>>(
+        message: S,
+    ) -> Filenames<'s, Message<'o, Owner>> {
         let messageref = message.into();
         Filenames::from_ptr(
             unsafe { ffi::notmuch_message_get_filenames(messageref.handle.ptr) },
-            Supercow::phantom(messageref)
+            Supercow::phantom(messageref),
         )
     }
 }
 
-impl<'o, Owner: MessageOwner + 'o> MessageExt<'o, Owner> for Message<'o, Owner>{
-    
-}
+impl<'o, Owner: MessageOwner + 'o> MessageExt<'o, Owner> for Message<'o, Owner> {}
 
 unsafe impl<'o, Owner: MessageOwner + 'o> Send for Message<'o, Owner> {}
 unsafe impl<'o, Owner: MessageOwner + 'o> Sync for Message<'o, Owner> {}

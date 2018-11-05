@@ -48,17 +48,14 @@ impl<'s, 'o: 's, Owner: ThreadsOwner + 'o> StreamingIterator<'s, Thread<'s, Self
     }
 }
 
-pub trait ThreadsExt<'o, Owner: ThreadsOwner + 'o>{
+pub trait ThreadsExt<'o, Owner: ThreadsOwner + 'o> {}
 
-}
+impl<'o, Owner: ThreadsOwner + 'o> ThreadsExt<'o, Owner> for Threads<'o, Owner> {}
 
-impl<'o, Owner: ThreadsOwner + 'o> ThreadsExt<'o, Owner> for Threads<'o, Owner>{
-    
-}
-
-impl<'s, 'o: 's, Owner: ThreadsOwner + 'o> StreamingIteratorExt<'s, Thread<'s, Self>> for Threads<'o, Owner>
+impl<'s, 'o: 's, Owner: ThreadsOwner + 'o> StreamingIteratorExt<'s, Thread<'s, Self>>
+    for Threads<'o, Owner>
 {
-    fn next<S: Into<Supercow<'s, Threads<'o, Owner>>>>(threads: S) -> Option<Thread<'s, Self>>{
+    fn next<S: Into<Supercow<'s, Threads<'o, Owner>>>>(threads: S) -> Option<Thread<'s, Self>> {
         let threadsref = threads.into();
         let valid = unsafe { ffi::notmuch_threads_valid(threadsref.handle.ptr) };
 

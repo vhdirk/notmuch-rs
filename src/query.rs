@@ -1,19 +1,19 @@
+use std::ffi::{CStr, CString};
 use std::ops::Drop;
 use std::ptr;
-use std::ffi::{CStr, CString};
 
-use supercow::{Supercow, Phantomcow};
+use supercow::{Phantomcow, Supercow};
 
 use error::Result;
 use ffi;
 use ffi::Sort;
+use messages::MessagesPtr;
+use threads::ThreadsPtr;
 use Database;
 use Messages;
 use MessagesOwner;
 use Threads;
 use ThreadsOwner;
-use threads::ThreadsPtr;
-use messages::MessagesPtr;
 
 #[derive(Debug)]
 pub(crate) struct QueryPtr {
@@ -36,13 +36,12 @@ impl<'d> ThreadsOwner for Query<'d> {}
 impl<'d> MessagesOwner for Query<'d> {}
 
 impl<'d> Query<'d> {
-
     pub(crate) fn from_ptr<O: Into<Phantomcow<'d, Database>>>(
         ptr: *mut ffi::notmuch_query_t,
         owner: O,
     ) -> Query<'d> {
         Query {
-            handle: QueryPtr{ptr},
+            handle: QueryPtr { ptr },
             marker: owner.into(),
         }
     }
@@ -57,13 +56,12 @@ impl<'d> Query<'d> {
         }
     }
 
-    pub fn create<D: Into<Supercow<'d, Database>>>(db: D,
-                  query_string: &str) -> Result<Self> {
-
+    pub fn create<D: Into<Supercow<'d, Database>>>(db: D, query_string: &str) -> Result<Self> {
         let dbref = db.into();
-        dbref.handle.create_query(query_string).map(move |handle|{
-            Query::from_handle(handle, Supercow::phantom(dbref))
-        })
+        dbref
+            .handle
+            .create_query(query_string)
+            .map(move |handle| Query::from_handle(handle, Supercow::phantom(dbref)))
     }
 
     /// Specify the sorting desired for this query.
@@ -101,34 +99,37 @@ impl<'d> Query<'d> {
     }
 }
 
-pub trait QueryExt<'d>{
-    
-    fn search_threads<'q, Q: Into<Supercow<'q, Query<'d>>>>(query: Q) -> Result<Threads<'q, Query<'d>>>{
+pub trait QueryExt<'d> {
+    fn search_threads<'q, Q: Into<Supercow<'q, Query<'d>>>>(
+        query: Q,
+    ) -> Result<Threads<'q, Query<'d>>> {
         let queryref = query.into();
 
         let mut thrds = ptr::null_mut();
         try!(
-            unsafe { ffi::notmuch_query_search_threads(queryref.handle.ptr, &mut thrds) }.as_result()
+            unsafe { ffi::notmuch_query_search_threads(queryref.handle.ptr, &mut thrds) }
+                .as_result()
         );
 
         Ok(Threads::from_ptr(thrds, Supercow::phantom(queryref)))
     }
 
-    fn search_messages<'q, Q: Into<Supercow<'q, Query<'d>>>>(query: Q) -> Result<Messages<'q, Query<'d>>>{
+    fn search_messages<'q, Q: Into<Supercow<'q, Query<'d>>>>(
+        query: Q,
+    ) -> Result<Messages<'q, Query<'d>>> {
         let queryref = query.into();
 
         let mut msgs = ptr::null_mut();
         try!(
-            unsafe { ffi::notmuch_query_search_messages(queryref.handle.ptr, &mut msgs) }.as_result()
+            unsafe { ffi::notmuch_query_search_messages(queryref.handle.ptr, &mut msgs) }
+                .as_result()
         );
 
         Ok(Messages::from_ptr(msgs, Supercow::phantom(queryref)))
     }
-
 }
 
-impl<'d> QueryExt<'d> for Query<'d>{}
-
+impl<'d> QueryExt<'d> for Query<'d> {}
 
 unsafe impl<'d> Send for Query<'d> {}
 unsafe impl<'d> Sync for Query<'d> {}

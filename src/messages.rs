@@ -89,17 +89,14 @@ impl<'s, 'o: 's, Owner: MessagesOwner + 'o> StreamingIterator<'s, Message<'s, Se
     }
 }
 
-pub trait MessagesExt<'o, Owner: MessagesOwner + 'o> {
+pub trait MessagesExt<'o, Owner: MessagesOwner + 'o> {}
 
-}
+impl<'o, Owner: MessagesOwner + 'o> MessagesExt<'o, Owner> for Messages<'o, Owner> {}
 
-impl<'o, Owner: MessagesOwner + 'o> MessagesExt<'o, Owner> for Messages<'o, Owner>{
-    
-}
-
-impl<'s, 'o: 's, Owner: MessagesOwner + 'o> StreamingIteratorExt<'s, Message<'s, Self>> for Messages<'o, Owner>
+impl<'s, 'o: 's, Owner: MessagesOwner + 'o> StreamingIteratorExt<'s, Message<'s, Self>>
+    for Messages<'o, Owner>
 {
-    fn next<S: Into<Supercow<'s, Messages<'o, Owner>>>>(messages: S) -> Option<Message<'s, Self>>{
+    fn next<S: Into<Supercow<'s, Messages<'o, Owner>>>>(messages: S) -> Option<Message<'s, Self>> {
         let messagesref = messages.into();
         let valid = unsafe { ffi::notmuch_messages_valid(messagesref.handle.ptr) };
 

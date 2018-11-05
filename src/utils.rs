@@ -34,6 +34,6 @@ pub trait StreamingIteratorExt<'a, T> {
     /// Return either the next item in the sequence, or `None` if all items
     /// have been consumed.
     fn next<S: Into<Supercow<'a, Self>>>(s: S) -> Option<T>
-      where Self: Sized + 'a;
+    where
+        Self: Sized + 'a;
 }
-

@@ -9,10 +9,10 @@ use libc;
 
 use error::Result;
 use ffi;
+use query::QueryPtr;
 use utils::ToStr;
 use Directory;
 use Query;
-use query::QueryPtr;
 use Tags;
 use TagsOwner;
 
@@ -40,12 +40,11 @@ impl Drop for DatabasePtr {
 }
 
 impl DatabasePtr {
-
     pub(crate) fn create_query(&self, query_string: &str) -> Result<QueryPtr> {
         let query_str = CString::new(query_string).unwrap();
 
         let query = unsafe { ffi::notmuch_query_create(self.ptr, query_str.as_ptr()) };
-        
+
         Ok(QueryPtr { ptr: query })
     }
 }
@@ -88,7 +87,7 @@ impl Database {
 
         Ok(())
     }
- 
+
     pub fn compact<P: AsRef<Path>, F: FnMut(&str)>(
         path: &P,
         backup_path: Option<&P>,
@@ -222,13 +221,16 @@ impl Database {
     }
 }
 
-pub trait DatabaseExt{
-    fn create_query<'d, D: Into<Supercow<'d, Database>>>(database: D, query_string: &str) -> Result<Query<'d>> {
+pub trait DatabaseExt {
+    fn create_query<'d, D: Into<Supercow<'d, Database>>>(
+        database: D,
+        query_string: &str,
+    ) -> Result<Query<'d>> {
         let dbref = database.into();
         let query_str = CString::new(query_string).unwrap();
 
         let query = unsafe { ffi::notmuch_query_create(dbref.handle.ptr, query_str.as_ptr()) };
-        
+
         Ok(Query::from_ptr(query, Supercow::phantom(dbref)))
     }
 
@@ -240,8 +242,10 @@ pub trait DatabaseExt{
         Ok(Tags::from_ptr(tags, Supercow::phantom(dbref)))
     }
 
-
-    fn directory<'d, D: Into<Supercow<'d, Database>>, P: AsRef<Path>>(database: D, path: &P) -> Result<Option<Directory<'d>>> {
+    fn directory<'d, D: Into<Supercow<'d, Database>>, P: AsRef<Path>>(
+        database: D,
+        path: &P,
+    ) -> Result<Option<Directory<'d>>> {
         let dbref = database.into();
 
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
@@ -262,8 +266,7 @@ pub trait DatabaseExt{
     }
 }
 
-impl DatabaseExt for Database{}
-
+impl DatabaseExt for Database {}
 
 unsafe impl Send for Database {}
 unsafe impl Sync for Database {}

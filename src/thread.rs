@@ -1,5 +1,5 @@
 use std::ops::Drop;
-use supercow::{Supercow, Phantomcow};
+use supercow::{Phantomcow, Supercow};
 
 use ffi;
 use utils::ToStr;
@@ -97,38 +97,41 @@ impl<'o, Owner: ThreadOwner + 'o> Thread<'o, Owner> {
     }
 }
 
-pub trait ThreadExt<'o, Owner: ThreadOwner + 'o>{
-    fn tags<'s, S: Into<Supercow<'s, Thread<'o, Owner>>>>(thread: S) -> Tags<'s, Thread<'o, Owner>> {
+pub trait ThreadExt<'o, Owner: ThreadOwner + 'o> {
+    fn tags<'s, S: Into<Supercow<'s, Thread<'o, Owner>>>>(
+        thread: S,
+    ) -> Tags<'s, Thread<'o, Owner>> {
         let threadref = thread.into();
         Tags::from_ptr(
             unsafe { ffi::notmuch_thread_get_tags(threadref.handle.ptr) },
-            Supercow::phantom(threadref)
+            Supercow::phantom(threadref),
         )
     }
 
-    fn toplevel_messages<'s, S: Into<Supercow<'s, Thread<'o, Owner>>>>(thread: S) -> Messages<'s, Thread<'o, Owner>> {
+    fn toplevel_messages<'s, S: Into<Supercow<'s, Thread<'o, Owner>>>>(
+        thread: S,
+    ) -> Messages<'s, Thread<'o, Owner>> {
         let threadref = thread.into();
         Messages::from_ptr(
             unsafe { ffi::notmuch_thread_get_toplevel_messages(threadref.handle.ptr) },
-            Supercow::phantom(threadref)
+            Supercow::phantom(threadref),
         )
     }
 
     /// Get a `Messages` iterator for all messages in 'thread' in
     /// oldest-first order.
-    fn messages<'s, S: Into<Supercow<'s, Thread<'o, Owner>>>>(thread: S) -> Messages<'s, Thread<'o, Owner>> {
+    fn messages<'s, S: Into<Supercow<'s, Thread<'o, Owner>>>>(
+        thread: S,
+    ) -> Messages<'s, Thread<'o, Owner>> {
         let threadref = thread.into();
         Messages::from_ptr(
             unsafe { ffi::notmuch_thread_get_messages(threadref.handle.ptr) },
-            Supercow::phantom(threadref)
+            Supercow::phantom(threadref),
         )
     }
-
 }
 
-impl<'o, Owner: ThreadOwner + 'o> ThreadExt<'o, Owner> for Thread<'o, Owner>{
-    
-}
+impl<'o, Owner: ThreadOwner + 'o> ThreadExt<'o, Owner> for Thread<'o, Owner> {}
 
 unsafe impl<'o, Owner: ThreadOwner + 'o> Send for Thread<'o, Owner> {}
 unsafe impl<'o, Owner: ThreadOwner + 'o> Sync for Thread<'o, Owner> {}
