@@ -36,6 +36,17 @@ impl<'d> ThreadsOwner for Query<'d> {}
 impl<'d> MessagesOwner for Query<'d> {}
 
 impl<'d> Query<'d> {
+
+    pub(crate) fn from_ptr<O: Into<Phantomcow<'d, Database>>>(
+        ptr: *mut ffi::notmuch_query_t,
+        owner: O,
+    ) -> Query<'d> {
+        Query {
+            handle: QueryPtr{ptr},
+            marker: owner.into(),
+        }
+    }
+
     pub(crate) fn from_handle<O: Into<Phantomcow<'d, Database>>>(
         handle: QueryPtr,
         owner: O,
@@ -80,7 +91,6 @@ impl<'d> Query<'d> {
 
     pub fn search_threads<'q>(self: &'d Self) -> Result<Threads<'q, Self>> {
         <Query as QueryExt>::search_threads(self)
-
     }
 
     pub fn count_threads(self: &Self) -> Result<u32> {
@@ -92,11 +102,7 @@ impl<'d> Query<'d> {
 }
 
 pub trait QueryExt<'d>{
-    fn search_threads<'q, Q: Into<Supercow<'q, Query<'d>>>>(query: Q) -> Result<Threads<'q, Query<'d>>>;
-    fn search_messages<'q, Q: Into<Supercow<'q, Query<'d>>>>(query: Q) -> Result<Messages<'q, Query<'d>>>;
-}
-
-impl<'d> QueryExt<'d> for Query<'d>{
+    
     fn search_threads<'q, Q: Into<Supercow<'q, Query<'d>>>>(query: Q) -> Result<Threads<'q, Query<'d>>>{
         let queryref = query.into();
 
@@ -120,6 +126,8 @@ impl<'d> QueryExt<'d> for Query<'d>{
     }
 
 }
+
+impl<'d> QueryExt<'d> for Query<'d>{}
 
 
 unsafe impl<'d> Send for Query<'d> {}

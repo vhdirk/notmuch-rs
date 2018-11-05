@@ -63,5 +63,9 @@ pub trait TagsExt<'o, Owner: TagsOwner + 'o>{
 
 }
 
+impl<'o, Owner: TagsOwner + 'o> TagsExt<'o, Owner> for Tags<'o, Owner>{
+    
+}
+
 unsafe impl<'o, Owner: TagsOwner + 'o> Send for Tags<'o, Owner> {}
 unsafe impl<'o, Owner: TagsOwner + 'o> Sync for Tags<'o, Owner> {}

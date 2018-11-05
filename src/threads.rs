@@ -73,5 +73,9 @@ pub trait ThreadsExt<'o, Owner: ThreadsOwner + 'o>{
 
 }
 
+impl<'o, Owner: ThreadsOwner + 'o> ThreadsExt<'o, Owner> for Threads<'o, Owner>{
+    
+}
+
 unsafe impl<'o, Owner: ThreadsOwner + 'o> Send for Threads<'o, Owner> {}
 unsafe impl<'o, Owner: ThreadsOwner + 'o> Sync for Threads<'o, Owner> {}

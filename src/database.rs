@@ -3,6 +3,8 @@ use std::ops::Drop;
 use std::path::Path;
 use std::ptr;
 
+use supercow::Supercow;
+
 use libc;
 
 use error::Result;
@@ -208,12 +210,46 @@ impl Database {
     }
 
     pub fn directory<'d, P: AsRef<Path>>(&'d self, path: &P) -> Result<Option<Directory<'d>>> {
+        <Self as DatabaseExt>::directory(self, path)
+    }
+
+    pub fn create_query<'d>(&'d self, query_string: &str) -> Result<Query<'d>> {
+        <Self as DatabaseExt>::create_query(self, query_string)
+    }
+
+    pub fn all_tags<'d>(&'d self) -> Result<Tags<'d, Self>> {
+        <Self as DatabaseExt>::all_tags(self)
+    }
+}
+
+pub trait DatabaseExt{
+    fn create_query<'d, D: Into<Supercow<'d, Database>>>(database: D, query_string: &str) -> Result<Query<'d>> {
+        let dbref = database.into();
+        let query_str = CString::new(query_string).unwrap();
+
+        let query = unsafe { ffi::notmuch_query_create(dbref.handle.ptr, query_str.as_ptr()) };
+        
+        Ok(Query::from_ptr(query, Supercow::phantom(dbref)))
+    }
+
+    fn all_tags<'d, D: Into<Supercow<'d, Database>>>(database: D) -> Result<Tags<'d, Database>> {
+        let dbref = database.into();
+
+        let tags = unsafe { ffi::notmuch_database_get_all_tags(dbref.handle.ptr) };
+
+        Ok(Tags::from_ptr(tags, Supercow::phantom(dbref)))
+    }
+
+
+    fn directory<'d, D: Into<Supercow<'d, Database>>, P: AsRef<Path>>(database: D, path: &P) -> Result<Option<Directory<'d>>> {
+        let dbref = database.into();
+
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut dir = ptr::null_mut();
         try!(
             unsafe {
-                ffi::notmuch_database_get_directory(self.handle.ptr, path_str.as_ptr(), &mut dir)
+                ffi::notmuch_database_get_directory(dbref.handle.ptr, path_str.as_ptr(), &mut dir)
             }
             .as_result()
         );
@@ -221,26 +257,12 @@ impl Database {
         if dir.is_null() {
             Ok(None)
         } else {
-            Ok(Some(Directory::from_ptr(dir, self)))
+            Ok(Some(Directory::from_ptr(dir, Supercow::phantom(dbref))))
         }
     }
-
-    pub fn create_query<'d>(&'d self, query_string: &str) -> Result<Query<'d>> {
-        self.handle.create_query(query_string).map(move |handle|{
-            Query::from_handle(handle, self)
-        })
-    }
-
-    pub fn all_tags<'d>(&'d self) -> Result<Tags<'d, Self>> {
-        let tags = unsafe { ffi::notmuch_database_get_all_tags(self.handle.ptr) };
-
-        Ok(Tags::from_ptr(tags, self))
-    }
 }
 
-pub trait DatabaseExt{
-
-}
+impl DatabaseExt for Database{}
 
 
 unsafe impl Send for Database {}

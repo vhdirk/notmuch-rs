@@ -56,6 +56,15 @@ impl<'o, Owner: MessagesOwner + 'o> Messages<'o, Owner> {
     }
 }
 
+
+pub trait MessagesExt<'o, Owner: MessagesOwner + 'o>{
+
+}
+
+impl<'o, Owner: MessagesOwner + 'o> MessagesExt<'o, Owner> for Messages<'o, Owner>{
+    
+}
+
 impl<'o, Owner: MessagesOwner + 'o> MessageOwner for Messages<'o, Owner> {}
 impl<'o, Owner: MessagesOwner + 'o> TagsOwner for Messages<'o, Owner> {}
 

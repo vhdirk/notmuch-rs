@@ -59,10 +59,7 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
     }
 
     pub fn replies(self: &Self) -> Messages<Self> {
-        Messages::from_ptr(
-            unsafe { ffi::notmuch_message_get_replies(self.handle.ptr) },
-            self,
-        )
+        <Self as MessageExt<'o, Owner>>::replies(self)
     }
 
     #[cfg(feature = "v0_26")]
@@ -71,10 +68,7 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
     }
 
     pub fn filenames(self: &Self) -> Filenames<Self> {
-        Filenames::from_ptr(
-            unsafe { ffi::notmuch_message_get_filenames(self.handle.ptr) },
-            self,
-        )
+        <Self as MessageExt<'o, Owner>>::filenames(self)
     }
 
     pub fn filename(self: &Self) -> PathBuf {
@@ -104,10 +98,7 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
     }
 
     pub fn tags(&self) -> Tags<Self> {
-        Tags::from_ptr(
-            unsafe { ffi::notmuch_message_get_tags(self.handle.ptr) },
-            self,
-        )
+        <Self as MessageExt<'o, Owner>>::tags(self)
     }
 
     pub fn add_tag(self: &Self, tag: &str) -> Status {
@@ -134,7 +125,15 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
 
 pub trait MessageExt<'o, Owner: MessageOwner + 'o>{
 
-    fn replies<'s, M: Into<Supercow<'s, Message<'o, Owner>>>>(message: M) -> Messages<'s, Message<'o, Owner>> {
+    fn tags<'s, S: Into<Supercow<'s, Message<'o, Owner>>>>(message: S) -> Tags<'s, Message<'o, Owner>> {
+        let messageref = message.into();
+        Tags::from_ptr(
+            unsafe { ffi::notmuch_message_get_tags(messageref.handle.ptr) },
+            Supercow::phantom(messageref)
+        )
+    }
+
+    fn replies<'s, S: Into<Supercow<'s, Message<'o, Owner>>>>(message: S) -> Messages<'s, Message<'o, Owner>> {
         let messageref = message.into();
         Messages::from_ptr(
             unsafe { ffi::notmuch_message_get_replies(messageref.handle.ptr) },
@@ -142,13 +141,17 @@ pub trait MessageExt<'o, Owner: MessageOwner + 'o>{
         )
     }
 
-    fn filenames<'s, M: Into<Supercow<'s, Message<'o, Owner>>>>(message: M) -> Filenames<'s, Message<'o, Owner>> {
+    fn filenames<'s, S: Into<Supercow<'s, Message<'o, Owner>>>>(message: S) -> Filenames<'s, Message<'o, Owner>> {
         let messageref = message.into();
         Filenames::from_ptr(
             unsafe { ffi::notmuch_message_get_filenames(messageref.handle.ptr) },
             Supercow::phantom(messageref)
         )
     }
+}
+
+impl<'o, Owner: MessageOwner + 'o> MessageExt<'o, Owner> for Message<'o, Owner>{
+    
 }
 
 unsafe impl<'o, Owner: MessageOwner + 'o> Send for Message<'o, Owner> {}
