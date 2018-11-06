@@ -89,12 +89,10 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
         if ret.is_null() {
             Err(Error::UnspecifiedError)
         } else {
-            let ret = ret.to_str().unwrap();
-            if ret == "" {
-                Ok(None)
-            } else {
-                Ok(Some(ret))
-            }
+            Ok(match ret.to_str().unwrap() {
+                "" => None,
+                ret => Some(ret)
+            })
         }
     }
 
