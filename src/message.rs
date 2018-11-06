@@ -83,13 +83,18 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
         unsafe { ffi::notmuch_message_get_date(self.handle.ptr) }
     }
 
-    pub fn header(&self, name: &str) -> Result<&str> {
+    pub fn header(&self, name: &str) -> Result<Option<&str>> {
         let name = CString::new(name).unwrap();
         let ret = unsafe { ffi::notmuch_message_get_header(self.handle.ptr, name.as_ptr()) };
         if ret.is_null() {
             Err(Error::UnspecifiedError)
         } else {
-            Ok(ret.to_str().unwrap())
+            let ret = ret.to_str().unwrap();
+            if ret == "" {
+                Ok(None)
+            } else {
+                Ok(Some(ret))
+            }
         }
     }
 
