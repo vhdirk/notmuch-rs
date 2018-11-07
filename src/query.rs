@@ -1,4 +1,3 @@
-use std::ffi::{CStr, CString};
 use std::ops::Drop;
 use std::ptr;
 
@@ -7,8 +6,6 @@ use supercow::{Phantomcow, Supercow};
 use error::Result;
 use ffi;
 use ffi::Sort;
-use messages::MessagesPtr;
-use threads::ThreadsPtr;
 use Database;
 use Messages;
 use MessagesOwner;

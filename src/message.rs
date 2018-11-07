@@ -91,7 +91,7 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
         } else {
             Ok(match ret.to_str().unwrap() {
                 "" => None,
-                ret => Some(ret)
+                ret => Some(ret),
             })
         }
     }

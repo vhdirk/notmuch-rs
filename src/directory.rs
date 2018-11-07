@@ -1,10 +1,6 @@
-use std::ffi::{CStr, CString};
 use std::ops::Drop;
-use std::path::Path;
-use std::ptr;
 use supercow::{Phantomcow, Supercow};
 
-use error::Result;
 use ffi;
 use Database;
 use Filenames;

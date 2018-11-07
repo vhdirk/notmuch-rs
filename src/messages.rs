@@ -44,16 +44,6 @@ impl<'o, Owner: MessagesOwner + 'o> Messages<'o, Owner> {
             marker: owner.into(),
         }
     }
-
-    pub(crate) fn from_handle<O: Into<Phantomcow<'o, Owner>>>(
-        handle: MessagesPtr,
-        owner: O,
-    ) -> Messages<'o, Owner> {
-        Messages {
-            handle,
-            marker: owner.into(),
-        }
-    }
 }
 
 impl<'o, Owner: MessagesOwner + 'o> MessageOwner for Messages<'o, Owner> {}

@@ -3,8 +3,8 @@ extern crate notmuch;
 
 use std::sync::Arc;
 
-use notmuch::{Query, QueryExt, Thread, Threads};
-use notmuch::{StreamingIterator, StreamingIteratorExt};
+use notmuch::StreamingIteratorExt;
+use notmuch::{Query, QueryExt, Threads};
 
 fn main() {
     let mut mail_path = dirs::home_dir().unwrap();
