@@ -25,16 +25,22 @@ impl Drop for FilenamesPtr {
 }
 
 #[derive(Debug)]
-pub struct Filenames<'o, Owner: FilenamesOwner + 'o> {
+pub struct Filenames<'o, O>
+where
+    O: FilenamesOwner + 'o,
+{
     pub(crate) handle: FilenamesPtr,
-    pub(crate) marker: Phantomcow<'o, Owner>,
+    pub(crate) marker: Phantomcow<'o, O>,
 }
 
-impl<'o, Owner: FilenamesOwner + 'o> Filenames<'o, Owner> {
-    pub fn from_ptr<O: Into<Phantomcow<'o, Owner>>>(
-        ptr: *mut ffi::notmuch_filenames_t,
-        owner: O,
-    ) -> Filenames<'o, Owner> {
+impl<'o, O> Filenames<'o, O>
+where
+    O: FilenamesOwner + 'o,
+{
+    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_filenames_t, owner: P) -> Filenames<'o, O>
+    where
+        P: Into<Phantomcow<'o, O>>,
+    {
         Filenames {
             handle: FilenamesPtr { ptr },
             marker: owner.into(),
@@ -42,7 +48,10 @@ impl<'o, Owner: FilenamesOwner + 'o> Filenames<'o, Owner> {
     }
 }
 
-impl<'o, Owner: FilenamesOwner + 'o> Iterator for Filenames<'o, Owner> {
+impl<'o, O> Iterator for Filenames<'o, O>
+where
+    O: FilenamesOwner + 'o,
+{
     type Item = PathBuf;
 
     fn next(self: &mut Self) -> Option<Self::Item> {
@@ -62,5 +71,5 @@ impl<'o, Owner: FilenamesOwner + 'o> Iterator for Filenames<'o, Owner> {
     }
 }
 
-unsafe impl<'o, Owner: FilenamesOwner + 'o> Send for Filenames<'o, Owner> {}
-unsafe impl<'o, Owner: FilenamesOwner + 'o> Sync for Filenames<'o, Owner> {}
+unsafe impl<'o, O> Send for Filenames<'o, O> where O: FilenamesOwner + 'o {}
+unsafe impl<'o, O> Sync for Filenames<'o, O> where O: FilenamesOwner + 'o {}

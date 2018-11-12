@@ -28,20 +28,26 @@ impl Drop for MessagePtr {
 }
 
 #[derive(Debug)]
-pub struct Message<'o, Owner: MessageOwner + 'o> {
+pub struct Message<'o, O>
+where
+    O: MessageOwner + 'o,
+{
     pub(crate) handle: MessagePtr,
-    marker: Phantomcow<'o, Owner>,
+    marker: Phantomcow<'o, O>,
 }
 
-impl<'o, Owner: MessageOwner + 'o> MessagesOwner for Message<'o, Owner> {}
-impl<'o, Owner: MessageOwner + 'o> FilenamesOwner for Message<'o, Owner> {}
-impl<'o, Owner: MessageOwner + 'o> TagsOwner for Message<'o, Owner> {}
+impl<'o, O> MessagesOwner for Message<'o, O> where O: MessageOwner + 'o {}
+impl<'o, O> FilenamesOwner for Message<'o, O> where O: MessageOwner + 'o {}
+impl<'o, O> TagsOwner for Message<'o, O> where O: MessageOwner + 'o {}
 
-impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
-    pub fn from_ptr<O: Into<Phantomcow<'o, Owner>>>(
-        ptr: *mut ffi::notmuch_message_t,
-        owner: O,
-    ) -> Message<'o, Owner> {
+impl<'o, O> Message<'o, O>
+where
+    O: MessageOwner + 'o,
+{
+    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_message_t, owner: P) -> Message<'o, O>
+    where
+        P: Into<Phantomcow<'o, O>>,
+    {
         Message {
             handle: MessagePtr { ptr },
             marker: owner.into(),
@@ -59,7 +65,7 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
     }
 
     pub fn replies(self: &Self) -> Messages<Self> {
-        <Self as MessageExt<'o, Owner>>::replies(self)
+        <Self as MessageExt<'o, O>>::replies(self)
     }
 
     #[cfg(feature = "v0_26")]
@@ -68,7 +74,7 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
     }
 
     pub fn filenames(self: &Self) -> Filenames<Self> {
-        <Self as MessageExt<'o, Owner>>::filenames(self)
+        <Self as MessageExt<'o, O>>::filenames(self)
     }
 
     pub fn filename(self: &Self) -> PathBuf {
@@ -97,7 +103,7 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
     }
 
     pub fn tags(&self) -> Tags<Self> {
-        <Self as MessageExt<'o, Owner>>::tags(self)
+        <Self as MessageExt<'o, O>>::tags(self)
     }
 
     pub fn add_tag(self: &Self, tag: &str) -> Status {
@@ -115,10 +121,14 @@ impl<'o, Owner: MessageOwner + 'o> Message<'o, Owner> {
     }
 }
 
-pub trait MessageExt<'o, Owner: MessageOwner + 'o> {
-    fn tags<'s, S: Into<Supercow<'s, Message<'o, Owner>>>>(
-        message: S,
-    ) -> Tags<'s, Message<'o, Owner>> {
+pub trait MessageExt<'o, O>
+where
+    O: MessageOwner + 'o,
+{
+    fn tags<'s, S>(message: S) -> Tags<'s, Message<'o, O>>
+    where
+        S: Into<Supercow<'s, Message<'o, O>>>,
+    {
         let messageref = message.into();
         Tags::from_ptr(
             unsafe { ffi::notmuch_message_get_tags(messageref.handle.ptr) },
@@ -126,9 +136,10 @@ pub trait MessageExt<'o, Owner: MessageOwner + 'o> {
         )
     }
 
-    fn replies<'s, S: Into<Supercow<'s, Message<'o, Owner>>>>(
-        message: S,
-    ) -> Messages<'s, Message<'o, Owner>> {
+    fn replies<'s, S>(message: S) -> Messages<'s, Message<'o, O>>
+    where
+        S: Into<Supercow<'s, Message<'o, O>>>,
+    {
         let messageref = message.into();
         Messages::from_ptr(
             unsafe { ffi::notmuch_message_get_replies(messageref.handle.ptr) },
@@ -136,9 +147,10 @@ pub trait MessageExt<'o, Owner: MessageOwner + 'o> {
         )
     }
 
-    fn filenames<'s, S: Into<Supercow<'s, Message<'o, Owner>>>>(
-        message: S,
-    ) -> Filenames<'s, Message<'o, Owner>> {
+    fn filenames<'s, S>(message: S) -> Filenames<'s, Message<'o, O>>
+    where
+        S: Into<Supercow<'s, Message<'o, O>>>,
+    {
         let messageref = message.into();
         Filenames::from_ptr(
             unsafe { ffi::notmuch_message_get_filenames(messageref.handle.ptr) },
@@ -147,7 +159,7 @@ pub trait MessageExt<'o, Owner: MessageOwner + 'o> {
     }
 }
 
-impl<'o, Owner: MessageOwner + 'o> MessageExt<'o, Owner> for Message<'o, Owner> {}
+impl<'o, O> MessageExt<'o, O> for Message<'o, O> where O: MessageOwner + 'o {}
 
-unsafe impl<'o, Owner: MessageOwner + 'o> Send for Message<'o, Owner> {}
-unsafe impl<'o, Owner: MessageOwner + 'o> Sync for Message<'o, Owner> {}
+unsafe impl<'o, O> Send for Message<'o, O> where O: MessageOwner + 'o {}
+unsafe impl<'o, O> Sync for Message<'o, O> where O: MessageOwner + 'o {}

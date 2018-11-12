@@ -33,27 +33,30 @@ impl<'d> ThreadsOwner for Query<'d> {}
 impl<'d> MessagesOwner for Query<'d> {}
 
 impl<'d> Query<'d> {
-    pub(crate) fn from_ptr<O: Into<Phantomcow<'d, Database>>>(
-        ptr: *mut ffi::notmuch_query_t,
-        owner: O,
-    ) -> Query<'d> {
+    pub(crate) fn from_ptr<O>(ptr: *mut ffi::notmuch_query_t, owner: O) -> Query<'d>
+    where
+        O: Into<Phantomcow<'d, Database>>,
+    {
         Query {
             handle: QueryPtr { ptr },
             marker: owner.into(),
         }
     }
 
-    pub(crate) fn from_handle<O: Into<Phantomcow<'d, Database>>>(
-        handle: QueryPtr,
-        owner: O,
-    ) -> Query<'d> {
+    pub(crate) fn from_handle<O>(handle: QueryPtr, owner: O) -> Query<'d>
+    where
+        O: Into<Phantomcow<'d, Database>>,
+    {
         Query {
             handle,
             marker: owner.into(),
         }
     }
 
-    pub fn create<D: Into<Supercow<'d, Database>>>(db: D, query_string: &str) -> Result<Self> {
+    pub fn create<D>(db: D, query_string: &str) -> Result<Self>
+    where
+        D: Into<Supercow<'d, Database>>,
+    {
         let dbref = db.into();
         dbref
             .handle
@@ -97,9 +100,10 @@ impl<'d> Query<'d> {
 }
 
 pub trait QueryExt<'d> {
-    fn search_threads<'q, Q: Into<Supercow<'q, Query<'d>>>>(
-        query: Q,
-    ) -> Result<Threads<'q, Query<'d>>> {
+    fn search_threads<'q, Q>(query: Q) -> Result<Threads<'q, Query<'d>>>
+    where
+        Q: Into<Supercow<'q, Query<'d>>>,
+    {
         let queryref = query.into();
 
         let mut thrds = ptr::null_mut();
@@ -111,9 +115,10 @@ pub trait QueryExt<'d> {
         Ok(Threads::from_ptr(thrds, Supercow::phantom(queryref)))
     }
 
-    fn search_messages<'q, Q: Into<Supercow<'q, Query<'d>>>>(
-        query: Q,
-    ) -> Result<Messages<'q, Query<'d>>> {
+    fn search_messages<'q, Q>(query: Q) -> Result<Messages<'q, Query<'d>>>
+    where
+        Q: Into<Supercow<'q, Query<'d>>>,
+    {
         let queryref = query.into();
 
         let mut msgs = ptr::null_mut();
