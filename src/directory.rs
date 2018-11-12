@@ -26,10 +26,10 @@ pub struct Directory<'d> {
 impl<'d> FilenamesOwner for Directory<'d> {}
 
 impl<'d> Directory<'d> {
-    pub fn from_ptr<O: Into<Phantomcow<'d, Database>>>(
-        ptr: *mut ffi::notmuch_directory_t,
-        owner: O,
-    ) -> Directory<'d> {
+    pub fn from_ptr<O>(ptr: *mut ffi::notmuch_directory_t, owner: O) -> Directory<'d>
+    where
+        O: Into<Phantomcow<'d, Database>>,
+    {
         Directory {
             handle: DirectoryPtr { ptr },
             marker: owner.into(),
@@ -42,9 +42,10 @@ impl<'d> Directory<'d> {
 }
 
 pub trait DirectoryExt<'d> {
-    fn child_directories<'s, S: Into<Supercow<'s, Directory<'d>>>>(
-        directory: S,
-    ) -> Filenames<'s, Directory<'d>> {
+    fn child_directories<'s, S>(directory: S) -> Filenames<'s, Directory<'d>>
+    where
+        S: Into<Supercow<'s, Directory<'d>>>,
+    {
         let dir = directory.into();
         Filenames::from_ptr(
             unsafe { ffi::notmuch_directory_get_child_directories(dir.handle.ptr) },

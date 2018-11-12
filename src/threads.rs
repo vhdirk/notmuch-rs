@@ -21,18 +21,24 @@ impl Drop for ThreadsPtr {
 }
 
 #[derive(Debug)]
-pub struct Threads<'o, Owner: ThreadsOwner + 'o> {
+pub struct Threads<'o, O>
+where
+    O: ThreadsOwner + 'o,
+{
     handle: ThreadsPtr,
-    marker: Phantomcow<'o, Owner>,
+    marker: Phantomcow<'o, O>,
 }
 
-impl<'o, Owner: ThreadsOwner + 'o> ThreadOwner for Threads<'o, Owner> {}
+impl<'o, O> ThreadOwner for Threads<'o, O> where O: ThreadsOwner + 'o {}
 
-impl<'o, Owner: ThreadsOwner + 'o> Threads<'o, Owner> {
-    pub fn from_ptr<O: Into<Phantomcow<'o, Owner>>>(
-        ptr: *mut ffi::notmuch_threads_t,
-        owner: O,
-    ) -> Threads<'o, Owner> {
+impl<'o, O> Threads<'o, O>
+where
+    O: ThreadsOwner + 'o,
+{
+    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_threads_t, owner: P) -> Threads<'o, O>
+    where
+        P: Into<Phantomcow<'o, O>>,
+    {
         Threads {
             handle: ThreadsPtr { ptr },
             marker: owner.into(),
@@ -40,22 +46,31 @@ impl<'o, Owner: ThreadsOwner + 'o> Threads<'o, Owner> {
     }
 }
 
-impl<'s, 'o: 's, Owner: ThreadsOwner + 'o> StreamingIterator<'s, Thread<'s, Self>>
-    for Threads<'o, Owner>
+impl<'s, 'o: 's, O> StreamingIterator<'s, Thread<'s, Self>> for Threads<'o, O>
+where
+    O: ThreadsOwner + 'o,
 {
     fn next(&'s mut self) -> Option<Thread<'s, Self>> {
         <Self as StreamingIteratorExt<'s, Thread<'s, Self>>>::next(Supercow::borrowed(self))
     }
 }
 
-pub trait ThreadsExt<'o, Owner: ThreadsOwner + 'o> {}
-
-impl<'o, Owner: ThreadsOwner + 'o> ThreadsExt<'o, Owner> for Threads<'o, Owner> {}
-
-impl<'s, 'o: 's, Owner: ThreadsOwner + 'o> StreamingIteratorExt<'s, Thread<'s, Self>>
-    for Threads<'o, Owner>
+pub trait ThreadsExt<'o, O>
+where
+    O: ThreadsOwner + 'o,
 {
-    fn next<S: Into<Supercow<'s, Threads<'o, Owner>>>>(threads: S) -> Option<Thread<'s, Self>> {
+}
+
+impl<'o, O> ThreadsExt<'o, O> for Threads<'o, O> where O: ThreadsOwner + 'o {}
+
+impl<'s, 'o: 's, O> StreamingIteratorExt<'s, Thread<'s, Self>> for Threads<'o, O>
+where
+    O: ThreadsOwner + 'o,
+{
+    fn next<S>(threads: S) -> Option<Thread<'s, Self>>
+    where
+        S: Into<Supercow<'s, Threads<'o, O>>>,
+    {
         let threadsref = threads.into();
         let valid = unsafe { ffi::notmuch_threads_valid(threadsref.handle.ptr) };
 
@@ -73,5 +88,5 @@ impl<'s, 'o: 's, Owner: ThreadsOwner + 'o> StreamingIteratorExt<'s, Thread<'s, S
     }
 }
 
-unsafe impl<'o, Owner: ThreadsOwner + 'o> Send for Threads<'o, Owner> {}
-unsafe impl<'o, Owner: ThreadsOwner + 'o> Sync for Threads<'o, Owner> {}
+unsafe impl<'o, O> Send for Threads<'o, O> where O: ThreadsOwner + 'o {}
+unsafe impl<'o, O> Sync for Threads<'o, O> where O: ThreadsOwner + 'o {}

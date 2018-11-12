@@ -22,19 +22,25 @@ impl Drop for ThreadPtr {
 }
 
 #[derive(Debug)]
-pub struct Thread<'o, Owner: ThreadOwner + 'o> {
+pub struct Thread<'o, O>
+where
+    O: ThreadOwner + 'o,
+{
     pub(crate) handle: ThreadPtr,
-    marker: Phantomcow<'o, Owner>,
+    marker: Phantomcow<'o, O>,
 }
 
-impl<'o, Owner: ThreadOwner + 'o> MessagesOwner for Thread<'o, Owner> {}
-impl<'o, Owner: ThreadOwner + 'o> TagsOwner for Thread<'o, Owner> {}
+impl<'o, O> MessagesOwner for Thread<'o, O> where O: ThreadOwner + 'o {}
+impl<'o, O> TagsOwner for Thread<'o, O> where O: ThreadOwner + 'o {}
 
-impl<'o, Owner: ThreadOwner + 'o> Thread<'o, Owner> {
-    pub fn from_ptr<O: Into<Phantomcow<'o, Owner>>>(
-        ptr: *mut ffi::notmuch_thread_t,
-        owner: O,
-    ) -> Thread<'o, Owner> {
+impl<'o, O> Thread<'o, O>
+where
+    O: ThreadOwner + 'o,
+{
+    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_thread_t, owner: P) -> Thread<'o, O>
+    where
+        P: Into<Phantomcow<'o, O>>,
+    {
         Thread {
             handle: ThreadPtr { ptr },
             marker: owner.into(),
@@ -56,17 +62,17 @@ impl<'o, Owner: ThreadOwner + 'o> Thread<'o, Owner> {
     }
 
     pub fn toplevel_messages(self: &Self) -> Messages<Self> {
-        <Self as ThreadExt<'o, Owner>>::toplevel_messages(self)
+        <Self as ThreadExt<'o, O>>::toplevel_messages(self)
     }
 
     /// Get a `Messages` iterator for all messages in 'thread' in
     /// oldest-first order.
     pub fn messages(self: &Self) -> Messages<Self> {
-        <Self as ThreadExt<'o, Owner>>::messages(self)
+        <Self as ThreadExt<'o, O>>::messages(self)
     }
 
     pub fn tags(&self) -> Tags<Self> {
-        <Self as ThreadExt<'o, Owner>>::tags(self)
+        <Self as ThreadExt<'o, O>>::tags(self)
     }
 
     pub fn subject(self: &Self) -> String {
@@ -97,10 +103,14 @@ impl<'o, Owner: ThreadOwner + 'o> Thread<'o, Owner> {
     }
 }
 
-pub trait ThreadExt<'o, Owner: ThreadOwner + 'o> {
-    fn tags<'s, S: Into<Supercow<'s, Thread<'o, Owner>>>>(
-        thread: S,
-    ) -> Tags<'s, Thread<'o, Owner>> {
+pub trait ThreadExt<'o, O>
+where
+    O: ThreadOwner + 'o,
+{
+    fn tags<'s, S>(thread: S) -> Tags<'s, Thread<'o, O>>
+    where
+        S: Into<Supercow<'s, Thread<'o, O>>>,
+    {
         let threadref = thread.into();
         Tags::from_ptr(
             unsafe { ffi::notmuch_thread_get_tags(threadref.handle.ptr) },
@@ -108,9 +118,10 @@ pub trait ThreadExt<'o, Owner: ThreadOwner + 'o> {
         )
     }
 
-    fn toplevel_messages<'s, S: Into<Supercow<'s, Thread<'o, Owner>>>>(
-        thread: S,
-    ) -> Messages<'s, Thread<'o, Owner>> {
+    fn toplevel_messages<'s, S>(thread: S) -> Messages<'s, Thread<'o, O>>
+    where
+        S: Into<Supercow<'s, Thread<'o, O>>>,
+    {
         let threadref = thread.into();
         Messages::from_ptr(
             unsafe { ffi::notmuch_thread_get_toplevel_messages(threadref.handle.ptr) },
@@ -120,9 +131,10 @@ pub trait ThreadExt<'o, Owner: ThreadOwner + 'o> {
 
     /// Get a `Messages` iterator for all messages in 'thread' in
     /// oldest-first order.
-    fn messages<'s, S: Into<Supercow<'s, Thread<'o, Owner>>>>(
-        thread: S,
-    ) -> Messages<'s, Thread<'o, Owner>> {
+    fn messages<'s, S>(thread: S) -> Messages<'s, Thread<'o, O>>
+    where
+        S: Into<Supercow<'s, Thread<'o, O>>>,
+    {
         let threadref = thread.into();
         Messages::from_ptr(
             unsafe { ffi::notmuch_thread_get_messages(threadref.handle.ptr) },
@@ -131,7 +143,7 @@ pub trait ThreadExt<'o, Owner: ThreadOwner + 'o> {
     }
 }
 
-impl<'o, Owner: ThreadOwner + 'o> ThreadExt<'o, Owner> for Thread<'o, Owner> {}
+impl<'o, O> ThreadExt<'o, O> for Thread<'o, O> where O: ThreadOwner + 'o {}
 
-unsafe impl<'o, Owner: ThreadOwner + 'o> Send for Thread<'o, Owner> {}
-unsafe impl<'o, Owner: ThreadOwner + 'o> Sync for Thread<'o, Owner> {}
+unsafe impl<'o, O> Send for Thread<'o, O> where O: ThreadOwner + 'o {}
+unsafe impl<'o, O> Sync for Thread<'o, O> where O: ThreadOwner + 'o {}

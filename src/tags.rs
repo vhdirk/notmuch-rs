@@ -25,11 +25,14 @@ pub struct Tags<'o, Owner: TagsOwner + 'o> {
     marker: Phantomcow<'o, Owner>,
 }
 
-impl<'o, Owner: TagsOwner + 'o> Tags<'o, Owner> {
-    pub fn from_ptr<O: Into<Phantomcow<'o, Owner>>>(
-        ptr: *mut ffi::notmuch_tags_t,
-        owner: O,
-    ) -> Tags<'o, Owner> {
+impl<'o, O> Tags<'o, O>
+where
+    O: TagsOwner + 'o,
+{
+    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_tags_t, owner: P) -> Tags<'o, O>
+    where
+        P: Into<Phantomcow<'o, O>>,
+    {
         Tags {
             handle: TagsPtr { ptr },
             marker: owner.into(),
@@ -37,7 +40,10 @@ impl<'o, Owner: TagsOwner + 'o> Tags<'o, Owner> {
     }
 }
 
-impl<'o, Owner: TagsOwner + 'o> Iterator for Tags<'o, Owner> {
+impl<'o, O> Iterator for Tags<'o, O>
+where
+    O: TagsOwner + 'o,
+{
     type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -58,9 +64,13 @@ impl<'o, Owner: TagsOwner + 'o> Iterator for Tags<'o, Owner> {
     }
 }
 
-pub trait TagsExt<'o, Owner: TagsOwner + 'o> {}
+pub trait TagsExt<'o, O>
+where
+    O: TagsOwner + 'o,
+{
+}
 
-impl<'o, Owner: TagsOwner + 'o> TagsExt<'o, Owner> for Tags<'o, Owner> {}
+impl<'o, O> TagsExt<'o, O> for Tags<'o, O> where O: TagsOwner + 'o {}
 
-unsafe impl<'o, Owner: TagsOwner + 'o> Send for Tags<'o, Owner> {}
-unsafe impl<'o, Owner: TagsOwner + 'o> Sync for Tags<'o, Owner> {}
+unsafe impl<'o, O> Send for Tags<'o, O> where O: TagsOwner + 'o {}
+unsafe impl<'o, O> Sync for Tags<'o, O> where O: TagsOwner + 'o {}
