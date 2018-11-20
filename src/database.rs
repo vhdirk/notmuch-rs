@@ -9,6 +9,7 @@ use libc;
 
 use error::Result;
 use ffi;
+use ffi::Status;
 use query::QueryPtr;
 use utils::ToStr;
 use Directory;
@@ -140,8 +141,7 @@ impl Database {
                     },
                     status.map_or(ptr::null_mut(), |f| &f as *const _ as *mut libc::c_void),
                 )
-            }
-            .as_result()
+            }.as_result()
         );
 
         Ok(())
@@ -220,8 +220,7 @@ impl Database {
                     },
                     status.map_or(ptr::null_mut(), |f| &f as *const _ as *mut libc::c_void),
                 )
-            }
-            .as_result()
+            }.as_result()
         );
 
         Ok(())
@@ -240,6 +239,13 @@ impl Database {
 
     pub fn all_tags<'d>(&'d self) -> Result<Tags<'d, Self>> {
         <Self as DatabaseExt>::all_tags(self)
+    }
+
+    pub fn remove_message<'d, P>(&'d self, path: &P) -> Status
+    where
+        P: AsRef<str>,
+    {
+        <Self as DatabaseExt>::remove_message(self, path)
     }
 }
 
@@ -280,8 +286,7 @@ pub trait DatabaseExt {
         try!(
             unsafe {
                 ffi::notmuch_database_get_directory(dbref.handle.ptr, path_str.as_ptr(), &mut dir)
-            }
-            .as_result()
+            }.as_result()
         );
 
         if dir.is_null() {
@@ -289,6 +294,19 @@ pub trait DatabaseExt {
         } else {
             Ok(Some(Directory::from_ptr(dir, Supercow::phantom(dbref))))
         }
+    }
+
+    fn remove_message<'d, D, P>(database: D, path: &P) -> Status
+    where
+        D: Into<Supercow<'d, Database>>,
+        P: AsRef<str>,
+    {
+        let dbref = database.into();
+        let msg_path = CString::new(path.as_ref()).unwrap();
+
+        Status::from(unsafe {
+            ffi::notmuch_database_remove_message(dbref.handle.ptr, msg_path.as_ptr())
+        })
     }
 }
 
