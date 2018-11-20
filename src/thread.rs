@@ -94,12 +94,12 @@ where
 
     /// Get the date of the oldest message in 'thread' as a time_t value.
     pub fn oldest_date(self: &Self) -> i64 {
-        unsafe { ffi::notmuch_thread_get_oldest_date(self.handle.ptr) }
+        unsafe { ffi::notmuch_thread_get_oldest_date(self.handle.ptr) as i64 }
     }
 
     /// Get the date of the newest message in 'thread' as a time_t value.
     pub fn newest_date(self: &Self) -> i64 {
-        unsafe { ffi::notmuch_thread_get_newest_date(self.handle.ptr) }
+        unsafe { ffi::notmuch_thread_get_newest_date(self.handle.ptr) as i64 }
     }
 }
 

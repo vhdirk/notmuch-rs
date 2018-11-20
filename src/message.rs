@@ -86,7 +86,7 @@ where
     }
 
     pub fn date(&self) -> i64 {
-        unsafe { ffi::notmuch_message_get_date(self.handle.ptr) }
+        unsafe { ffi::notmuch_message_get_date(self.handle.ptr) as i64 }
     }
 
     pub fn header(&self, name: &str) -> Result<Option<&str>> {
