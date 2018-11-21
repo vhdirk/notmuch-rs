@@ -7,7 +7,7 @@ use supercow::Supercow;
 
 use libc;
 
-use error::Result;
+use error::{Error, Result};
 use ffi;
 use ffi::Status;
 use query::QueryPtr;
@@ -235,7 +235,7 @@ impl Database {
         <Self as DatabaseExt>::all_tags(self)
     }
 
-    pub fn remove_message<'d, P>(&'d self, path: &P) -> Status
+    pub fn remove_message<'d, P>(&'d self, path: &P) -> Result<()>
     where
         P: AsRef<Path>,
     {
@@ -288,7 +288,7 @@ pub trait DatabaseExt {
         }
     }
 
-    fn remove_message<'d, D, P>(database: D, path: &P) -> Status
+    fn remove_message<'d, D, P>(database: D, path: &P) -> Result<()>
     where
         D: Into<Supercow<'d, Database>>,
         P: AsRef<Path>,
@@ -298,11 +298,10 @@ pub trait DatabaseExt {
             Some(path_str) => {
                 let msg_path = CString::new(path_str).unwrap();
 
-                Status::from(unsafe {
-                    ffi::notmuch_database_remove_message(dbref.handle.ptr, msg_path.as_ptr())
-                })
+                unsafe { ffi::notmuch_database_remove_message(dbref.handle.ptr, msg_path.as_ptr()) }
+                    .as_result()
             }
-            None => Status::FileError,
+            None => Err(Error::NotmuchError(Status::FileError)),
         }
     }
 }
