@@ -65,7 +65,7 @@ impl Database {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut db = ptr::null_mut();
-        try!(unsafe { ffi::notmuch_database_create(path_str.as_ptr(), &mut db) }.as_result());
+        unsafe { ffi::notmuch_database_create(path_str.as_ptr(), &mut db) }.as_result()?;
 
         Ok(Database {
             handle: DatabasePtr { ptr: db },
@@ -79,10 +79,8 @@ impl Database {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut db = ptr::null_mut();
-        try!(
-            unsafe { ffi::notmuch_database_open(path_str.as_ptr(), mode.into(), &mut db,) }
-                .as_result()
-        );
+        unsafe { ffi::notmuch_database_open(path_str.as_ptr(), mode.into(), &mut db) }
+            .as_result()?;
 
         Ok(Database {
             handle: DatabasePtr { ptr: db },
@@ -90,7 +88,7 @@ impl Database {
     }
 
     pub fn close(&mut self) -> Result<()> {
-        try!(unsafe { ffi::notmuch_database_close(self.handle.ptr) }.as_result());
+        unsafe { ffi::notmuch_database_close(self.handle.ptr) }.as_result()?;
 
         Ok(())
     }
@@ -129,20 +127,18 @@ impl Database {
 
         let backup_path = backup_path.map(|p| CString::new(p.as_ref().to_str().unwrap()).unwrap());
 
-        try!(
-            unsafe {
-                ffi::notmuch_database_compact(
-                    path_str.as_ptr(),
-                    backup_path.map_or(ptr::null(), |p| p.as_ptr()),
-                    if status.is_some() {
-                        Some(wrapper::<F>)
-                    } else {
-                        None
-                    },
-                    status.map_or(ptr::null_mut(), |f| &f as *const _ as *mut libc::c_void),
-                )
-            }.as_result()
-        );
+        unsafe {
+            ffi::notmuch_database_compact(
+                path_str.as_ptr(),
+                backup_path.map_or(ptr::null(), |p| p.as_ptr()),
+                if status.is_some() {
+                    Some(wrapper::<F>)
+                } else {
+                    None
+                },
+                status.map_or(ptr::null_mut(), |f| &f as *const _ as *mut libc::c_void),
+            )
+        }.as_result()?;
 
         Ok(())
     }
@@ -209,19 +205,17 @@ impl Database {
             unsafe { (*closure)(progress as f64) }
         }
 
-        try!(
-            unsafe {
-                ffi::notmuch_database_upgrade(
-                    self.handle.ptr,
-                    if status.is_some() {
-                        Some(wrapper::<F>)
-                    } else {
-                        None
-                    },
-                    status.map_or(ptr::null_mut(), |f| &f as *const _ as *mut libc::c_void),
-                )
-            }.as_result()
-        );
+        unsafe {
+            ffi::notmuch_database_upgrade(
+                self.handle.ptr,
+                if status.is_some() {
+                    Some(wrapper::<F>)
+                } else {
+                    None
+                },
+                status.map_or(ptr::null_mut(), |f| &f as *const _ as *mut libc::c_void),
+            )
+        }.as_result()?;
 
         Ok(())
     }
@@ -283,11 +277,9 @@ pub trait DatabaseExt {
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut dir = ptr::null_mut();
-        try!(
-            unsafe {
-                ffi::notmuch_database_get_directory(dbref.handle.ptr, path_str.as_ptr(), &mut dir)
-            }.as_result()
-        );
+        unsafe {
+            ffi::notmuch_database_get_directory(dbref.handle.ptr, path_str.as_ptr(), &mut dir)
+        }.as_result()?;
 
         if dir.is_null() {
             Ok(None)
@@ -310,7 +302,7 @@ pub trait DatabaseExt {
                     ffi::notmuch_database_remove_message(dbref.handle.ptr, msg_path.as_ptr())
                 })
             }
-            None => Status::FileError
+            None => Status::FileError,
         }
     }
 }
