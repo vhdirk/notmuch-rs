@@ -5,7 +5,6 @@ use supercow::{Phantomcow, Supercow};
 
 use error::{Error, Result};
 use ffi;
-use ffi::Status;
 use utils::ToStr;
 use Filenames;
 use FilenamesOwner;
@@ -106,18 +105,18 @@ where
         <Self as MessageExt<'o, O>>::tags(self)
     }
 
-    pub fn add_tag(self: &Self, tag: &str) -> Status {
+    pub fn add_tag(self: &Self, tag: &str) -> Result<()> {
         let tag = CString::new(tag).unwrap();
-        Status::from(unsafe { ffi::notmuch_message_add_tag(self.handle.ptr, tag.as_ptr()) })
+        unsafe { ffi::notmuch_message_add_tag(self.handle.ptr, tag.as_ptr()) }.as_result()
     }
 
-    pub fn remove_tag(self: &Self, tag: &str) -> Status {
+    pub fn remove_tag(self: &Self, tag: &str) -> Result<()> {
         let tag = CString::new(tag).unwrap();
-        Status::from(unsafe { ffi::notmuch_message_remove_tag(self.handle.ptr, tag.as_ptr()) })
+        unsafe { ffi::notmuch_message_remove_tag(self.handle.ptr, tag.as_ptr()) }.as_result()
     }
 
-    pub fn remove_all_tags(self: &Self) -> Status {
-        Status::from(unsafe { ffi::notmuch_message_remove_all_tags(self.handle.ptr) })
+    pub fn remove_all_tags(self: &Self) -> Result<()> {
+        unsafe { ffi::notmuch_message_remove_all_tags(self.handle.ptr) }.as_result()
     }
 }
 

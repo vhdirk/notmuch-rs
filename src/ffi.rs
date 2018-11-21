@@ -4,6 +4,7 @@
 
 use libc::{c_char, c_double, c_int, c_uint, c_ulong, c_void, time_t};
 
+use error::{Error, Result};
 use std::{error, fmt, str};
 
 use utils::ToStr;
@@ -43,17 +44,17 @@ impl notmuch_status_t {
         !self.is_ok()
     }
 
-    pub fn as_result(self) -> Result<(), Self> {
+    pub fn as_result(self) -> Result<()> {
         if self.is_ok() {
             Ok(())
         } else {
-            Err(self)
+            Err(Error::NotmuchError(Status::from(self)))
         }
     }
 }
 
 impl ToStr for Status {
-    fn to_str<'a>(&self) -> Result<&'a str, str::Utf8Error> {
+    fn to_str<'a>(&self) -> std::result::Result<&'a str, str::Utf8Error> {
         unsafe { notmuch_status_to_string((*self).into()) }.to_str()
     }
 }
