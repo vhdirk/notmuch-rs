@@ -243,7 +243,7 @@ impl Database {
 
     pub fn remove_message<'d, P>(&'d self, path: &P) -> Status
     where
-        P: AsRef<str>,
+        P: AsRef<Path>,
     {
         <Self as DatabaseExt>::remove_message(self, path)
     }
@@ -299,14 +299,19 @@ pub trait DatabaseExt {
     fn remove_message<'d, D, P>(database: D, path: &P) -> Status
     where
         D: Into<Supercow<'d, Database>>,
-        P: AsRef<str>,
+        P: AsRef<Path>,
     {
         let dbref = database.into();
-        let msg_path = CString::new(path.as_ref()).unwrap();
+        match path.as_ref().to_str() {
+            Some(path_str) => {
+                let msg_path = CString::new(path_str).unwrap();
 
-        Status::from(unsafe {
-            ffi::notmuch_database_remove_message(dbref.handle.ptr, msg_path.as_ptr())
-        })
+                Status::from(unsafe {
+                    ffi::notmuch_database_remove_message(dbref.handle.ptr, msg_path.as_ptr())
+                })
+            }
+            None => Status::FileError
+        }
     }
 }
 
