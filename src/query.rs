@@ -82,7 +82,7 @@ impl<'d> Query<'d> {
 
     pub fn count_messages(self: &Self) -> Result<u32> {
         let mut cnt = 0;
-        try!(unsafe { ffi::notmuch_query_count_messages(self.handle.ptr, &mut cnt,) }.as_result());
+        unsafe { ffi::notmuch_query_count_messages(self.handle.ptr, &mut cnt) }.as_result()?;
 
         Ok(cnt)
     }
@@ -93,7 +93,7 @@ impl<'d> Query<'d> {
 
     pub fn count_threads(self: &Self) -> Result<u32> {
         let mut cnt = 0;
-        try!(unsafe { ffi::notmuch_query_count_threads(self.handle.ptr, &mut cnt,) }.as_result());
+        unsafe { ffi::notmuch_query_count_threads(self.handle.ptr, &mut cnt) }.as_result()?;
 
         Ok(cnt)
     }
@@ -107,10 +107,8 @@ pub trait QueryExt<'d> {
         let queryref = query.into();
 
         let mut thrds = ptr::null_mut();
-        try!(
-            unsafe { ffi::notmuch_query_search_threads(queryref.handle.ptr, &mut thrds) }
-                .as_result()
-        );
+        unsafe { ffi::notmuch_query_search_threads(queryref.handle.ptr, &mut thrds) }
+            .as_result()?;
 
         Ok(Threads::from_ptr(thrds, Supercow::phantom(queryref)))
     }
@@ -122,10 +120,8 @@ pub trait QueryExt<'d> {
         let queryref = query.into();
 
         let mut msgs = ptr::null_mut();
-        try!(
-            unsafe { ffi::notmuch_query_search_messages(queryref.handle.ptr, &mut msgs) }
-                .as_result()
-        );
+        unsafe { ffi::notmuch_query_search_messages(queryref.handle.ptr, &mut msgs) }
+            .as_result()?;
 
         Ok(Messages::from_ptr(msgs, Supercow::phantom(queryref)))
     }
