@@ -20,17 +20,17 @@ impl fmt::Display for Error {
 
 impl std::error::Error for Error {
     fn description(&self) -> &str {
-        match *self {
-            Error::IoError(ref e) => error::Error::description(e),
-            Error::NotmuchError(ref e) => e.description(),
+        match self {
+            Error::IoError(e) => error::Error::description(e),
+            Error::NotmuchError(e) => e.description(),
             Error::UnspecifiedError => "Generic notmuch error",
         }
     }
 
     fn cause(&self) -> Option<&dyn error::Error> {
-        match *self {
-            Error::IoError(ref e) => Some(e),
-            Error::NotmuchError(ref e) => Some(e),
+        match self {
+            Error::IoError(e) => Some(e),
+            Error::NotmuchError(e) => Some(e),
             Error::UnspecifiedError => None,
         }
     }
