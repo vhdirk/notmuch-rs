@@ -4,10 +4,10 @@
 
 use libc::{c_char, c_double, c_int, c_uint, c_ulong, c_void, time_t};
 
-use error::{Error, Result};
+use crate::error::{Error, Result};
 use std::{error, fmt, str};
 
-use utils::ToStr;
+use crate::utils::ToStr;
 
 notmuch_enum! {
     #[repr(C)]
@@ -60,7 +60,7 @@ impl ToStr for Status {
 }
 
 impl fmt::Display for Status {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.to_str().unwrap())
     }
 }

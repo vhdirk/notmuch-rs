@@ -4,7 +4,7 @@ use std::ops::Drop;
 
 use supercow::Phantomcow;
 
-use ffi;
+use crate::ffi;
 
 pub trait TagsOwner {}
 
@@ -20,7 +20,7 @@ impl Drop for TagsPtr {
 }
 
 #[derive(Debug)]
-pub struct Tags<'o, Owner: TagsOwner + 'o> {
+pub struct Tags<'o, Owner: TagsOwner> {
     handle: TagsPtr,
     marker: Phantomcow<'o, Owner>,
 }

@@ -3,15 +3,15 @@ use std::ops::Drop;
 use std::path::PathBuf;
 use supercow::{Phantomcow, Supercow};
 
-use error::{Error, Result};
-use ffi;
-use utils::ToStr;
-use Filenames;
-use FilenamesOwner;
-use Messages;
-use MessagesOwner;
-use Tags;
-use TagsOwner;
+use crate::error::{Error, Result};
+use crate::ffi;
+use crate::utils::ToStr;
+use crate::Filenames;
+use crate::FilenamesOwner;
+use crate::Messages;
+use crate::MessagesOwner;
+use crate::Tags;
+use crate::TagsOwner;
 
 pub trait MessageOwner {}
 
@@ -29,7 +29,7 @@ impl Drop for MessagePtr {
 #[derive(Debug)]
 pub struct Message<'o, O>
 where
-    O: MessageOwner + 'o,
+    O: MessageOwner,
 {
     pub(crate) handle: MessagePtr,
     marker: Phantomcow<'o, O>,
@@ -63,7 +63,7 @@ where
         tid.to_str().unwrap().to_string()
     }
 
-    pub fn replies(self: &Self) -> Messages<Self> {
+    pub fn replies(self: &Self) -> Messages<'_, Self> {
         <Self as MessageExt<'o, O>>::replies(self)
     }
 
@@ -72,7 +72,7 @@ where
         unsafe { ffi::notmuch_message_count_files(self.handle.ptr) }
     }
 
-    pub fn filenames(self: &Self) -> Filenames<Self> {
+    pub fn filenames(self: &Self) -> Filenames<'_, Self> {
         <Self as MessageExt<'o, O>>::filenames(self)
     }
 
@@ -101,7 +101,7 @@ where
         }
     }
 
-    pub fn tags(&self) -> Tags<Self> {
+    pub fn tags(&self) -> Tags<'_, Self> {
         <Self as MessageExt<'o, O>>::tags(self)
     }
 
