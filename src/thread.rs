@@ -15,11 +15,13 @@ pub(crate) struct ThreadPtr {
     pub ptr: *mut ffi::notmuch_thread_t,
 }
 
-impl Drop for ThreadPtr {
-    fn drop(&mut self) {
-        unsafe { ffi::notmuch_thread_destroy(self.ptr) };
-    }
-}
+// TODO: The iterator doesn't actually own these, so dropping these will
+//       generate a segfault when a new iterator is constructed.
+// impl Drop for ThreadPtr {
+//     fn drop(&mut self) {
+//         unsafe { ffi::notmuch_thread_destroy(self.ptr) };
+//     }
+// }
 
 #[derive(Debug)]
 pub struct Thread<'o, O>

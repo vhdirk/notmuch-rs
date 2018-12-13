@@ -20,11 +20,13 @@ pub(crate) struct MessagePtr {
     pub ptr: *mut ffi::notmuch_message_t,
 }
 
-impl Drop for MessagePtr {
-    fn drop(&mut self) {
-        unsafe { ffi::notmuch_message_destroy(self.ptr) };
-    }
-}
+// TODO: The iterator doesn't actually own these, so dropping these will
+//       generate a segfault when a new iterator is constructed.
+// impl Drop for MessagePtr {
+//     fn drop(&mut self) {
+//         unsafe { ffi::notmuch_message_destroy(self.ptr) };
+//     }
+// }
 
 #[derive(Debug)]
 pub struct Message<'o, O>
