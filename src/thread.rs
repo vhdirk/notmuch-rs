@@ -1,12 +1,12 @@
 use std::ops::Drop;
 use supercow::{Phantomcow, Supercow};
 
-use ffi;
-use utils::ToStr;
-use Messages;
-use MessagesOwner;
-use Tags;
-use TagsOwner;
+use crate::ffi;
+use crate::utils::ToStr;
+use crate::Messages;
+use crate::MessagesOwner;
+use crate::Tags;
+use crate::TagsOwner;
 
 pub trait ThreadOwner {}
 
@@ -24,7 +24,7 @@ impl Drop for ThreadPtr {
 #[derive(Debug)]
 pub struct Thread<'o, O>
 where
-    O: ThreadOwner + 'o,
+    O: ThreadOwner,
 {
     pub(crate) handle: ThreadPtr,
     marker: Phantomcow<'o, O>,
@@ -61,17 +61,17 @@ where
         unsafe { ffi::notmuch_thread_get_total_files(self.handle.ptr) }
     }
 
-    pub fn toplevel_messages(self: &Self) -> Messages<Self> {
+    pub fn toplevel_messages(self: &Self) -> Messages<'_, Self> {
         <Self as ThreadExt<'o, O>>::toplevel_messages(self)
     }
 
     /// Get a `Messages` iterator for all messages in 'thread' in
     /// oldest-first order.
-    pub fn messages(self: &Self) -> Messages<Self> {
+    pub fn messages(self: &Self) -> Messages<'_, Self> {
         <Self as ThreadExt<'o, O>>::messages(self)
     }
 
-    pub fn tags(&self) -> Tags<Self> {
+    pub fn tags(&self) -> Tags<'_, Self> {
         <Self as ThreadExt<'o, O>>::tags(self)
     }
 

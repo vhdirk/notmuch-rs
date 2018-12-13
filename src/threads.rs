@@ -1,11 +1,11 @@
 use std::ops::Drop;
 
 use supercow::{Phantomcow, Supercow};
-use utils::{StreamingIterator, StreamingIteratorExt};
+use crate::utils::{StreamingIterator, StreamingIteratorExt};
 
-use ffi;
-use thread::ThreadOwner;
-use Thread;
+use crate::ffi;
+use crate::thread::ThreadOwner;
+use crate::Thread;
 
 pub trait ThreadsOwner {}
 
@@ -23,7 +23,7 @@ impl Drop for ThreadsPtr {
 #[derive(Debug)]
 pub struct Threads<'o, O>
 where
-    O: ThreadsOwner + 'o,
+    O: ThreadsOwner,
 {
     handle: ThreadsPtr,
     marker: Phantomcow<'o, O>,

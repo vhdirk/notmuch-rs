@@ -2,12 +2,12 @@ use std::ops::Drop;
 
 use supercow::{Phantomcow, Supercow};
 
-use ffi;
-use utils::{StreamingIterator, StreamingIteratorExt};
-use Message;
-use MessageOwner;
-use Tags;
-use TagsOwner;
+use crate::ffi;
+use crate::utils::{StreamingIterator, StreamingIteratorExt};
+use crate::Message;
+use crate::MessageOwner;
+use crate::Tags;
+use crate::TagsOwner;
 
 pub trait MessagesOwner {}
 
@@ -31,7 +31,7 @@ impl Drop for MessagesPtr {
 #[derive(Debug)]
 pub struct Messages<'o, O>
 where
-    O: MessagesOwner + 'o,
+    O: MessagesOwner,
 {
     pub(crate) handle: MessagesPtr,
     marker: Phantomcow<'o, O>,

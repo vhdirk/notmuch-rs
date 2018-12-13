@@ -1,5 +1,5 @@
-extern crate dirs;
-extern crate notmuch;
+use dirs;
+use notmuch;
 
 use std::sync::Arc;
 
