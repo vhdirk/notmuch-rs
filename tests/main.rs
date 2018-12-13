@@ -30,9 +30,9 @@ fn main() {
 
             // let mut threads = db.create_query(&"".to_string()).unwrap().search_threads().unwrap();
 
-            let threads = Arc::new(<Query<'_> as QueryExt>::search_threads(query).unwrap());
+            let threads = Arc::new(<Query as QueryExt>::search_threads(query).unwrap());
 
-            while let Some(thread) = <Threads<'_, _> as StreamingIteratorExt<_>>::next(threads.clone())
+            while let Some(thread) = <Threads<_> as StreamingIteratorExt<_>>::next(threads.clone())
             {
                 println!("thread {:?} {:?}", thread.subject(), thread.authors());
             }
