@@ -3,7 +3,6 @@ use notmuch;
 
 use std::sync::Arc;
 
-use notmuch::StreamingIteratorExt;
 use notmuch::{Query, QueryExt, Threads};
 
 fn main() {
@@ -30,9 +29,9 @@ fn main() {
 
             // let mut threads = db.create_query(&"".to_string()).unwrap().search_threads().unwrap();
 
-            let threads = Arc::new(<Query as QueryExt>::search_threads(query).unwrap());
+            let mut threads = Arc::new(<Query as QueryExt>::search_threads(query).unwrap());
 
-            while let Some(thread) = <Threads<_> as StreamingIteratorExt<_>>::next(threads.clone())
+            for thread in Arc::get_mut(&mut threads).unwrap()
             {
                 println!("thread {:?} {:?}", thread.subject(), thread.authors());
             }

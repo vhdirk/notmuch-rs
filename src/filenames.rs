@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use supercow::Phantomcow;
 
 use crate::ffi;
+use crate::utils::ScopedPhantomcow;
 
 pub trait FilenamesOwner {}
 
@@ -30,7 +31,7 @@ where
     O: FilenamesOwner,
 {
     pub(crate) handle: FilenamesPtr,
-    pub(crate) marker: Phantomcow<'o, O>,
+    pub(crate) marker: ScopedPhantomcow<'o, O>,
 }
 
 impl<'o, O> Filenames<'o, O>
@@ -39,7 +40,7 @@ where
 {
     pub fn from_ptr<P>(ptr: *mut ffi::notmuch_filenames_t, owner: P) -> Filenames<'o, O>
     where
-        P: Into<Phantomcow<'o, O>>,
+        P: Into<ScopedPhantomcow<'o, O>>,
     {
         Filenames {
             handle: FilenamesPtr { ptr },

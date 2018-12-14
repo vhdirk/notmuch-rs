@@ -8,9 +8,10 @@ use crate::ffi;
 use crate::ffi::Sort;
 use crate::Database;
 use crate::Messages;
-use crate::MessagesOwner;
+use crate::MessageOwner;
 use crate::Threads;
-use crate::ThreadsOwner;
+use crate::ThreadOwner;
+use crate::utils::{ScopedSupercow, ScopedPhantomcow};
 
 #[derive(Debug)]
 pub(crate) struct QueryPtr {
@@ -29,8 +30,8 @@ pub struct Query<'d> {
     marker: Phantomcow<'d, Database>,
 }
 
-impl<'d> ThreadsOwner for Query<'d> {}
-impl<'d> MessagesOwner for Query<'d> {}
+impl<'d> ThreadOwner for Query<'d> {}
+impl<'d> MessageOwner for Query<'d> {}
 
 impl<'d> Query<'d> {
     pub(crate) fn from_ptr<O>(ptr: *mut ffi::notmuch_query_t, owner: O) -> Query<'d>
@@ -102,7 +103,7 @@ impl<'d> Query<'d> {
 pub trait QueryExt<'d> {
     fn search_threads<'q, Q>(query: Q) -> Result<Threads<'q, Query<'d>>>
     where
-        Q: Into<Supercow<'q, Query<'d>>>,
+        Q: Into<ScopedSupercow<'q, Query<'d>>>,
     {
         let queryref = query.into();
 
@@ -110,12 +111,12 @@ pub trait QueryExt<'d> {
         unsafe { ffi::notmuch_query_search_threads(queryref.handle.ptr, &mut thrds) }
             .as_result()?;
 
-        Ok(Threads::from_ptr(thrds, Supercow::phantom(queryref)))
+        Ok(Threads::from_ptr(thrds, ScopedSupercow::phantom(queryref)))
     }
 
     fn search_messages<'q, Q>(query: Q) -> Result<Messages<'q, Query<'d>>>
     where
-        Q: Into<Supercow<'q, Query<'d>>>,
+        Q: Into<ScopedSupercow<'q, Query<'d>>>,
     {
         let queryref = query.into();
 
@@ -123,7 +124,7 @@ pub trait QueryExt<'d> {
         unsafe { ffi::notmuch_query_search_messages(queryref.handle.ptr, &mut msgs) }
             .as_result()?;
 
-        Ok(Messages::from_ptr(msgs, Supercow::phantom(queryref)))
+        Ok(Messages::from_ptr(msgs, ScopedSupercow::phantom(queryref)))
     }
 }
 

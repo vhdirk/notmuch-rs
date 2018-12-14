@@ -1,32 +1,22 @@
 use std::ffi::CString;
-use std::ops::Drop;
 use std::path::PathBuf;
-use supercow::{Phantomcow, Supercow};
+use supercow::{Supercow};
 
 use crate::error::{Error, Result};
 use crate::ffi;
-use crate::utils::ToStr;
+use crate::utils::{ToStr, ScopedPhantomcow, ScopedSupercow};
 use crate::Filenames;
 use crate::FilenamesOwner;
 use crate::Messages;
-use crate::MessagesOwner;
 use crate::Tags;
 use crate::TagsOwner;
 
-pub trait MessageOwner {}
+pub trait MessageOwner: Send + Sync {}
 
 #[derive(Debug)]
 pub(crate) struct MessagePtr {
     pub ptr: *mut ffi::notmuch_message_t,
 }
-
-// TODO: The iterator doesn't actually own these, so dropping these will
-//       generate a segfault when a new iterator is constructed.
-// impl Drop for MessagePtr {
-//     fn drop(&mut self) {
-//         unsafe { ffi::notmuch_message_destroy(self.ptr) };
-//     }
-// }
 
 #[derive(Debug)]
 pub struct Message<'o, O>
@@ -34,10 +24,10 @@ where
     O: MessageOwner,
 {
     pub(crate) handle: MessagePtr,
-    marker: Phantomcow<'o, O>,
+    marker: ScopedPhantomcow<'o, O>,
 }
 
-impl<'o, O> MessagesOwner for Message<'o, O> where O: MessageOwner + 'o {}
+impl<'o, O> MessageOwner for Message<'o, O> where O: MessageOwner + 'o {}
 impl<'o, O> FilenamesOwner for Message<'o, O> where O: MessageOwner + 'o {}
 impl<'o, O> TagsOwner for Message<'o, O> where O: MessageOwner + 'o {}
 
@@ -47,7 +37,7 @@ where
 {
     pub fn from_ptr<P>(ptr: *mut ffi::notmuch_message_t, owner: P) -> Message<'o, O>
     where
-        P: Into<Phantomcow<'o, O>>,
+        P: Into<ScopedPhantomcow<'o, O>>,
     {
         Message {
             handle: MessagePtr { ptr },
@@ -128,7 +118,7 @@ where
 {
     fn tags<'s, S>(message: S) -> Tags<'s, Message<'o, O>>
     where
-        S: Into<Supercow<'s, Message<'o, O>>>,
+        S: Into<ScopedSupercow<'s, Message<'o, O>>>,
     {
         let messageref = message.into();
         Tags::from_ptr(
@@ -139,7 +129,7 @@ where
 
     fn replies<'s, S>(message: S) -> Messages<'s, Message<'o, O>>
     where
-        S: Into<Supercow<'s, Message<'o, O>>>,
+        S: Into<ScopedSupercow<'s, Message<'o, O>>>,
     {
         let messageref = message.into();
         Messages::from_ptr(
@@ -150,7 +140,7 @@ where
 
     fn filenames<'s, S>(message: S) -> Filenames<'s, Message<'o, O>>
     where
-        S: Into<Supercow<'s, Message<'o, O>>>,
+        S: Into<ScopedSupercow<'s, Message<'o, O>>>,
     {
         let messageref = message.into();
         Filenames::from_ptr(

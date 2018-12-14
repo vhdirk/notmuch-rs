@@ -2,26 +2,18 @@ use std::ops::Drop;
 use supercow::{Phantomcow, Supercow};
 
 use crate::ffi;
-use crate::utils::ToStr;
+use crate::utils::{ToStr, ScopedSupercow, ScopedPhantomcow};
 use crate::Messages;
-use crate::MessagesOwner;
+use crate::MessageOwner;
 use crate::Tags;
 use crate::TagsOwner;
 
-pub trait ThreadOwner {}
+pub trait ThreadOwner: Send + Sync {}
 
 #[derive(Debug)]
 pub(crate) struct ThreadPtr {
     pub ptr: *mut ffi::notmuch_thread_t,
 }
-
-// TODO: The iterator doesn't actually own these, so dropping these will
-//       generate a segfault when a new iterator is constructed.
-// impl Drop for ThreadPtr {
-//     fn drop(&mut self) {
-//         unsafe { ffi::notmuch_thread_destroy(self.ptr) };
-//     }
-// }
 
 #[derive(Debug)]
 pub struct Thread<'o, O>
@@ -29,10 +21,10 @@ where
     O: ThreadOwner,
 {
     pub(crate) handle: ThreadPtr,
-    marker: Phantomcow<'o, O>,
+    pub(crate) marker: ScopedPhantomcow<'o, O>,
 }
 
-impl<'o, O> MessagesOwner for Thread<'o, O> where O: ThreadOwner + 'o {}
+impl<'o, O> MessageOwner for Thread<'o, O> where O: ThreadOwner + 'o {}
 impl<'o, O> TagsOwner for Thread<'o, O> where O: ThreadOwner + 'o {}
 
 impl<'o, O> Thread<'o, O>
@@ -41,7 +33,7 @@ where
 {
     pub fn from_ptr<P>(ptr: *mut ffi::notmuch_thread_t, owner: P) -> Thread<'o, O>
     where
-        P: Into<Phantomcow<'o, O>>,
+        P: Into<ScopedPhantomcow<'o, O>>,
     {
         Thread {
             handle: ThreadPtr { ptr },
@@ -111,23 +103,23 @@ where
 {
     fn tags<'s, S>(thread: S) -> Tags<'s, Thread<'o, O>>
     where
-        S: Into<Supercow<'s, Thread<'o, O>>>,
+        S: Into<ScopedSupercow<'s, Thread<'o, O>>>,
     {
         let threadref = thread.into();
         Tags::from_ptr(
             unsafe { ffi::notmuch_thread_get_tags(threadref.handle.ptr) },
-            Supercow::phantom(threadref),
+            ScopedSupercow::phantom(threadref),
         )
     }
 
     fn toplevel_messages<'s, S>(thread: S) -> Messages<'s, Thread<'o, O>>
     where
-        S: Into<Supercow<'s, Thread<'o, O>>>,
+        S: Into<ScopedSupercow<'s, Thread<'o, O>>>,
     {
         let threadref = thread.into();
         Messages::from_ptr(
             unsafe { ffi::notmuch_thread_get_toplevel_messages(threadref.handle.ptr) },
-            Supercow::phantom(threadref),
+            ScopedSupercow::phantom(threadref),
         )
     }
 
@@ -135,12 +127,12 @@ where
     /// oldest-first order.
     fn messages<'s, S>(thread: S) -> Messages<'s, Thread<'o, O>>
     where
-        S: Into<Supercow<'s, Thread<'o, O>>>,
+        S: Into<ScopedSupercow<'s, Thread<'o, O>>>,
     {
         let threadref = thread.into();
         Messages::from_ptr(
             unsafe { ffi::notmuch_thread_get_messages(threadref.handle.ptr) },
-            Supercow::phantom(threadref),
+            ScopedSupercow::phantom(threadref),
         )
     }
 }

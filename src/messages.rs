@@ -3,13 +3,11 @@ use std::ops::Drop;
 use supercow::{Phantomcow, Supercow};
 
 use crate::ffi;
-use crate::utils::{StreamingIterator, StreamingIteratorExt};
+use crate::utils::{ScopedSupercow, ScopedPhantomcow};
 use crate::Message;
 use crate::MessageOwner;
 use crate::Tags;
 use crate::TagsOwner;
-
-pub trait MessagesOwner {}
 
 #[derive(Debug)]
 pub struct MessagesPtr {
@@ -18,12 +16,6 @@ pub struct MessagesPtr {
 
 impl Drop for MessagesPtr {
     fn drop(self: &mut Self) {
-        let valid = unsafe { ffi::notmuch_messages_valid(self.ptr) };
-
-        if valid == 0 {
-            return;
-        }
-
         unsafe { ffi::notmuch_messages_destroy(self.ptr) };
     }
 }
@@ -31,19 +23,19 @@ impl Drop for MessagesPtr {
 #[derive(Debug)]
 pub struct Messages<'o, O>
 where
-    O: MessagesOwner,
+    O: MessageOwner,
 {
     pub(crate) handle: MessagesPtr,
-    marker: Phantomcow<'o, O>,
+    marker: ScopedPhantomcow<'o, O>,
 }
 
 impl<'o, O> Messages<'o, O>
 where
-    O: MessagesOwner + 'o,
+    O: MessageOwner + 'o,
 {
     pub(crate) fn from_ptr<P>(ptr: *mut ffi::notmuch_messages_t, owner: P) -> Messages<'o, O>
     where
-        P: Into<Phantomcow<'o, O>>,
+        P: Into<ScopedPhantomcow<'o, O>>,
     {
         Messages {
             handle: MessagesPtr { ptr },
@@ -52,12 +44,12 @@ where
     }
 }
 
-impl<'o, O> MessageOwner for Messages<'o, O> where O: MessagesOwner + 'o {}
-impl<'o, O> TagsOwner for Messages<'o, O> where O: MessagesOwner + 'o {}
+impl<'o, O> MessageOwner for Messages<'o, O> where O: MessageOwner + 'o {}
+impl<'o, O> TagsOwner for Messages<'o, O> where O: MessageOwner + 'o {}
 
 impl<'o, O> Messages<'o, O>
 where
-    O: MessagesOwner + 'o,
+    O: MessageOwner + 'o,
 {
     /**
      * Return a list of tags from all messages.
@@ -80,47 +72,14 @@ where
     }
 }
 
-impl<'s, 'o: 's, O> StreamingIterator<'s, Message<'s, Self>> for Messages<'o, O>
-where
-    O: MessagesOwner + 'o,
-{
-    fn next(&'s mut self) -> Option<Message<'s, Self>> {
-        <Self as StreamingIteratorExt<'s, Message<'s, Self>>>::next(Supercow::borrowed(self))
-    }
-}
-
 pub trait MessagesExt<'o, O>
 where
-    O: MessagesOwner + 'o,
+    O: MessageOwner + 'o,
 {
 }
 
-impl<'o, O> MessagesExt<'o, O> for Messages<'o, O> where O: MessagesOwner + 'o {}
+impl<'o, O> MessagesExt<'o, O> for Messages<'o, O> where O: MessageOwner + 'o {}
 
-impl<'s, 'o: 's, O> StreamingIteratorExt<'s, Message<'s, Self>> for Messages<'o, O>
-where
-    O: MessagesOwner + 'o,
-{
-    fn next<S>(messages: S) -> Option<Message<'s, Self>>
-    where
-        S: Into<Supercow<'s, Messages<'o, O>>>,
-    {
-        let messagesref = messages.into();
-        let valid = unsafe { ffi::notmuch_messages_valid(messagesref.handle.ptr) };
 
-        if valid == 0 {
-            return None;
-        }
-
-        let cmsg = unsafe {
-            let msg = ffi::notmuch_messages_get(messagesref.handle.ptr);
-            ffi::notmuch_messages_move_to_next(messagesref.handle.ptr);
-            msg
-        };
-
-        Some(Message::from_ptr(cmsg, Supercow::phantom(messagesref)))
-    }
-}
-
-unsafe impl<'o, O> Send for Messages<'o, O> where O: MessagesOwner + 'o {}
-unsafe impl<'o, O> Sync for Messages<'o, O> where O: MessagesOwner + 'o {}
+unsafe impl<'o, O> Send for Messages<'o, O> where O: MessageOwner + 'o {}
+unsafe impl<'o, O> Sync for Messages<'o, O> where O: MessageOwner + 'o {}

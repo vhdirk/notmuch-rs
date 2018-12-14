@@ -16,6 +16,7 @@ use crate::Directory;
 use crate::Query;
 use crate::Tags;
 use crate::TagsOwner;
+use crate::utils::{ScopedSupercow, ScopedPhantomcow};
 
 // Re-exported under database module for pretty namespacin'.
 pub use crate::ffi::DatabaseMode;
@@ -258,18 +259,18 @@ pub trait DatabaseExt {
 
     fn all_tags<'d, D>(database: D) -> Result<Tags<'d, Database>>
     where
-        D: Into<Supercow<'d, Database>>,
+        D: Into<ScopedSupercow<'d, Database>>,
     {
         let dbref = database.into();
 
         let tags = unsafe { ffi::notmuch_database_get_all_tags(dbref.handle.ptr) };
 
-        Ok(Tags::from_ptr(tags, Supercow::phantom(dbref)))
+        Ok(Tags::from_ptr(tags, ScopedSupercow::phantom(dbref)))
     }
 
     fn directory<'d, D, P>(database: D, path: &P) -> Result<Option<Directory<'d>>>
     where
-        D: Into<Supercow<'d, Database>>,
+        D: Into<ScopedSupercow<'d, Database>>,
         P: AsRef<Path>,
     {
         let dbref = database.into();

@@ -5,6 +5,7 @@ use crate::ffi;
 use crate::Database;
 use crate::Filenames;
 use crate::FilenamesOwner;
+use crate::utils::{ScopedSupercow, ScopedPhantomcow};
 
 #[derive(Debug)]
 pub(crate) struct DirectoryPtr {
@@ -20,7 +21,7 @@ impl Drop for DirectoryPtr {
 #[derive(Debug)]
 pub struct Directory<'d> {
     handle: DirectoryPtr,
-    marker: Phantomcow<'d, Database>,
+    marker: ScopedPhantomcow<'d, Database>,
 }
 
 impl<'d> FilenamesOwner for Directory<'d> {}
@@ -28,7 +29,7 @@ impl<'d> FilenamesOwner for Directory<'d> {}
 impl<'d> Directory<'d> {
     pub fn from_ptr<O>(ptr: *mut ffi::notmuch_directory_t, owner: O) -> Directory<'d>
     where
-        O: Into<Phantomcow<'d, Database>>,
+        O: Into<ScopedPhantomcow<'d, Database>>,
     {
         Directory {
             handle: DirectoryPtr { ptr },
@@ -44,7 +45,7 @@ impl<'d> Directory<'d> {
 pub trait DirectoryExt<'d> {
     fn child_directories<'s, S>(directory: S) -> Filenames<'s, Directory<'d>>
     where
-        S: Into<Supercow<'s, Directory<'d>>>,
+        S: Into<ScopedSupercow<'s, Directory<'d>>>,
     {
         let dir = directory.into();
         Filenames::from_ptr(

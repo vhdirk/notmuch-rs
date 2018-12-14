@@ -5,6 +5,7 @@ use std::ops::Drop;
 use supercow::Phantomcow;
 
 use crate::ffi;
+use crate::utils::ScopedPhantomcow;
 
 pub trait TagsOwner {}
 
@@ -22,7 +23,7 @@ impl Drop for TagsPtr {
 #[derive(Debug)]
 pub struct Tags<'o, Owner: TagsOwner> {
     handle: TagsPtr,
-    marker: Phantomcow<'o, Owner>,
+    marker: ScopedPhantomcow<'o, Owner>,
 }
 
 impl<'o, O> Tags<'o, O>
@@ -31,7 +32,7 @@ where
 {
     pub fn from_ptr<P>(ptr: *mut ffi::notmuch_tags_t, owner: P) -> Tags<'o, O>
     where
-        P: Into<Phantomcow<'o, O>>,
+        P: Into<ScopedPhantomcow<'o, O>>,
     {
         Tags {
             handle: TagsPtr { ptr },

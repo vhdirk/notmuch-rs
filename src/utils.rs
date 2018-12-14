@@ -1,7 +1,8 @@
 use libc;
 use std::{ffi, str};
 
-use supercow::Supercow;
+use supercow::{Supercow, DefaultFeatures, NonSyncFeatures};
+use supercow::ext::{BoxedStorage};
 
 pub trait ToStr {
     fn to_str<'a>(&self) -> Result<&'a str, str::Utf8Error>;
@@ -23,17 +24,18 @@ impl ToString for *const libc::c_char {
     }
 }
 
-/// A streaming iterator, as found in https://github.com/emk/rust-streaming
-pub trait StreamingIterator<'a, T> {
-    /// Return either the next item in the sequence, or `None` if all items
-    /// have been consumed.
-    fn next(&'a mut self) -> Option<T>;
-}
+pub type ScopedNonSyncSupercow<'a, OWNED, BORROWED = OWNED> =
+    Supercow<'a, OWNED, BORROWED,
+             Box<NonSyncFeatures<'a> + 'a>,
+             BoxedStorage>;
 
-pub trait StreamingIteratorExt<'a, T> {
-    /// Return either the next item in the sequence, or `None` if all items
-    /// have been consumed.
-    fn next<S: Into<Supercow<'a, Self>>>(s: S) -> Option<T>
-    where
-        Self: Sized + 'a;
-}
+pub type ScopedPhantomcow<'a, OWNED, BORROWED = OWNED, 
+                              SHARED = Box<DefaultFeatures<'a> + 'a>,
+                              STORAGE = BoxedStorage> =
+    Supercow<'a, OWNED, BORROWED, SHARED, STORAGE, ()>;
+
+pub type ScopedSupercow<'a, OWNED, BORROWED = OWNED, SHARED = Box<DefaultFeatures<'a> + 'a>> =
+    Supercow<'a, OWNED, BORROWED, SHARED, BoxedStorage>;
+
+
+
