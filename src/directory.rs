@@ -1,5 +1,5 @@
 use std::ops::Drop;
-use supercow::{Phantomcow, Supercow};
+use supercow::Supercow;
 
 use crate::ffi;
 use crate::Database;

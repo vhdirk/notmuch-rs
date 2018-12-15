@@ -1,5 +1,4 @@
 use std::ops::Drop;
-use supercow::{Phantomcow, Supercow};
 
 use crate::ffi;
 use crate::utils::{ToStr, ScopedSupercow, ScopedPhantomcow};
@@ -7,33 +6,38 @@ use crate::Messages;
 use crate::MessageOwner;
 use crate::Tags;
 use crate::TagsOwner;
-
-pub trait ThreadOwner: Send + Sync {}
+use crate::Query;
 
 #[derive(Debug)]
 pub(crate) struct ThreadPtr {
     pub ptr: *mut ffi::notmuch_thread_t,
 }
 
-#[derive(Debug)]
-pub struct Thread<'o, O>
-where
-    O: ThreadOwner,
-{
-    pub(crate) handle: ThreadPtr,
-    pub(crate) marker: ScopedPhantomcow<'o, O>,
+impl Drop for ThreadPtr {
+    fn drop(&mut self) {
+        unsafe { ffi::notmuch_thread_destroy(self.ptr) };
+    }
 }
 
-impl<'o, O> MessageOwner for Thread<'o, O> where O: ThreadOwner + 'o {}
-impl<'o, O> TagsOwner for Thread<'o, O> where O: ThreadOwner + 'o {}
-
-impl<'o, O> Thread<'o, O>
+#[derive(Debug)]
+pub struct Thread<'d, 'q>
 where
-    O: ThreadOwner + 'o,
+    'd: 'q
 {
-    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_thread_t, owner: P) -> Thread<'o, O>
+    pub(crate) handle: ThreadPtr,
+    pub(crate) marker: ScopedPhantomcow<'q, Query<'d>>,
+}
+
+impl<'d, 'q> MessageOwner for Thread<'d, 'q> where 'd: 'q {}
+impl<'d, 'q> TagsOwner for Thread<'d, 'q> where 'd: 'q {}
+
+impl<'d, 'q> Thread<'d, 'q>
+where
+    'd: 'q
+{
+    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_thread_t, owner: P) -> Thread<'d, 'q>
     where
-        P: Into<ScopedPhantomcow<'o, O>>,
+        P: Into<ScopedPhantomcow<'q, Query<'d>>>,
     {
         Thread {
             handle: ThreadPtr { ptr },
@@ -56,17 +60,17 @@ where
     }
 
     pub fn toplevel_messages(self: &Self) -> Messages<'_, Self> {
-        <Self as ThreadExt<'o, O>>::toplevel_messages(self)
+        <Self as ThreadExt<'d, 'q>>::toplevel_messages(self)
     }
 
     /// Get a `Messages` iterator for all messages in 'thread' in
     /// oldest-first order.
     pub fn messages(self: &Self) -> Messages<'_, Self> {
-        <Self as ThreadExt<'o, O>>::messages(self)
+        <Self as ThreadExt<'d, 'q>>::messages(self)
     }
 
     pub fn tags(&self) -> Tags<'_, Self> {
-        <Self as ThreadExt<'o, O>>::tags(self)
+        <Self as ThreadExt<'d, 'q>>::tags(self)
     }
 
     pub fn subject(self: &Self) -> String {
@@ -97,13 +101,13 @@ where
     }
 }
 
-pub trait ThreadExt<'o, O>
+pub trait ThreadExt<'d, 'q>
 where
-    O: ThreadOwner + 'o,
+    'd: 'q
 {
-    fn tags<'s, S>(thread: S) -> Tags<'s, Thread<'o, O>>
+    fn tags<'s, S>(thread: S) -> Tags<'s, Thread<'d, 'q>>
     where
-        S: Into<ScopedSupercow<'s, Thread<'o, O>>>,
+        S: Into<ScopedSupercow<'s, Thread<'d, 'q>>>,
     {
         let threadref = thread.into();
         Tags::from_ptr(
@@ -112,9 +116,9 @@ where
         )
     }
 
-    fn toplevel_messages<'s, S>(thread: S) -> Messages<'s, Thread<'o, O>>
+    fn toplevel_messages<'s, S>(thread: S) -> Messages<'s, Thread<'d, 'q>>
     where
-        S: Into<ScopedSupercow<'s, Thread<'o, O>>>,
+        S: Into<ScopedSupercow<'s, Thread<'d, 'q>>>,
     {
         let threadref = thread.into();
         Messages::from_ptr(
@@ -125,9 +129,9 @@ where
 
     /// Get a `Messages` iterator for all messages in 'thread' in
     /// oldest-first order.
-    fn messages<'s, S>(thread: S) -> Messages<'s, Thread<'o, O>>
+    fn messages<'s, S>(thread: S) -> Messages<'s, Thread<'d, 'q>>
     where
-        S: Into<ScopedSupercow<'s, Thread<'o, O>>>,
+        S: Into<ScopedSupercow<'s, Thread<'d, 'q>>>,
     {
         let threadref = thread.into();
         Messages::from_ptr(
@@ -137,7 +141,7 @@ where
     }
 }
 
-impl<'o, O> ThreadExt<'o, O> for Thread<'o, O> where O: ThreadOwner + 'o {}
+impl<'d, 'q> ThreadExt<'d, 'q> for Thread<'d, 'q> where 'd: 'q {}
 
-unsafe impl<'o, O> Send for Thread<'o, O> where O: ThreadOwner + 'o {}
-unsafe impl<'o, O> Sync for Thread<'o, O> where O: ThreadOwner + 'o {}
+unsafe impl<'d, 'q> Send for Thread<'d, 'q> where 'd: 'q {}
+unsafe impl<'d, 'q> Sync for Thread<'d, 'q> where 'd: 'q {}

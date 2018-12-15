@@ -10,8 +10,7 @@ use crate::Database;
 use crate::Messages;
 use crate::MessageOwner;
 use crate::Threads;
-use crate::ThreadOwner;
-use crate::utils::{ScopedSupercow, ScopedPhantomcow};
+use crate::utils::ScopedSupercow;
 
 #[derive(Debug)]
 pub(crate) struct QueryPtr {
@@ -30,7 +29,6 @@ pub struct Query<'d> {
     marker: Phantomcow<'d, Database>,
 }
 
-impl<'d> ThreadOwner for Query<'d> {}
 impl<'d> MessageOwner for Query<'d> {}
 
 impl<'d> Query<'d> {
@@ -88,8 +86,8 @@ impl<'d> Query<'d> {
         Ok(cnt)
     }
 
-    pub fn search_threads<'q>(self: &'d Self) -> Result<Threads<'q, Self>> {
-        <Query<'_> as QueryExt>::search_threads(self)
+    pub fn search_threads<'q>(self: &'d Self) -> Result<Threads<'d, 'q>> {
+        <Query<'d> as QueryExt>::search_threads(self)
     }
 
     pub fn count_threads(self: &Self) -> Result<u32> {
@@ -101,7 +99,7 @@ impl<'d> Query<'d> {
 }
 
 pub trait QueryExt<'d> {
-    fn search_threads<'q, Q>(query: Q) -> Result<Threads<'q, Query<'d>>>
+    fn search_threads<'q, Q>(query: Q) -> Result<Threads<'d, 'q>>
     where
         Q: Into<ScopedSupercow<'q, Query<'d>>>,
     {

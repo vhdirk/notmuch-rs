@@ -2,8 +2,6 @@ use std::ffi::CStr;
 use std::iter::Iterator;
 use std::ops::Drop;
 
-use supercow::Phantomcow;
-
 use crate::ffi;
 use crate::utils::ScopedPhantomcow;
 

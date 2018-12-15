@@ -1,10 +1,7 @@
 use std::ops::Drop;
 
-use supercow::{Phantomcow, Supercow};
-
 use crate::ffi;
-use crate::utils::{ScopedSupercow, ScopedPhantomcow};
-use crate::Message;
+use crate::utils::ScopedPhantomcow;
 use crate::MessageOwner;
 use crate::Tags;
 use crate::TagsOwner;

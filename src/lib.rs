@@ -29,7 +29,7 @@ pub use crate::message::{Message, MessageExt, MessageOwner};
 pub use crate::messages::{Messages, MessagesExt};
 pub use crate::query::{Query, QueryExt};
 pub use crate::tags::{Tags, TagsExt, TagsOwner};
-pub use crate::thread::{Thread, ThreadExt, ThreadOwner};
+pub use crate::thread::{Thread, ThreadExt};
 pub use crate::threads::{Threads, ThreadsExt};
 
 pub use crate::ffi::{DatabaseMode, Sort};

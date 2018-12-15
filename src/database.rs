@@ -16,7 +16,7 @@ use crate::Directory;
 use crate::Query;
 use crate::Tags;
 use crate::TagsOwner;
-use crate::utils::{ScopedSupercow, ScopedPhantomcow};
+use crate::utils::ScopedSupercow;
 
 // Re-exported under database module for pretty namespacin'.
 pub use crate::ffi::DatabaseMode;

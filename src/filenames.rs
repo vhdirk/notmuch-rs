@@ -3,8 +3,6 @@ use std::iter::Iterator;
 use std::ops::Drop;
 use std::path::PathBuf;
 
-use supercow::Phantomcow;
-
 use crate::ffi;
 use crate::utils::ScopedPhantomcow;
 

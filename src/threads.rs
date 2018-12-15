@@ -1,11 +1,9 @@
 use std::ops::Drop;
 
-use supercow::{Phantomcow, Supercow};
-
 use crate::ffi;
-use crate::thread::{ThreadOwner, ThreadPtr};
 use crate::Thread;
-use crate::utils::{ScopedPhantomcow, ScopedSupercow};
+use crate::Query;
+use crate::utils::ScopedPhantomcow;
 
 
 #[derive(Debug)]
@@ -20,21 +18,21 @@ impl Drop for ThreadsPtr {
 }
 
 #[derive(Debug)]
-pub struct Threads<'o, O>
+pub struct Threads<'d, 'q>
 where
-    O: ThreadOwner,
+    'd: 'q
 {
     handle: ThreadsPtr,
-    marker: ScopedPhantomcow<'o, O>,
+    marker: ScopedPhantomcow<'q, Query<'d>>,
 }
 
-impl<'o, O> Threads<'o, O>
+impl<'d, 'q> Threads<'d, 'q>
 where
-    O: ThreadOwner + 'o,
+    'd: 'q,
 {
-    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_threads_t, owner: P) -> Threads<'o, O>
+    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_threads_t, owner: P) -> Threads<'d, 'q>
     where
-        P: Into<ScopedPhantomcow<'o, O>>,
+        P: Into<ScopedPhantomcow<'q, Query<'d>>>,
     {
         Threads {
             handle: ThreadsPtr { ptr },
@@ -43,13 +41,13 @@ where
     }
 }
 
-impl<'o, O> Iterator for Threads<'o, O>
+impl<'d, 'q> Iterator for Threads<'d, 'q>
 where
-    O: ThreadOwner,
+    'd: 'q,
 {
-    type Item = Thread<'o, O>;
+    type Item = Thread<'d, 'q>;
 
-    fn next(&mut self) -> Option<Thread<'o, O>> {
+    fn next(&mut self) -> Option<Self::Item> {
         let valid = unsafe { ffi::notmuch_threads_valid(self.handle.ptr) };
 
         if valid == 0 {
@@ -62,19 +60,19 @@ where
             thrd
         };
 
-        Some(Thread::from_ptr(cthrd, ScopedPhantomcow::<'o, O>::share(&mut self.marker)))
+        Some(Thread::from_ptr(cthrd, ScopedPhantomcow::<'q, Query<'d>>::share(&mut self.marker)))
     }
 }
 
 
-pub trait ThreadsExt<'o, O>
+pub trait ThreadsExt<'d, 'q>
 where
-    O: ThreadOwner + 'o,
+    'd: 'q,
 {
 }
 
-impl<'o, O> ThreadsExt<'o, O> for Threads<'o, O> where O: ThreadOwner + 'o {}
+impl<'d, 'q> ThreadsExt<'d, 'q> for Threads<'d, 'q> where 'd: 'q {}
 
 
-unsafe impl<'o, O> Send for Threads<'o, O> where O: ThreadOwner + 'o {}
-unsafe impl<'o, O> Sync for Threads<'o, O> where O: ThreadOwner + 'o {}
+unsafe impl<'d, 'q> Send for Threads<'d, 'q> where 'd: 'q {}
+unsafe impl<'d, 'q> Sync for Threads<'d, 'q> where 'd: 'q {}
