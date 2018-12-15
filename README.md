@@ -5,7 +5,7 @@ This is not much more than a wrapper for the [notmuch](https://notmuchmail.org/)
 [![Build Status](https://travis-ci.org/vhdirk/notmuch-rs.svg?branch=master)](https://travis-ci.org/vhdirk/notmuch-rs)
 [![Crate version](https://img.shields.io/crates/v/notmuch.svg)](https://crates.io/crates/notmuch)
 [![Download statistics](https://img.shields.io/crates/d/notmuch.svg)](https://crates.io/crates/notmuch)
-[![License](https://img.shields.io/crates/l/notmuch.svg)](https://crates.io/crates/notmuch)
+[![License](https://img.shields.io/crates/l/notmuch.svg)](https://crates.io/crates/notmuch) [![Join the chat at https://gitter.im/notmuch-rs/Lobby](https://badges.gitter.im/notmuch-rs/Lobby.svg)](https://gitter.im/notmuch-rs/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ## Building
 
