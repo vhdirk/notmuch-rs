@@ -3,14 +3,14 @@ use std::ptr;
 
 use supercow::{Phantomcow, Supercow};
 
-use crate::error::Result;
-use crate::ffi;
-use crate::ffi::Sort;
-use crate::Database;
-use crate::Messages;
-use crate::MessageOwner;
-use crate::Threads;
-use crate::utils::ScopedSupercow;
+use error::Result;
+use ffi;
+use ffi::Sort;
+use Database;
+use Messages;
+use MessageOwner;
+use Threads;
+use utils::ScopedSupercow;
 
 #[derive(Debug)]
 pub(crate) struct QueryPtr {
@@ -76,7 +76,7 @@ impl<'d> Query<'d> {
 
     /// Filter messages according to the query and return
     pub fn search_messages<'q>(self: &'d Self) -> Result<Messages<'q, Self>> {
-        <Query<'_> as QueryExt>::search_messages(self)
+        <Query as QueryExt>::search_messages(self)
     }
 
     pub fn count_messages(self: &Self) -> Result<u32> {

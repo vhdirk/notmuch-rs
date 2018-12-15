@@ -1,12 +1,12 @@
 use std::ops::Drop;
 
-use crate::ffi;
-use crate::utils::{ToStr, ScopedSupercow, ScopedPhantomcow};
-use crate::Messages;
-use crate::MessageOwner;
-use crate::Tags;
-use crate::TagsOwner;
-use crate::Query;
+use ffi;
+use utils::{ToStr, ScopedSupercow, ScopedPhantomcow};
+use Messages;
+use MessageOwner;
+use Tags;
+use TagsOwner;
+use Query;
 
 #[derive(Debug)]
 pub(crate) struct ThreadPtr {

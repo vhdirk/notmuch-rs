@@ -1,7 +1,7 @@
 use std;
 use std::{error, fmt, io, result};
 
-use crate::ffi;
+use ffi;
 
 pub type Result<T> = result::Result<T, Error>;
 
@@ -13,7 +13,7 @@ pub enum Error {
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", error::Error::description(self))
     }
 }
@@ -27,10 +27,10 @@ impl std::error::Error for Error {
         }
     }
 
-    fn cause(&self) -> Option<&dyn error::Error> {
-        match self {
-            Error::IoError(e) => Some(e),
-            Error::NotmuchError(e) => Some(e),
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            Error::IoError(ref e) => Some(e),
+            Error::NotmuchError(ref e) => Some(e),
             Error::UnspecifiedError => None,
         }
     }

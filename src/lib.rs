@@ -4,8 +4,8 @@
 #[macro_use]
 mod macros;
 
-use libc;
-
+extern crate libc;
+extern crate supercow;
 
 mod ffi;
 mod utils;
@@ -21,15 +21,15 @@ mod tags;
 mod thread;
 mod threads;
 
-pub use crate::database::{Database, DatabaseExt};
-pub use crate::directory::{Directory, DirectoryExt};
-pub use crate::error::Error;
-pub use crate::filenames::{Filenames, FilenamesOwner};
-pub use crate::message::{Message, MessageExt, MessageOwner};
-pub use crate::messages::{Messages, MessagesExt};
-pub use crate::query::{Query, QueryExt};
-pub use crate::tags::{Tags, TagsExt, TagsOwner};
-pub use crate::thread::{Thread, ThreadExt};
-pub use crate::threads::{Threads, ThreadsExt};
+pub use database::{Database, DatabaseExt};
+pub use directory::{Directory, DirectoryExt};
+pub use error::Error;
+pub use filenames::{Filenames, FilenamesOwner};
+pub use message::{Message, MessageExt, MessageOwner};
+pub use messages::{Messages, MessagesExt};
+pub use query::{Query, QueryExt};
+pub use tags::{Tags, TagsExt, TagsOwner};
+pub use thread::{Thread, ThreadExt};
+pub use threads::{Threads, ThreadsExt};
 
-pub use crate::ffi::{DatabaseMode, Sort};
+pub use ffi::{DatabaseMode, Sort};

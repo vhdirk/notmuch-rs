@@ -3,8 +3,8 @@ use std::iter::Iterator;
 use std::ops::Drop;
 use std::path::PathBuf;
 
-use crate::ffi;
-use crate::utils::ScopedPhantomcow;
+use ffi;
+use utils::ScopedPhantomcow;
 
 pub trait FilenamesOwner {}
 
@@ -26,7 +26,7 @@ impl Drop for FilenamesPtr {
 #[derive(Debug)]
 pub struct Filenames<'o, O>
 where
-    O: FilenamesOwner,
+    O: FilenamesOwner + 'o,
 {
     pub(crate) handle: FilenamesPtr,
     pub(crate) marker: ScopedPhantomcow<'o, O>,

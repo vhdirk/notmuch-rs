@@ -2,8 +2,8 @@ use std::ffi::CStr;
 use std::iter::Iterator;
 use std::ops::Drop;
 
-use crate::ffi;
-use crate::utils::ScopedPhantomcow;
+use ffi;
+use utils::ScopedPhantomcow;
 
 pub trait TagsOwner {}
 
@@ -19,7 +19,7 @@ impl Drop for TagsPtr {
 }
 
 #[derive(Debug)]
-pub struct Tags<'o, Owner: TagsOwner> {
+pub struct Tags<'o, Owner: TagsOwner + 'o> {
     handle: TagsPtr,
     marker: ScopedPhantomcow<'o, Owner>,
 }

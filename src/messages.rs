@@ -1,11 +1,11 @@
 use std::ops::Drop;
 
-use crate::ffi;
-use crate::utils::ScopedPhantomcow;
-use crate::MessageOwner;
-use crate::Message;
-use crate::Tags;
-use crate::TagsOwner;
+use ffi;
+use utils::ScopedPhantomcow;
+use MessageOwner;
+use Message;
+use Tags;
+use TagsOwner;
 
 #[derive(Debug)]
 pub struct MessagesPtr {
@@ -21,7 +21,7 @@ impl Drop for MessagesPtr {
 #[derive(Debug)]
 pub struct Messages<'o, O>
 where
-    O: MessageOwner,
+    O: MessageOwner + 'o,
 {
     pub(crate) handle: MessagesPtr,
     marker: ScopedPhantomcow<'o, O>,

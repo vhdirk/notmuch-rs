@@ -2,14 +2,14 @@ use std::ffi::CString;
 use std::path::PathBuf;
 use supercow::{Supercow};
 
-use crate::error::{Error, Result};
-use crate::ffi;
-use crate::utils::{ToStr, ScopedPhantomcow, ScopedSupercow};
-use crate::Filenames;
-use crate::FilenamesOwner;
-use crate::Messages;
-use crate::Tags;
-use crate::TagsOwner;
+use error::{Error, Result};
+use ffi;
+use utils::{ToStr, ScopedPhantomcow, ScopedSupercow};
+use Filenames;
+use FilenamesOwner;
+use Messages;
+use Tags;
+use TagsOwner;
 
 pub trait MessageOwner: Send + Sync {}
 
@@ -21,7 +21,7 @@ pub(crate) struct MessagePtr {
 #[derive(Debug)]
 pub struct Message<'o, O>
 where
-    O: MessageOwner,
+    O: MessageOwner + 'o,
 {
     pub(crate) handle: MessagePtr,
     marker: ScopedPhantomcow<'o, O>,
@@ -55,7 +55,7 @@ where
         tid.to_str().unwrap().to_string()
     }
 
-    pub fn replies(self: &Self) -> Messages<'_, Self> {
+    pub fn replies(self: &Self) -> Messages<Self> {
         <Self as MessageExt<'o, O>>::replies(self)
     }
 
@@ -64,7 +64,7 @@ where
         unsafe { ffi::notmuch_message_count_files(self.handle.ptr) }
     }
 
-    pub fn filenames(self: &Self) -> Filenames<'_, Self> {
+    pub fn filenames(self: &Self) -> Filenames<Self> {
         <Self as MessageExt<'o, O>>::filenames(self)
     }
 
@@ -93,7 +93,7 @@ where
         }
     }
 
-    pub fn tags(&self) -> Tags<'_, Self> {
+    pub fn tags(&self) -> Tags<Self> {
         <Self as MessageExt<'o, O>>::tags(self)
     }
 

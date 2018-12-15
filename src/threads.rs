@@ -1,9 +1,9 @@
 use std::ops::Drop;
 
-use crate::ffi;
-use crate::Thread;
-use crate::Query;
-use crate::utils::ScopedPhantomcow;
+use ffi;
+use Thread;
+use Query;
+use utils::ScopedPhantomcow;
 
 
 #[derive(Debug)]
