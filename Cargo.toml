@@ -7,7 +7,6 @@ repository = "https://github.com/vhdirk/notmuch-rs"
 description = "Rust interface and bindings for notmuch"
 license = "GPL-3.0+"
 readme = "README.md"
-edition = "2018"
 
 [badges]
 travis-ci = { repository = "vhdirk/notmuch-rs" }

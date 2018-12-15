@@ -7,18 +7,18 @@ use supercow::Supercow;
 
 use libc;
 
-use crate::error::{Error, Result};
-use crate::ffi;
-use crate::ffi::Status;
-use crate::query::QueryPtr;
-use crate::utils::ToStr;
-use crate::Directory;
-use crate::Query;
-use crate::Tags;
-use crate::TagsOwner;
+use error::{Error, Result};
+use ffi;
+use ffi::Status;
+use query::QueryPtr;
+use utils::ToStr;
+use Directory;
+use Query;
+use Tags;
+use TagsOwner;
 
 // Re-exported under database module for pretty namespacin'.
-pub use crate::ffi::DatabaseMode;
+pub use ffi::DatabaseMode;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Version(libc::c_uint);

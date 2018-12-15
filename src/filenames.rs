@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use supercow::Phantomcow;
 
-use crate::ffi;
+use ffi;
 
 pub trait FilenamesOwner {}
 
@@ -27,7 +27,7 @@ impl Drop for FilenamesPtr {
 #[derive(Debug)]
 pub struct Filenames<'o, O>
 where
-    O: FilenamesOwner,
+    O: FilenamesOwner + 'o,
 {
     pub(crate) handle: FilenamesPtr,
     pub(crate) marker: Phantomcow<'o, O>,

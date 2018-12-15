@@ -1,10 +1,10 @@
 use std::ops::Drop;
 use supercow::{Phantomcow, Supercow};
 
-use crate::ffi;
-use crate::Database;
-use crate::Filenames;
-use crate::FilenamesOwner;
+use ffi;
+use Database;
+use Filenames;
+use FilenamesOwner;
 
 #[derive(Debug)]
 pub(crate) struct DirectoryPtr {
@@ -36,7 +36,7 @@ impl<'d> Directory<'d> {
         }
     }
 
-    pub fn child_directories(&self) -> Filenames<'_, Self> {
+    pub fn child_directories(&self) -> Filenames<Self> {
         <Self as DirectoryExt>::child_directories(self)
     }
 }

@@ -4,8 +4,8 @@
 #[macro_use]
 mod macros;
 
-use libc;
-
+extern crate libc;
+extern crate supercow;
 
 mod ffi;
 mod utils;
@@ -21,16 +21,16 @@ mod tags;
 mod thread;
 mod threads;
 
-pub use crate::database::{Database, DatabaseExt};
-pub use crate::directory::{Directory, DirectoryExt};
-pub use crate::error::Error;
-pub use crate::filenames::{Filenames, FilenamesOwner};
-pub use crate::message::{Message, MessageExt, MessageOwner};
-pub use crate::messages::{Messages, MessagesExt, MessagesOwner};
-pub use crate::query::{Query, QueryExt};
-pub use crate::tags::{Tags, TagsExt, TagsOwner};
-pub use crate::thread::{Thread, ThreadExt, ThreadOwner};
-pub use crate::threads::{Threads, ThreadsExt, ThreadsOwner};
+pub use database::{Database, DatabaseExt};
+pub use directory::{Directory, DirectoryExt};
+pub use error::Error;
+pub use filenames::{Filenames, FilenamesOwner};
+pub use message::{Message, MessageExt, MessageOwner};
+pub use messages::{Messages, MessagesExt, MessagesOwner};
+pub use query::{Query, QueryExt};
+pub use tags::{Tags, TagsExt, TagsOwner};
+pub use thread::{Thread, ThreadExt, ThreadOwner};
+pub use threads::{Threads, ThreadsExt, ThreadsOwner};
 
-pub use crate::ffi::{DatabaseMode, Sort};
-pub use crate::utils::{StreamingIterator, StreamingIteratorExt};
+pub use ffi::{DatabaseMode, Sort};
+pub use utils::{StreamingIterator, StreamingIteratorExt};
