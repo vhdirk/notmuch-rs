@@ -3,6 +3,7 @@ use std::ops::Drop;
 use crate::ffi;
 use crate::utils::ScopedPhantomcow;
 use crate::MessageOwner;
+use crate::Message;
 use crate::Tags;
 use crate::TagsOwner;
 
@@ -68,6 +69,31 @@ where
         )
     }
 }
+
+impl<'o, O> Iterator for Messages<'o, O>
+where
+    O: MessageOwner + 'o,
+{
+    type Item = Message<'o, O>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let valid = unsafe { ffi::notmuch_messages_valid(self.handle.ptr) };
+
+        if valid == 0 {
+            return None;
+        }
+
+        let cthrd = unsafe {
+            let thrd = ffi::notmuch_messages_get(self.handle.ptr);
+            ffi::notmuch_messages_move_to_next(self.handle.ptr);
+            thrd
+        };
+
+        Some(Message::from_ptr(cthrd, ScopedPhantomcow::<'o, O>::share(&mut self.marker)))
+    }
+}
+
+
 
 pub trait MessagesExt<'o, O>
 where
