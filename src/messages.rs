@@ -104,3 +104,35 @@ impl<'o, O> MessagesExt<'o, O> for Messages<'o, O> where O: MessageOwner + 'o {}
 
 unsafe impl<'o, O> Send for Messages<'o, O> where O: MessageOwner + 'o {}
 unsafe impl<'o, O> Sync for Messages<'o, O> where O: MessageOwner + 'o {}
+
+#[cfg(test)]
+mod tests {
+    // This will not compile if ownership can't be subject to recursion
+    fn descend<'o, O: 'o + super::MessageOwner, T: Iterator<Item=super::Message<'o, O>>>(iter: T)
+            -> usize {
+        iter.map(|msg| descend(msg.replies()) ).count()
+    }
+    
+    use query::Query;
+    use database;
+    
+    #[test]
+    #[should_panic] // until test data is filled in
+    fn recurse() -> () {
+        match database::Database::open(
+            &String::new(),
+            database::DatabaseMode::ReadOnly,
+        ) {
+            /* This will not happen without test data, but will force the compiler to compile
+             * the descend function.
+             */
+            Ok(db) => {
+                let q = Query::create(db, &String::new()).unwrap();
+                descend::<Query, super::Messages<Query>>(q.search_messages().unwrap());
+            }
+            Err(err) => {
+                panic!("Got error while trying to open db: {:?}", err);
+            }
+        }
+    }
+}
