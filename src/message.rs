@@ -35,7 +35,7 @@ impl<'o, O> Message<'o, O>
 where
     O: MessageOwner + 'o,
 {
-    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_message_t, owner: P) -> Message<'o, O>
+    pub(crate) fn from_ptr<P>(ptr: *mut ffi::notmuch_message_t, owner: P) -> Message<'o, O>
     where
         P: Into<ScopedPhantomcow<'o, O>>,
     {
@@ -55,8 +55,11 @@ where
         tid.to_str().unwrap().to_string()
     }
 
-    pub fn replies(self: &Self) -> Messages<Self> {
-        <Self as MessageExt<'o, O>>::replies(self)
+    pub fn replies(self: &mut Self) -> Messages<'o, O> {
+        Messages::<'o, O>::from_ptr(
+            unsafe { ffi::notmuch_message_get_replies(self.handle.ptr) },
+            ScopedPhantomcow::<'o, O>::share(&mut self.marker)
+        )
     }
 
     #[cfg(feature = "v0_26")]
@@ -127,16 +130,16 @@ where
         )
     }
 
-    fn replies<'s, S>(message: S) -> Messages<'s, Message<'o, O>>
-    where
-        S: Into<ScopedSupercow<'s, Message<'o, O>>>,
-    {
-        let messageref = message.into();
-        Messages::from_ptr(
-            unsafe { ffi::notmuch_message_get_replies(messageref.handle.ptr) },
-            Supercow::phantom(messageref),
-        )
-    }
+    // fn replies<'s, S>(message: S) -> Messages<'s, Message<'o, O>>
+    // where
+    //     S: Into<ScopedSupercow<'s, Message<'o, O>>>,
+    // {
+    //     let messageref = message.into();
+    //     Messages::from_ptr(
+    //         unsafe { ffi::notmuch_message_get_replies(messageref.handle.ptr) },
+    //         Supercow::phantom(messageref),
+    //     )
+    // }
 
     fn filenames<'s, S>(message: S) -> Filenames<'s, Message<'o, O>>
     where
