@@ -59,20 +59,14 @@ where
         unsafe { ffi::notmuch_thread_get_total_files(self.handle.ptr) }
     }
 
-    pub fn toplevel_messages(self: &mut Self) -> Messages<'d, 'q> {
-        Messages::from_ptr(
-            unsafe { ffi::notmuch_thread_get_toplevel_messages(self.handle.ptr) },
-            ScopedPhantomcow::<'q, Query<'d>>::share(&mut self.marker),
-        )
+    pub fn toplevel_messages(self: &Self) -> Messages<'_, Self> {
+        <Self as ThreadExt<'d, 'q>>::toplevel_messages(self)
     }
 
     /// Get a `Messages` iterator for all messages in 'thread' in
     /// oldest-first order.
-    pub fn messages(self: &mut Self) -> Messages<'d, 'q> {
-        Messages::from_ptr(
-            unsafe { ffi::notmuch_thread_get_messages(self.handle.ptr) },
-            ScopedPhantomcow::<'q, Query<'d>>::share(&mut self.marker),
-        )
+    pub fn messages(self: &Self) -> Messages<'_, Self> {
+        <Self as ThreadExt<'d, 'q>>::messages(self)
     }
 
     pub fn tags(&self) -> Tags<'_, Self> {
@@ -122,29 +116,29 @@ where
         )
     }
 
-    // fn toplevel_messages<'s, S>(thread: S) -> Messages<'d, 'q>
-    // where
-    //     S: Into<ScopedSupercow<'s, Thread<'d, 'q>>>,
-    // {
-    //     let threadref = thread.into();
-    //     Messages::from_ptr(
-    //         unsafe { ffi::notmuch_thread_get_toplevel_messages(threadref.handle.ptr) },
-    //         ScopedPhantomcow::<'q, Query<'d>>::share(&mut self.marker),
-    //     )
-    // }
+    fn toplevel_messages<'s, S>(thread: S) -> Messages<'s, Thread<'d, 'q>>
+    where
+        S: Into<ScopedSupercow<'s, Thread<'d, 'q>>>,
+    {
+        let threadref = thread.into();
+        Messages::from_ptr(
+            unsafe { ffi::notmuch_thread_get_toplevel_messages(threadref.handle.ptr) },
+            ScopedSupercow::phantom(threadref),
+        )
+    }
 
-    // /// Get a `Messages` iterator for all messages in 'thread' in
-    // /// oldest-first order.
-    // fn messages<'s, S>(thread: S) -> Messages<'d, 'q>
-    // where
-    //     S: Into<ScopedSupercow<'s, Thread<'d, 'q>>>,
-    // {
-    //     let threadref = thread.into();
-    //     Messages::from_ptr(
-    //         unsafe { ffi::notmuch_thread_get_messages(threadref.handle.ptr) },
-    //         ScopedPhantomcow::<'q, Query<'d>>::share(&mut self.marker),
-    //     )
-    // }
+    /// Get a `Messages` iterator for all messages in 'thread' in
+    /// oldest-first order.
+    fn messages<'s, S>(thread: S) -> Messages<'s, Thread<'d, 'q>>
+    where
+        S: Into<ScopedSupercow<'s, Thread<'d, 'q>>>,
+    {
+        let threadref = thread.into();
+        Messages::from_ptr(
+            unsafe { ffi::notmuch_thread_get_messages(threadref.handle.ptr) },
+            ScopedSupercow::phantom(threadref),
+        )
+    }
 }
 
 impl<'d, 'q> ThreadExt<'d, 'q> for Thread<'d, 'q> where 'd: 'q {}

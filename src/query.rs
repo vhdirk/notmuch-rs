@@ -75,7 +75,7 @@ impl<'d> Query<'d> {
     }
 
     /// Filter messages according to the query and return
-    pub fn search_messages<'q>(self: &'d Self) -> Result<Messages<'d, 'q>> {
+    pub fn search_messages<'q>(self: &'d Self) -> Result<Messages<'q, Self>> {
         <Query as QueryExt>::search_messages(self)
     }
 
@@ -112,7 +112,7 @@ pub trait QueryExt<'d> {
         Ok(Threads::from_ptr(thrds, ScopedSupercow::phantom(queryref)))
     }
 
-    fn search_messages<'q, Q>(query: Q) -> Result<Messages<'d, 'q>>
+    fn search_messages<'q, Q>(query: Q) -> Result<Messages<'q, Query<'d>>>
     where
         Q: Into<ScopedSupercow<'q, Query<'d>>>,
     {
