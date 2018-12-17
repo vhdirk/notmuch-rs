@@ -10,6 +10,7 @@ use FilenamesOwner;
 use Messages;
 use Tags;
 use TagsOwner;
+use Query;
 
 pub trait MessageOwner: Send + Sync {}
 
@@ -19,25 +20,25 @@ pub(crate) struct MessagePtr {
 }
 
 #[derive(Debug)]
-pub struct Message<'o, O>
+pub struct Message<'d, 'q>
 where
-    O: MessageOwner + 'o,
+    'd: 'q,
 {
     pub(crate) handle: MessagePtr,
-    marker: ScopedPhantomcow<'o, O>,
+    marker: ScopedPhantomcow<'q, Query<'d>>,
 }
 
-impl<'o, O> MessageOwner for Message<'o, O> where O: MessageOwner + 'o {}
-impl<'o, O> FilenamesOwner for Message<'o, O> where O: MessageOwner + 'o {}
-impl<'o, O> TagsOwner for Message<'o, O> where O: MessageOwner + 'o {}
+impl<'d, 'q> MessageOwner for Message<'d, 'q> where 'd: 'q {}
+impl<'d, 'q> FilenamesOwner for Message<'d, 'q> where 'd: 'q {}
+impl<'d, 'q> TagsOwner for Message<'d, 'q> where 'd: 'q {}
 
-impl<'o, O> Message<'o, O>
+impl<'d, 'q> Message<'d, 'q>
 where
-    O: MessageOwner + 'o,
+    'd: 'q,
 {
-    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_message_t, owner: P) -> Message<'o, O>
+    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_message_t, owner: P) -> Message<'d, 'q>
     where
-        P: Into<ScopedPhantomcow<'o, O>>,
+        P: Into<ScopedPhantomcow<'q, Query<'d>>>,
     {
         Message {
             handle: MessagePtr { ptr },
@@ -55,8 +56,12 @@ where
         tid.to_str().unwrap().to_string()
     }
 
-    pub fn replies(self: &Self) -> Messages<Self> {
-        <Self as MessageExt<'o, O>>::replies(self)
+    pub fn replies(self: &mut Self) -> Messages<'d, 'q>
+    {
+        Messages::from_ptr(
+            unsafe { ffi::notmuch_message_get_replies(self.handle.ptr) },
+            ScopedPhantomcow::<'q, Query<'d>>::share(&mut self.marker),
+        )
     }
 
     #[cfg(feature = "v0_26")]
@@ -65,7 +70,7 @@ where
     }
 
     pub fn filenames(self: &Self) -> Filenames<Self> {
-        <Self as MessageExt<'o, O>>::filenames(self)
+        <Self as MessageExt<'d, 'q>>::filenames(self)
     }
 
     pub fn filename(self: &Self) -> PathBuf {
@@ -94,7 +99,7 @@ where
     }
 
     pub fn tags(&self) -> Tags<Self> {
-        <Self as MessageExt<'o, O>>::tags(self)
+        <Self as MessageExt<'d, 'q>>::tags(self)
     }
 
     pub fn add_tag(self: &Self, tag: &str) -> Result<()> {
@@ -112,13 +117,13 @@ where
     }
 }
 
-pub trait MessageExt<'o, O>
+pub trait MessageExt<'d, 'q>
 where
-    O: MessageOwner + 'o,
+    'd: 'q,
 {
-    fn tags<'s, S>(message: S) -> Tags<'s, Message<'o, O>>
+    fn tags<'s, S>(message: S) -> Tags<'s, Message<'d, 'q>>
     where
-        S: Into<ScopedSupercow<'s, Message<'o, O>>>,
+        S: Into<ScopedSupercow<'s, Message<'d, 'q>>>,
     {
         let messageref = message.into();
         Tags::from_ptr(
@@ -127,20 +132,20 @@ where
         )
     }
 
-    fn replies<'s, S>(message: S) -> Messages<'s, Message<'o, O>>
-    where
-        S: Into<ScopedSupercow<'s, Message<'o, O>>>,
-    {
-        let messageref = message.into();
-        Messages::from_ptr(
-            unsafe { ffi::notmuch_message_get_replies(messageref.handle.ptr) },
-            Supercow::phantom(messageref),
-        )
-    }
+    // fn replies<'s, S>(message: S) -> Messages<'d, 'q>
+    // where
+    //     S: Into<ScopedSupercow<'s, Message<'d, 'q>>>,
+    // {
+    //     let messageref = message.into();
+    //     Messages::from_ptr(
+    //         unsafe { ffi::notmuch_message_get_replies(messageref.handle.ptr) },
+    //         Supercow::phantom(messageref),
+    //     )
+    // }
 
-    fn filenames<'s, S>(message: S) -> Filenames<'s, Message<'o, O>>
+    fn filenames<'s, S>(message: S) -> Filenames<'s, Message<'d, 'q>>
     where
-        S: Into<ScopedSupercow<'s, Message<'o, O>>>,
+        S: Into<ScopedSupercow<'s, Message<'d, 'q>>>,
     {
         let messageref = message.into();
         Filenames::from_ptr(
@@ -150,7 +155,7 @@ where
     }
 }
 
-impl<'o, O> MessageExt<'o, O> for Message<'o, O> where O: MessageOwner + 'o {}
+impl<'d, 'q> MessageExt<'d, 'q> for Message<'d, 'q> where 'd: 'q {}
 
-unsafe impl<'o, O> Send for Message<'o, O> where O: MessageOwner + 'o {}
-unsafe impl<'o, O> Sync for Message<'o, O> where O: MessageOwner + 'o {}
+unsafe impl<'d, 'q> Send for Message<'d, 'q> where 'd: 'q {}
+unsafe impl<'d, 'q> Sync for Message<'d, 'q> where 'd: 'q {}

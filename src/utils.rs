@@ -37,7 +37,3 @@ pub type ScopedPhantomcow<'a, OWNED, BORROWED = OWNED,
 pub type ScopedSupercow<'a, OWNED, BORROWED = OWNED, SHARED = Box<DefaultFeatures<'a> + 'a>> =
     Supercow<'a, OWNED, BORROWED, SHARED, BoxedStorage>;
 
-
-
-
-

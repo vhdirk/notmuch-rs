@@ -6,6 +6,7 @@ use MessageOwner;
 use Message;
 use Tags;
 use TagsOwner;
+use Query;
 
 #[derive(Debug)]
 pub struct MessagesPtr {
@@ -19,21 +20,21 @@ impl Drop for MessagesPtr {
 }
 
 #[derive(Debug)]
-pub struct Messages<'o, O>
+pub struct Messages<'d, 'q>
 where
-    O: MessageOwner + 'o,
+    'd: 'q,
 {
     pub(crate) handle: MessagesPtr,
-    marker: ScopedPhantomcow<'o, O>,
+    marker: ScopedPhantomcow<'q, Query<'d>>,
 }
 
-impl<'o, O> Messages<'o, O>
+impl<'d, 'q> Messages<'d, 'q>
 where
-    O: MessageOwner + 'o,
+    'd: 'q,
 {
-    pub(crate) fn from_ptr<P>(ptr: *mut ffi::notmuch_messages_t, owner: P) -> Messages<'o, O>
+    pub(crate) fn from_ptr<P>(ptr: *mut ffi::notmuch_messages_t, owner: P) -> Messages<'d, 'q>
     where
-        P: Into<ScopedPhantomcow<'o, O>>,
+        P: Into<ScopedPhantomcow<'q, Query<'d>>>,
     {
         Messages {
             handle: MessagesPtr { ptr },
@@ -42,12 +43,12 @@ where
     }
 }
 
-impl<'o, O> MessageOwner for Messages<'o, O> where O: MessageOwner + 'o {}
-impl<'o, O> TagsOwner for Messages<'o, O> where O: MessageOwner + 'o {}
+impl<'d, 'q> MessageOwner for Messages<'d, 'q> where 'd: 'q {}
+impl<'d, 'q> TagsOwner for Messages<'d, 'q> where 'd: 'q {}
 
-impl<'o, O> Messages<'o, O>
+impl<'d, 'q> Messages<'d, 'q>
 where
-    O: MessageOwner + 'o,
+    'd: 'q,
 {
     /**
      * Return a list of tags from all messages.
@@ -62,7 +63,7 @@ where
      *
      * The function returns NULL on error.
      */
-    pub fn collect_tags<'m>(self: &'o Self) -> Tags<'m, Self> {
+    pub fn collect_tags<'m>(self: &'m Self) -> Tags<'m, Self> {
         Tags::from_ptr(
             unsafe { ffi::notmuch_messages_collect_tags(self.handle.ptr) },
             self,
@@ -70,11 +71,11 @@ where
     }
 }
 
-impl<'o, O> Iterator for Messages<'o, O>
+impl<'d, 'q> Iterator for Messages<'d, 'q>
 where
-    O: MessageOwner + 'o,
+    'd: 'q,
 {
-    type Item = Message<'o, O>;
+    type Item = Message<'d, 'q>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let valid = unsafe { ffi::notmuch_messages_valid(self.handle.ptr) };
@@ -89,20 +90,20 @@ where
             thrd
         };
 
-        Some(Message::from_ptr(cthrd, ScopedPhantomcow::<'o, O>::share(&mut self.marker)))
+        Some(Message::from_ptr(cthrd, ScopedPhantomcow::<'q, Query<'d>>::share(&mut self.marker)))
     }
 }
 
 
 
-pub trait MessagesExt<'o, O>
+pub trait MessagesExt<'d, 'q>
 where
-    O: MessageOwner + 'o,
+    'd: 'q,
 {
 }
 
-impl<'o, O> MessagesExt<'o, O> for Messages<'o, O> where O: MessageOwner + 'o {}
+impl<'d, 'q> MessagesExt<'q, 'q> for Messages<'d, 'q> where 'd: 'q {}
 
 
-unsafe impl<'o, O> Send for Messages<'o, O> where O: MessageOwner + 'o {}
-unsafe impl<'o, O> Sync for Messages<'o, O> where O: MessageOwner + 'o {}
+unsafe impl<'d, 'q> Send for Messages<'d, 'q> where 'd: 'q {}
+unsafe impl<'d, 'q> Sync for Messages<'d, 'q> where 'd: 'q {}
