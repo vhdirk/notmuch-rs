@@ -1,5 +1,6 @@
 use std::ffi::CString;
 use std::path::PathBuf;
+use std::cell::RefCell;
 use supercow::{Supercow};
 
 use error::{Error, Result};
@@ -24,7 +25,7 @@ where
     O: MessageOwner + 'o,
 {
     pub(crate) handle: MessagePtr,
-    marker: ScopedPhantomcow<'o, O>,
+    marker: RefCell<ScopedPhantomcow<'o, O>>,
 }
 
 impl<'o, O> MessageOwner for Message<'o, O> where O: MessageOwner + 'o {}
@@ -41,7 +42,7 @@ where
     {
         Message {
             handle: MessagePtr { ptr },
-            marker: owner.into(),
+            marker: RefCell::new(owner.into()),
         }
     }
 
@@ -55,10 +56,11 @@ where
         tid.to_str().unwrap().to_string()
     }
 
-    pub fn replies(self: &mut Self) -> Messages<'o, O> {
+    pub fn replies(self: &Self) -> Messages<'o, O> {
         Messages::<'o, O>::from_ptr(
             unsafe { ffi::notmuch_message_get_replies(self.handle.ptr) },
-            ScopedPhantomcow::<'o, O>::share(&mut self.marker)
+            // will never panic since the borrow is released immediately
+            ScopedPhantomcow::<'o, O>::share(&mut *(self.marker.borrow_mut()))
         )
     }
 
