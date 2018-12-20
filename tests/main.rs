@@ -3,7 +3,7 @@ extern crate notmuch;
 
 use std::sync::Arc;
 
-use notmuch::{Query, QueryExt, Threads};
+use notmuch::{Query, QueryExt};
 
 fn main() {
     let mut mail_path = dirs::home_dir().unwrap();

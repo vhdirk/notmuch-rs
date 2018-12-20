@@ -1,7 +1,7 @@
 use libc;
 use std::{ffi, str};
 
-use supercow::{Supercow, DefaultFeatures, NonSyncFeatures};
+use supercow::{Supercow, DefaultFeatures/*, NonSyncFeatures*/};
 use supercow::ext::{BoxedStorage};
 
 pub trait ToStr {
