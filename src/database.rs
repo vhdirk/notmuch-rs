@@ -10,7 +10,6 @@ use libc;
 use error::{Error, Result};
 use ffi;
 use ffi::Status;
-use query::QueryPtr;
 use utils::ToStr;
 use Directory;
 use Query;
@@ -31,30 +30,16 @@ pub struct Revision {
     pub uuid: String,
 }
 
-#[derive(Debug)]
-pub(crate) struct DatabasePtr {
-    pub ptr: *mut ffi::notmuch_database_t,
-}
-
-impl Drop for DatabasePtr {
-    fn drop(&mut self) {
-        unsafe { ffi::notmuch_database_destroy(self.ptr) };
-    }
-}
-
-impl DatabasePtr {
-    pub(crate) fn create_query(&self, query_string: &str) -> Result<QueryPtr> {
-        let query_str = CString::new(query_string).unwrap();
-
-        let query = unsafe { ffi::notmuch_query_create(self.ptr, query_str.as_ptr()) };
-
-        Ok(QueryPtr { ptr: query })
-    }
-}
 
 #[derive(Debug)]
 pub struct Database {
-    pub(crate) handle: DatabasePtr,
+    pub(crate) ptr: *mut ffi::notmuch_database_t,
+}
+
+impl Drop for Database {
+    fn drop(&mut self) {
+        unsafe { ffi::notmuch_database_destroy(self.ptr) };
+    }
 }
 
 impl TagsOwner for Database {}
@@ -70,7 +55,7 @@ impl Database {
         unsafe { ffi::notmuch_database_create(path_str.as_ptr(), &mut db) }.as_result()?;
 
         Ok(Database {
-            handle: DatabasePtr { ptr: db },
+            ptr: db,
         })
     }
 
@@ -85,12 +70,12 @@ impl Database {
             .as_result()?;
 
         Ok(Database {
-            handle: DatabasePtr { ptr: db },
+            ptr: db,
         })
     }
 
     pub fn close(&mut self) -> Result<()> {
-        unsafe { ffi::notmuch_database_close(self.handle.ptr) }.as_result()?;
+        unsafe { ffi::notmuch_database_close(self.ptr) }.as_result()?;
 
         Ok(())
     }
@@ -147,14 +132,14 @@ impl Database {
 
     pub fn path(&self) -> &Path {
         Path::new(
-            unsafe { ffi::notmuch_database_get_path(self.handle.ptr) }
+            unsafe { ffi::notmuch_database_get_path(self.ptr) }
                 .to_str()
                 .unwrap(),
         )
     }
 
     pub fn version(&self) -> Version {
-        Version(unsafe { ffi::notmuch_database_get_version(self.handle.ptr) })
+        Version(unsafe { ffi::notmuch_database_get_version(self.ptr) })
     }
 
     #[cfg(feature = "v0_21")]
@@ -162,7 +147,7 @@ impl Database {
         let uuid_p: *const libc::c_char = ptr::null();
         let revision = unsafe {
             ffi::notmuch_database_get_revision(
-                self.handle.ptr,
+                self.ptr,
                 (&uuid_p) as *const _ as *mut *const libc::c_char,
             )
         };
@@ -176,7 +161,7 @@ impl Database {
     }
 
     pub fn needs_upgrade(&self) -> bool {
-        unsafe { ffi::notmuch_database_needs_upgrade(self.handle.ptr) == 1 }
+        unsafe { ffi::notmuch_database_needs_upgrade(self.ptr) == 1 }
     }
 
     pub fn upgrade<F>(&mut self) -> Result<()>
@@ -209,7 +194,7 @@ impl Database {
 
         unsafe {
             ffi::notmuch_database_upgrade(
-                self.handle.ptr,
+                self.ptr,
                 if status.is_some() {
                     Some(wrapper::<F>)
                 } else {
@@ -253,7 +238,7 @@ pub trait DatabaseExt {
         let dbref = database.into();
         let query_str = CString::new(query_string).unwrap();
 
-        let query = unsafe { ffi::notmuch_query_create(dbref.handle.ptr, query_str.as_ptr()) };
+        let query = unsafe { ffi::notmuch_query_create(dbref.ptr, query_str.as_ptr()) };
 
         Ok(Query::from_ptr(query, Supercow::phantom(dbref)))
     }
@@ -264,7 +249,7 @@ pub trait DatabaseExt {
     {
         let dbref = database.into();
 
-        let tags = unsafe { ffi::notmuch_database_get_all_tags(dbref.handle.ptr) };
+        let tags = unsafe { ffi::notmuch_database_get_all_tags(dbref.ptr) };
 
         Ok(Tags::from_ptr(tags, ScopedSupercow::phantom(dbref)))
     }
@@ -280,7 +265,7 @@ pub trait DatabaseExt {
 
         let mut dir = ptr::null_mut();
         unsafe {
-            ffi::notmuch_database_get_directory(dbref.handle.ptr, path_str.as_ptr(), &mut dir)
+            ffi::notmuch_database_get_directory(dbref.ptr, path_str.as_ptr(), &mut dir)
         }.as_result()?;
 
         if dir.is_null() {
@@ -300,7 +285,7 @@ pub trait DatabaseExt {
             Some(path_str) => {
                 let msg_path = CString::new(path_str).unwrap();
 
-                unsafe { ffi::notmuch_database_remove_message(dbref.handle.ptr, msg_path.as_ptr()) }
+                unsafe { ffi::notmuch_database_remove_message(dbref.ptr, msg_path.as_ptr()) }
                     .as_result()
             }
             None => Err(Error::NotmuchError(Status::FileError)),

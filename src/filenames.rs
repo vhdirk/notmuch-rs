@@ -9,27 +9,21 @@ use utils::ScopedPhantomcow;
 pub trait FilenamesOwner {}
 
 #[derive(Debug)]
-pub(crate) struct FilenamesPtr {
-    pub ptr: *mut ffi::notmuch_filenames_t,
-}
-
-impl Drop for FilenamesPtr {
-    fn drop(self: &mut Self) {
-        let valid = unsafe { ffi::notmuch_filenames_valid(self.ptr) };
-
-        if valid != 0 {
-            unsafe { ffi::notmuch_filenames_destroy(self.ptr) };
-        }
-    }
-}
-
-#[derive(Debug)]
 pub struct Filenames<'o, O>
 where
     O: FilenamesOwner + 'o,
 {
-    pub(crate) handle: FilenamesPtr,
+    pub(crate) ptr: *mut ffi::notmuch_filenames_t,
     pub(crate) marker: ScopedPhantomcow<'o, O>,
+}
+
+impl<'o, O> Drop for Filenames<'o, O>
+where
+    O: FilenamesOwner + 'o,
+{
+    fn drop(self: &mut Self) {
+        unsafe { ffi::notmuch_filenames_destroy(self.ptr) };
+    }
 }
 
 impl<'o, O> Filenames<'o, O>
@@ -41,7 +35,7 @@ where
         P: Into<ScopedPhantomcow<'o, O>>,
     {
         Filenames {
-            handle: FilenamesPtr { ptr },
+            ptr,
             marker: owner.into(),
         }
     }
@@ -54,15 +48,15 @@ where
     type Item = PathBuf;
 
     fn next(self: &mut Self) -> Option<Self::Item> {
-        let valid = unsafe { ffi::notmuch_filenames_valid(self.handle.ptr) };
+        let valid = unsafe { ffi::notmuch_filenames_valid(self.ptr) };
 
         if valid == 0 {
             return None;
         }
 
         let ctag = unsafe {
-            let t = ffi::notmuch_filenames_get(self.handle.ptr);
-            ffi::notmuch_filenames_move_to_next(self.handle.ptr);
+            let t = ffi::notmuch_filenames_get(self.ptr);
+            ffi::notmuch_filenames_move_to_next(self.ptr);
             CStr::from_ptr(t)
         };
 

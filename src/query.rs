@@ -10,23 +10,19 @@ use Database;
 use Messages;
 use MessageOwner;
 use Threads;
+use DatabaseExt;
 use utils::ScopedSupercow;
 
 #[derive(Debug)]
-pub(crate) struct QueryPtr {
-    pub ptr: *mut ffi::notmuch_query_t,
+pub struct Query<'d> {
+    pub(crate) ptr: *mut ffi::notmuch_query_t,
+    marker: Phantomcow<'d, Database>,
 }
 
-impl Drop for QueryPtr {
+impl<'d> Drop for Query<'d> {
     fn drop(&mut self) {
         unsafe { ffi::notmuch_query_destroy(self.ptr) };
     }
-}
-
-#[derive(Debug)]
-pub struct Query<'d> {
-    pub(crate) handle: QueryPtr,
-    marker: Phantomcow<'d, Database>,
 }
 
 impl<'d> MessageOwner for Query<'d> {}
@@ -37,17 +33,7 @@ impl<'d> Query<'d> {
         O: Into<Phantomcow<'d, Database>>,
     {
         Query {
-            handle: QueryPtr { ptr },
-            marker: owner.into(),
-        }
-    }
-
-    pub(crate) fn from_handle<O>(handle: QueryPtr, owner: O) -> Query<'d>
-    where
-        O: Into<Phantomcow<'d, Database>>,
-    {
-        Query {
-            handle,
+            ptr,
             marker: owner.into(),
         }
     }
@@ -56,22 +42,18 @@ impl<'d> Query<'d> {
     where
         D: Into<Supercow<'d, Database>>,
     {
-        let dbref = db.into();
-        dbref
-            .handle
-            .create_query(query_string)
-            .map(move |handle| Query::from_handle(handle, Supercow::phantom(dbref)))
+        <Database as DatabaseExt>::create_query(db, query_string)
     }
 
     /// Specify the sorting desired for this query.
     pub fn set_sort(self: &Self, sort: Sort) {
-        unsafe { ffi::notmuch_query_set_sort(self.handle.ptr, sort.into()) }
+        unsafe { ffi::notmuch_query_set_sort(self.ptr, sort.into()) }
     }
 
     /// Return the sort specified for this query. See
     /// `set_sort`.
     pub fn sort(self: &Self) -> Sort {
-        unsafe { ffi::notmuch_query_get_sort(self.handle.ptr) }.into()
+        unsafe { ffi::notmuch_query_get_sort(self.ptr) }.into()
     }
 
     /// Filter messages according to the query and return
@@ -81,7 +63,7 @@ impl<'d> Query<'d> {
 
     pub fn count_messages(self: &Self) -> Result<u32> {
         let mut cnt = 0;
-        unsafe { ffi::notmuch_query_count_messages(self.handle.ptr, &mut cnt) }.as_result()?;
+        unsafe { ffi::notmuch_query_count_messages(self.ptr, &mut cnt) }.as_result()?;
 
         Ok(cnt)
     }
@@ -92,7 +74,7 @@ impl<'d> Query<'d> {
 
     pub fn count_threads(self: &Self) -> Result<u32> {
         let mut cnt = 0;
-        unsafe { ffi::notmuch_query_count_threads(self.handle.ptr, &mut cnt) }.as_result()?;
+        unsafe { ffi::notmuch_query_count_threads(self.ptr, &mut cnt) }.as_result()?;
 
         Ok(cnt)
     }
@@ -106,7 +88,7 @@ pub trait QueryExt<'d> {
         let queryref = query.into();
 
         let mut thrds = ptr::null_mut();
-        unsafe { ffi::notmuch_query_search_threads(queryref.handle.ptr, &mut thrds) }
+        unsafe { ffi::notmuch_query_search_threads(queryref.ptr, &mut thrds) }
             .as_result()?;
 
         Ok(Threads::from_ptr(thrds, ScopedSupercow::phantom(queryref)))
@@ -119,7 +101,7 @@ pub trait QueryExt<'d> {
         let queryref = query.into();
 
         let mut msgs = ptr::null_mut();
-        unsafe { ffi::notmuch_query_search_messages(queryref.handle.ptr, &mut msgs) }
+        unsafe { ffi::notmuch_query_search_messages(queryref.ptr, &mut msgs) }
             .as_result()?;
 
         Ok(Messages::from_ptr(msgs, ScopedSupercow::phantom(queryref)))

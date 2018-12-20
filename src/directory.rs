@@ -7,21 +7,17 @@ use Filenames;
 use FilenamesOwner;
 use utils::{ScopedSupercow, ScopedPhantomcow};
 
-#[derive(Debug)]
-pub(crate) struct DirectoryPtr {
-    pub ptr: *mut ffi::notmuch_directory_t,
-}
-
-impl Drop for DirectoryPtr {
-    fn drop(&mut self) {
-        unsafe { ffi::notmuch_directory_destroy(self.ptr) };
-    }
-}
 
 #[derive(Debug)]
 pub struct Directory<'d> {
-    handle: DirectoryPtr,
+    ptr: *mut ffi::notmuch_directory_t,
     marker: ScopedPhantomcow<'d, Database>,
+}
+
+impl<'d> Drop for Directory<'d> {
+    fn drop(&mut self) {
+        unsafe { ffi::notmuch_directory_destroy(self.ptr) };
+    }
 }
 
 impl<'d> FilenamesOwner for Directory<'d> {}
@@ -32,7 +28,7 @@ impl<'d> Directory<'d> {
         O: Into<ScopedPhantomcow<'d, Database>>,
     {
         Directory {
-            handle: DirectoryPtr { ptr },
+            ptr,
             marker: owner.into(),
         }
     }
@@ -49,7 +45,7 @@ pub trait DirectoryExt<'d> {
     {
         let dir = directory.into();
         Filenames::from_ptr(
-            unsafe { ffi::notmuch_directory_get_child_directories(dir.handle.ptr) },
+            unsafe { ffi::notmuch_directory_get_child_directories(dir.ptr) },
             Supercow::phantom(dir),
         )
     }

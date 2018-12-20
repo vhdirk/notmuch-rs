@@ -7,23 +7,21 @@ use utils::ScopedPhantomcow;
 
 
 #[derive(Debug)]
-pub(crate) struct ThreadsPtr {
-    pub ptr: *mut ffi::notmuch_threads_t,
-}
-
-impl Drop for ThreadsPtr {
-    fn drop(&mut self) {
-        unsafe { ffi::notmuch_threads_destroy(self.ptr) };
-    }
-}
-
-#[derive(Debug)]
 pub struct Threads<'d, 'q>
 where
     'd: 'q
 {
-    handle: ThreadsPtr,
+    ptr: *mut ffi::notmuch_threads_t,
     marker: ScopedPhantomcow<'q, Query<'d>>,
+}
+
+impl<'d, 'q> Drop for Threads<'d, 'q>
+where
+    'd: 'q,
+{
+    fn drop(&mut self) {
+        unsafe { ffi::notmuch_threads_destroy(self.ptr) };
+    }
 }
 
 impl<'d, 'q> Threads<'d, 'q>
@@ -35,7 +33,7 @@ where
         P: Into<ScopedPhantomcow<'q, Query<'d>>>,
     {
         Threads {
-            handle: ThreadsPtr { ptr },
+            ptr,
             marker: owner.into(),
         }
     }
@@ -48,15 +46,15 @@ where
     type Item = Thread<'d, 'q>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let valid = unsafe { ffi::notmuch_threads_valid(self.handle.ptr) };
+        let valid = unsafe { ffi::notmuch_threads_valid(self.ptr) };
 
         if valid == 0 {
             return None;
         }
 
         let cthrd = unsafe {
-            let thrd = ffi::notmuch_threads_get(self.handle.ptr);
-            ffi::notmuch_threads_move_to_next(self.handle.ptr);
+            let thrd = ffi::notmuch_threads_get(self.ptr);
+            ffi::notmuch_threads_move_to_next(self.ptr);
             thrd
         };
 

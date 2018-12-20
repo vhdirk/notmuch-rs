@@ -8,23 +8,21 @@ use Tags;
 use TagsOwner;
 
 #[derive(Debug)]
-pub struct MessagesPtr {
-    pub ptr: *mut ffi::notmuch_messages_t,
-}
-
-impl Drop for MessagesPtr {
-    fn drop(self: &mut Self) {
-        unsafe { ffi::notmuch_messages_destroy(self.ptr) };
-    }
-}
-
-#[derive(Debug)]
 pub struct Messages<'o, O>
 where
     O: MessageOwner + 'o,
 {
-    pub(crate) handle: MessagesPtr,
+    pub(crate) ptr: *mut ffi::notmuch_messages_t,
     marker: ScopedPhantomcow<'o, O>,
+}
+
+impl<'o, O> Drop for Messages<'o, O>
+where
+    O: MessageOwner + 'o,
+{
+    fn drop(self: &mut Self) {
+        unsafe { ffi::notmuch_messages_destroy(self.ptr) };
+    }
 }
 
 impl<'o, O> Messages<'o, O>
@@ -36,7 +34,7 @@ where
         P: Into<ScopedPhantomcow<'o, O>>,
     {
         Messages {
-            handle: MessagesPtr { ptr },
+            ptr,
             marker: owner.into(),
         }
     }
@@ -64,7 +62,7 @@ where
      */
     pub fn collect_tags<'m>(self: &'o Self) -> Tags<'m, Self> {
         Tags::from_ptr(
-            unsafe { ffi::notmuch_messages_collect_tags(self.handle.ptr) },
+            unsafe { ffi::notmuch_messages_collect_tags(self.ptr) },
             self,
         )
     }
@@ -77,15 +75,15 @@ where
     type Item = Message<'o, O>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let valid = unsafe { ffi::notmuch_messages_valid(self.handle.ptr) };
+        let valid = unsafe { ffi::notmuch_messages_valid(self.ptr) };
 
         if valid == 0 {
             return None;
         }
 
         let cthrd = unsafe {
-            let thrd = ffi::notmuch_messages_get(self.handle.ptr);
-            ffi::notmuch_messages_move_to_next(self.handle.ptr);
+            let thrd = ffi::notmuch_messages_get(self.ptr);
+            ffi::notmuch_messages_move_to_next(self.ptr);
             thrd
         };
 

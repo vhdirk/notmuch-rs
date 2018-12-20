@@ -8,20 +8,20 @@ use utils::ScopedPhantomcow;
 pub trait TagsOwner {}
 
 #[derive(Debug)]
-pub(crate) struct TagsPtr {
-    pub ptr: *mut ffi::notmuch_tags_t,
+pub struct Tags<'o, O> where
+    O: TagsOwner + 'o,
+{
+    ptr: *mut ffi::notmuch_tags_t,
+    marker: ScopedPhantomcow<'o, O>,
 }
 
-impl Drop for TagsPtr {
+impl<'o, O> Drop for Tags<'o, O>
+where
+    O: TagsOwner + 'o,
+{
     fn drop(&mut self) {
         unsafe { ffi::notmuch_tags_destroy(self.ptr) };
     }
-}
-
-#[derive(Debug)]
-pub struct Tags<'o, Owner: TagsOwner + 'o> {
-    handle: TagsPtr,
-    marker: ScopedPhantomcow<'o, Owner>,
 }
 
 impl<'o, O> Tags<'o, O>
@@ -33,7 +33,7 @@ where
         P: Into<ScopedPhantomcow<'o, O>>,
     {
         Tags {
-            handle: TagsPtr { ptr },
+            ptr,
             marker: owner.into(),
         }
     }
@@ -46,15 +46,15 @@ where
     type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let valid = unsafe { ffi::notmuch_tags_valid(self.handle.ptr) };
+        let valid = unsafe { ffi::notmuch_tags_valid(self.ptr) };
 
         if valid == 0 {
             return None;
         }
 
         let ctag = unsafe {
-            let t = ffi::notmuch_tags_get(self.handle.ptr);
-            ffi::notmuch_tags_move_to_next(self.handle.ptr);
+            let t = ffi::notmuch_tags_get(self.ptr);
+            ffi::notmuch_tags_move_to_next(self.ptr);
 
             CStr::from_ptr(t)
         };
