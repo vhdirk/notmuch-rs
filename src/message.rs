@@ -110,6 +110,14 @@ where
     pub fn remove_all_tags(self: &Self) -> Result<()> {
         unsafe { ffi::notmuch_message_remove_all_tags(self.ptr) }.as_result()
     }
+
+    pub fn tags_to_maildir_flags(self: &Self) -> Result<()> {
+        unsafe { ffi::notmuch_message_tags_to_maildir_flags(self.ptr) }.as_result()
+    }
+
+    pub fn maildir_flags_to_tags(self: &Self) -> Result<()> {
+        unsafe { ffi::notmuch_message_maildir_flags_to_tags(self.ptr) }.as_result()
+    }
 }
 
 pub trait MessageExt<'o, O>
