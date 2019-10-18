@@ -20,6 +20,7 @@ mod query;
 mod tags;
 mod thread;
 mod threads;
+mod index;
 
 pub use database::{Database, DatabaseExt};
 pub use directory::{Directory, DirectoryExt};
@@ -31,5 +32,6 @@ pub use query::{Query, QueryExt};
 pub use tags::{Tags, TagsExt, TagsOwner};
 pub use thread::{Thread, ThreadExt};
 pub use threads::{Threads, ThreadsExt};
+pub use index::IndexOpts;
 
-pub use ffi::{DatabaseMode, Sort};
+pub use ffi::{DatabaseMode, Sort, DecryptionPolicy};

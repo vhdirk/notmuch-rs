@@ -23,7 +23,7 @@ impl<'d> Drop for Directory<'d> {
 impl<'d> FilenamesOwner for Directory<'d> {}
 
 impl<'d> Directory<'d> {
-    pub fn from_ptr<O>(ptr: *mut ffi::notmuch_directory_t, owner: O) -> Directory<'d>
+    pub(crate) fn from_ptr<O>(ptr: *mut ffi::notmuch_directory_t, owner: O) -> Directory<'d>
     where
         O: Into<ScopedPhantomcow<'d, Database>>,
     {

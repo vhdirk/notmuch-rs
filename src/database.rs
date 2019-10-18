@@ -17,6 +17,7 @@ use Tags;
 use TagsOwner;
 use Message;
 use MessageOwner;
+use IndexOpts;
 use utils::ScopedSupercow;
 
 
@@ -225,8 +226,7 @@ impl Database {
         <Self as DatabaseExt>::all_tags(self)
     }
 
-    pub fn find_message<'d, P>(&'d self, message_id: &str) -> Result<Option<Message<'d, Self>>>
-    {
+    pub fn find_message<'d>(&'d self, message_id: &str) -> Result<Option<Message<'d, Self>>> {
         <Self as DatabaseExt>::find_message(self, message_id)
     }
 
@@ -235,6 +235,18 @@ impl Database {
         P: AsRef<Path>,
     {
         <Self as DatabaseExt>::remove_message(self, path)
+    }
+
+    pub fn get_default_indexopts<'d, P>(&'d self) -> Result<IndexOpts<'d>>
+    {
+        <Self as DatabaseExt>::get_default_indexopts(self)
+    }
+
+    pub fn index_file<'d, P>(&'d self, path: &P, indexopts: Option<IndexOpts<'d>>) -> Result<Option<Message<'d, Self>>>
+    where
+        P: AsRef<Path>,
+    {
+        <Self as DatabaseExt>::index_file(self, path, indexopts)
     }
 }
 
@@ -304,7 +316,7 @@ pub trait DatabaseExt {
 
     fn remove_message<'d, D, P>(database: D, path: &P) -> Result<()>
     where
-        D: Into<Supercow<'d, Database>>,
+        D: Into<ScopedSupercow<'d, Database>>,
         P: AsRef<Path>,
     {
         let dbref = database.into();
@@ -314,6 +326,45 @@ pub trait DatabaseExt {
 
                 unsafe { ffi::notmuch_database_remove_message(dbref.ptr, msg_path.as_ptr()) }
                     .as_result()
+            }
+            None => Err(Error::NotmuchError(Status::FileError)),
+        }
+    }
+
+    fn get_default_indexopts<'d, D>(database: D) -> Result<IndexOpts<'d>>
+    where
+        D: Into<ScopedSupercow<'d, Database>>
+    {
+        let dbref = database.into();
+
+        let opts = unsafe { ffi::notmuch_database_get_default_indexopts(dbref.ptr) };
+
+        Ok(IndexOpts::from_ptr(opts, ScopedSupercow::phantom(dbref)))
+    }
+
+
+    fn index_file<'d, D, P>(database: D, path: &P, indexopts: Option<IndexOpts<'d>>) -> Result<Option<Message<'d, Database>>>
+    where
+        D: Into<ScopedSupercow<'d, Database>>,
+        P: AsRef<Path>,
+    {
+        let dbref = database.into();
+
+        let opts = indexopts.map_or(ptr::null_mut(), |opt| opt.ptr);
+
+        match path.as_ref().to_str() {
+            Some(path_str) => {
+                let msg_path = CString::new(path_str).unwrap();
+
+                let mut msg = ptr::null_mut();
+                unsafe { ffi::notmuch_database_index_file(dbref.ptr, msg_path.as_ptr(), opts, &mut msg) }
+                    .as_result()?;
+                
+                if msg.is_null() {
+                    Ok(None)
+                } else {
+                    Ok(Some(Message::from_ptr(msg, Supercow::phantom(dbref))))
+                }
             }
             None => Err(Error::NotmuchError(Status::FileError)),
         }

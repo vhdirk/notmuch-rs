@@ -112,6 +112,17 @@ notmuch_enum! {
     }
 }
 
+notmuch_enum! {
+    #[repr(C)]
+    #[derive(Debug, Eq, PartialEq, Clone, Copy)]
+    pub enum notmuch_decryption_policy_t => DecryptionPolicy {
+        NOTMUCH_DECRYPT_FALSE => False,
+        NOTMUCH_DECRYPT_TRUE => True,
+        NOTMUCH_DECRYPT_AUTO => Auto,
+        NOTMUCH_DECRYPT_NOSTASH => NoStash
+    }
+}
+
 #[repr(C)]
 pub struct notmuch_database_t(c_void);
 #[repr(C)]
@@ -1728,6 +1739,55 @@ extern "C" {
     ///
     /// @since libnotmuch 4.4 (notmuch 0.23)
     pub fn notmuch_config_list_destroy(config_list: *mut notmuch_config_list_t);
+
+    /// get the current default indexing options for a given database.
+    ///
+    /// This object will survive until the database itself is destroyed,
+    /// but the caller may also release it earlier with
+    /// notmuch_indexopts_destroy.
+    ///
+    /// This object represents a set of options on how a message can be
+    /// added to the index.  At the moment it is a featureless stub.
+    ///
+    /// @since libnotmuch 5.1 (notmuch 0.26)
+    pub fn notmuch_database_get_default_indexopts(db: *mut notmuch_database_t) -> *mut notmuch_indexopts_t;
+
+
+    //// 
+    //// Stating a policy about how to decrypt messages.
+    ////
+    //// See index.decrypt in notmuch-config(1) for more details.
+    //// 
+    //// typedef enum {
+    ////     NOTMUCH_DECRYPT_FALSE,
+    ////     NOTMUCH_DECRYPT_TRUE,
+    ////     NOTMUCH_DECRYPT_AUTO,
+    ////     NOTMUCH_DECRYPT_NOSTASH,
+    //// } notmuch_decryption_policy_t;
+    ////
+    //// 
+    //// Specify whether to decrypt encrypted parts while indexing.
+    ////
+    //// Be aware that the index is likely sufficient to reconstruct the
+    //// cleartext of the message itself, so please ensure that the notmuch
+    //// message index is adequately protected. DO NOT SET THIS FLAG TO TRUE
+    //// without considering the security of your index.
+    ////
+    //// @since libnotmuch 5.1 (notmuch 0.26)
+    pub fn notmuch_indexopts_set_decrypt_policy(options: *mut notmuch_indexopts_t,
+                                                decrypt_policy: notmuch_decryption_policy_t) -> notmuch_status_t;
+
+    //// Return whether to decrypt encrypted parts while indexing.
+    //// see notmuch_indexopts_set_decrypt_policy.
+    ////  
+    //// @since libnotmuch 5.1 (notmuch 0.26)
+    pub fn notmuch_indexopts_get_decrypt_policy(options: *const notmuch_indexopts_t) -> notmuch_decryption_policy_t;
+
+
+    /// Destroy a notmuch_indexopts_t object.
+    /// 
+    /// @since libnotmuch 5.1 (notmuch 0.26)
+    pub fn notmuch_indexopts_destroy(options: *mut notmuch_indexopts_t);
 
     /// interrogate the library for compile time features
     ///
