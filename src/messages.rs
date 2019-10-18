@@ -16,14 +16,14 @@ where
     marker: ScopedPhantomcow<'o, O>,
 }
 
-impl<'o, O> Drop for Messages<'o, O>
-where
-    O: MessageOwner + 'o,
-{
-    fn drop(self: &mut Self) {
-        unsafe { ffi::notmuch_messages_destroy(self.ptr) };
-    }
-}
+// impl<'o, O> Drop for Messages<'o, O>
+// where
+//     O: MessageOwner + 'o,
+// {
+//     fn drop(self: &mut Self) {
+//         unsafe { ffi::notmuch_messages_destroy(self.ptr) };
+//     }
+// }
 
 impl<'o, O> Messages<'o, O>
 where
