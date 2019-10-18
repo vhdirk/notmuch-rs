@@ -11,6 +11,7 @@ use FilenamesOwner;
 use Messages;
 use Tags;
 use TagsOwner;
+use IndexOpts;
 
 pub trait MessageOwner: Send + Sync {}
 
@@ -117,6 +118,10 @@ where
 
     pub fn maildir_flags_to_tags(self: &Self) -> Result<()> {
         unsafe { ffi::notmuch_message_maildir_flags_to_tags(self.ptr) }.as_result()
+    }
+
+    pub fn reindex<'d>(self: &Self, indexopts: IndexOpts<'d>) -> Result<()> {
+        unsafe { ffi::notmuch_message_reindex(self.ptr, indexopts.ptr) }.as_result()
     }
 }
 
