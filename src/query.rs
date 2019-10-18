@@ -6,7 +6,7 @@ use supercow::{Phantomcow, Supercow};
 
 use error::Result;
 use ffi;
-use ffi::Sort;
+use ffi::{Sort, Exclude};
 use Database;
 use Messages;
 use MessageOwner;
@@ -84,6 +84,10 @@ impl<'d> Query<'d> {
     {
         let tag_str = CString::new(tag).unwrap();
         unsafe { ffi::notmuch_query_add_tag_exclude(self.ptr, tag_str.as_ptr()) }.as_result()
+    }
+
+    pub fn set_omit_excluded(self: &Self, omit_excluded: Exclude) {
+        unsafe { ffi::notmuch_query_set_omit_excluded(self.ptr, omit_excluded.into()) }
     }
 }
 
