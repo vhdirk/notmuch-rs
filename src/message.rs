@@ -124,9 +124,9 @@ pub trait MessageExt<'o, O>
 where
     O: MessageOwner + 'o,
 {
-    fn tags<'s, S>(message: S) -> Tags<'s, Message<'o, O>>
+    fn tags<'m, M>(message: M) -> Tags<'m, Message<'o, O>>
     where
-        S: Into<ScopedSupercow<'s, Message<'o, O>>>,
+        M: Into<ScopedSupercow<'m, Message<'o, O>>>,
     {
         let messageref = message.into();
         Tags::from_ptr(
@@ -146,9 +146,9 @@ where
     //     )
     // }
 
-    fn filenames<'s, S>(message: S) -> Filenames<'s, Message<'o, O>>
+    fn filenames<'m, M>(message: M) -> Filenames<'m, Message<'o, O>>
     where
-        S: Into<ScopedSupercow<'s, Message<'o, O>>>,
+        M: Into<ScopedSupercow<'m, Message<'o, O>>>,
     {
         let messageref = message.into();
         Filenames::from_ptr(
