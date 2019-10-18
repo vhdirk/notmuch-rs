@@ -1,5 +1,6 @@
 use std::ops::Drop;
 use std::ptr;
+use std::ffi::{CStr, CString};
 
 use supercow::{Phantomcow, Supercow};
 
@@ -77,6 +78,12 @@ impl<'d> Query<'d> {
         unsafe { ffi::notmuch_query_count_threads(self.ptr, &mut cnt) }.as_result()?;
 
         Ok(cnt)
+    }
+
+    pub fn add_tag_exclude(self: &Self, tag: &str) -> Result<()>
+    {
+        let tag_str = CString::new(tag).unwrap();
+        unsafe { ffi::notmuch_query_add_tag_exclude(self.ptr, tag_str.as_ptr()) }.as_result()
     }
 }
 

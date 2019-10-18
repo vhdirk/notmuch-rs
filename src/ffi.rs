@@ -674,7 +674,7 @@ extern "C" {
     /// Add a tag that will be excluded from the query results by default.
     /// This exclusion will be overridden if this tag appears explicitly in
     /// the query.
-    pub fn notmuch_query_add_tag_exclude(query: *mut notmuch_query_t, tag: *const c_char);
+    pub fn notmuch_query_add_tag_exclude(query: *mut notmuch_query_t, tag: *const c_char) -> notmuch_status_t;
 
     /// Execute a query for threads, returning a `notmuch_threads_t` object
     /// which can be used to iterate over the results. The returned threads
