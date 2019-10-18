@@ -15,6 +15,8 @@ use Directory;
 use Query;
 use Tags;
 use TagsOwner;
+use Message;
+use MessageOwner;
 use utils::ScopedSupercow;
 
 
@@ -43,6 +45,7 @@ impl Drop for Database {
 }
 
 impl TagsOwner for Database {}
+impl MessageOwner for Database {}
 
 impl Database {
     pub fn create<P>(path: &P) -> Result<Self>
@@ -222,6 +225,11 @@ impl Database {
         <Self as DatabaseExt>::all_tags(self)
     }
 
+    pub fn find_message<'d, P>(&'d self, message_id: &str) -> Result<Option<Message<'d, Self>>>
+    {
+        <Self as DatabaseExt>::find_message(self, message_id)
+    }
+
     pub fn remove_message<'d, P>(&'d self, path: &P) -> Result<()>
     where
         P: AsRef<Path>,
@@ -272,6 +280,25 @@ pub trait DatabaseExt {
             Ok(None)
         } else {
             Ok(Some(Directory::from_ptr(dir, Supercow::phantom(dbref))))
+        }
+    }
+
+    fn find_message<'d, D>(database: D, message_id: &str) -> Result<Option<Message<'d, Database>>>
+    where
+        D: Into<ScopedSupercow<'d, Database>>
+    {
+        let dbref = database.into();
+        let message_id_str = CString::new(message_id).unwrap();
+
+        let mut msg = ptr::null_mut();
+        unsafe {
+            ffi::notmuch_database_find_message(dbref.ptr, message_id_str.as_ptr(), &mut msg)
+        }.as_result()?;
+
+        if msg.is_null() {
+            Ok(None)
+        } else {
+            Ok(Some(Message::from_ptr(msg, Supercow::phantom(dbref))))
         }
     }
 
