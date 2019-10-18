@@ -30,11 +30,11 @@ impl ToString for *const libc::c_char {
 //              BoxedStorage>;
 
 pub type ScopedPhantomcow<'a, OWNED, BORROWED = OWNED, 
-                              SHARED = Box<DefaultFeatures<'a> + 'a>,
+                              SHARED = Box<dyn DefaultFeatures<'a> + 'a>,
                               STORAGE = BoxedStorage> =
     Supercow<'a, OWNED, BORROWED, SHARED, STORAGE, ()>;
 
-pub type ScopedSupercow<'a, OWNED, BORROWED = OWNED, SHARED = Box<DefaultFeatures<'a> + 'a>> =
+pub type ScopedSupercow<'a, OWNED, BORROWED = OWNED, SHARED = Box<dyn DefaultFeatures<'a> + 'a>> =
     Supercow<'a, OWNED, BORROWED, SHARED, BoxedStorage>;
 
 
