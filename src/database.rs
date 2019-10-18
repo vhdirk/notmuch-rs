@@ -230,6 +230,13 @@ impl Database {
         <Self as DatabaseExt>::find_message(self, message_id)
     }
 
+    pub fn find_message_by_filename<'d, P>(&'d self, filename: &P) -> Result<Option<Message<'d, Self>>>
+    where
+        P: AsRef<Path>,
+    {
+        <Self as DatabaseExt>::find_message_by_filename(self, filename)
+    }
+
     pub fn remove_message<'d, P>(&'d self, path: &P) -> Result<()>
     where
         P: AsRef<Path>,
@@ -305,6 +312,26 @@ pub trait DatabaseExt {
         let mut msg = ptr::null_mut();
         unsafe {
             ffi::notmuch_database_find_message(dbref.ptr, message_id_str.as_ptr(), &mut msg)
+        }.as_result()?;
+
+        if msg.is_null() {
+            Ok(None)
+        } else {
+            Ok(Some(Message::from_ptr(msg, Supercow::phantom(dbref))))
+        }
+    }
+
+    fn find_message_by_filename<'d, D, P>(database: D, filename: &P) -> Result<Option<Message<'d, Database>>>
+    where
+        D: Into<ScopedSupercow<'d, Database>>,
+        P: AsRef<Path>
+    {
+        let dbref = database.into();
+        let path_str = CString::new(filename.as_ref().to_str().unwrap()).unwrap();
+
+        let mut msg = ptr::null_mut();
+        unsafe {
+            ffi::notmuch_database_find_message_by_filename(dbref.ptr, path_str.as_ptr(), &mut msg)
         }.as_result()?;
 
         if msg.is_null() {
