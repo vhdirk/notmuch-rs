@@ -123,6 +123,14 @@ where
     pub fn reindex<'d>(self: &Self, indexopts: IndexOpts<'d>) -> Result<()> {
         unsafe { ffi::notmuch_message_reindex(self.ptr, indexopts.ptr) }.as_result()
     }
+
+    pub fn freeze(self: &Self) -> Result<()> {
+        unsafe { ffi::notmuch_message_freeze(self.ptr) }.as_result()
+    }
+
+    pub fn thaw(self: &Self) -> Result<()> {
+        unsafe { ffi::notmuch_message_thaw(self.ptr) }.as_result()
+    }
 }
 
 pub trait MessageExt<'o, O>

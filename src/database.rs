@@ -249,11 +249,19 @@ impl Database {
         <Self as DatabaseExt>::get_default_indexopts(self)
     }
 
-    pub fn index_file<'d, P>(&'d self, path: &P, indexopts: Option<IndexOpts<'d>>) -> Result<Option<Message<'d, Self>>>
+    pub fn index_file<'d, P>(&'d self, path: &P, indexopts: Option<IndexOpts<'d>>) -> Result<Message<'d, Self>>
     where
         P: AsRef<Path>,
     {
         <Self as DatabaseExt>::index_file(self, path, indexopts)
+    }
+
+    pub fn begin_atomic(&self) -> Result<()> {
+        unsafe { ffi::notmuch_database_begin_atomic(self.ptr) }.as_result()
+    }
+
+    pub fn end_atomic(&self) -> Result<()> {
+        unsafe { ffi::notmuch_database_end_atomic(self.ptr) }.as_result()
     }
 }
 
@@ -370,7 +378,7 @@ pub trait DatabaseExt {
     }
 
 
-    fn index_file<'d, D, P>(database: D, path: &P, indexopts: Option<IndexOpts<'d>>) -> Result<Option<Message<'d, Database>>>
+    fn index_file<'d, D, P>(database: D, path: &P, indexopts: Option<IndexOpts<'d>>) -> Result<Message<'d, Database>>
     where
         D: Into<ScopedSupercow<'d, Database>>,
         P: AsRef<Path>,
@@ -387,11 +395,7 @@ pub trait DatabaseExt {
                 unsafe { ffi::notmuch_database_index_file(dbref.ptr, msg_path.as_ptr(), opts, &mut msg) }
                     .as_result()?;
                 
-                if msg.is_null() {
-                    Ok(None)
-                } else {
-                    Ok(Some(Message::from_ptr(msg, Supercow::phantom(dbref))))
-                }
+                Ok(Message::from_ptr(msg, Supercow::phantom(dbref)))
             }
             None => Err(Error::NotmuchError(Status::FileError)),
         }

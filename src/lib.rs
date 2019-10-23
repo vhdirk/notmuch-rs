@@ -35,3 +35,5 @@ pub use threads::{Threads, ThreadsExt};
 pub use index::IndexOpts;
 
 pub use ffi::{DatabaseMode, Sort, DecryptionPolicy};
+
+pub use utils::{ScopedSupercow, ScopedPhantomcow};
