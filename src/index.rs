@@ -1,5 +1,5 @@
 use std::ops::Drop;
-use supercow::Supercow;
+use supercow::{Supercow, Phantomcow};
 
 use error::{Error, Result};
 use ffi;

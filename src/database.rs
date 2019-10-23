@@ -395,7 +395,7 @@ pub trait DatabaseExt {
                 unsafe { ffi::notmuch_database_index_file(dbref.ptr, msg_path.as_ptr(), opts, &mut msg) }
                     .as_result()?;
                 
-                Ok(Message::from_ptr(msg, Supercow::phantom(dbref)))
+                Ok(Message::from_ptr(msg, ScopedSupercow::phantom(dbref)))
             }
             None => Err(Error::NotmuchError(Status::FileError)),
         }

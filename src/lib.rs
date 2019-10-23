@@ -26,7 +26,7 @@ pub use database::{Database, DatabaseExt};
 pub use directory::{Directory, DirectoryExt};
 pub use error::Error;
 pub use filenames::{Filenames, FilenamesOwner};
-pub use message::{Message, MessageExt, MessageOwner};
+pub use message::{Message, MessageExt, MessageOwner, FrozenMessage};
 pub use messages::{Messages, MessagesExt};
 pub use query::{Query, QueryExt};
 pub use tags::{Tags, TagsExt, TagsOwner};

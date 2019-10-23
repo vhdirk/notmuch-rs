@@ -175,3 +175,39 @@ impl<'o, O> MessageExt<'o, O> for Message<'o, O> where O: MessageOwner + 'o {}
 
 unsafe impl<'o, O> Send for Message<'o, O> where O: MessageOwner + 'o {}
 unsafe impl<'o, O> Sync for Message<'o, O> where O: MessageOwner + 'o {}
+
+
+pub struct FrozenMessage<'m ,'o, O>
+where
+    O: MessageOwner + 'o
+{
+    message: ScopedSupercow<'m, Message<'o, O>>
+}
+
+
+impl<'m, 'o, O> FrozenMessage<'m, 'o, O>
+where
+    O: MessageOwner + 'o
+{
+    pub fn new<M>(message: M) -> Result<Self>
+    where
+        M: Into<ScopedSupercow<'m, Message<'o, O>>>
+    {
+        let msg = message.into();
+        msg.freeze()?;
+        Ok(FrozenMessage{
+            message: msg
+        })
+    }
+}
+
+impl<'m, 'o, O> Drop for FrozenMessage<'m, 'o, O>
+where
+    O: MessageOwner + 'o
+{
+    fn drop(&mut self) {
+        let _ = self.message.thaw();
+    }
+}
+
+
