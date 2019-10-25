@@ -37,7 +37,7 @@ impl<'d> IndexOpts<'d> {
         unsafe { ffi::notmuch_indexopts_set_decrypt_policy(self.ptr, decrypt_policy.into()) }.as_result()
     }
 
-    pub fn get_decrypt_policy(self: &Self) -> DecryptionPolicy {
+    pub fn decrypt_policy(self: &Self) -> DecryptionPolicy {
         unsafe { ffi::notmuch_indexopts_get_decrypt_policy(self.ptr)}.into()
     }
 }

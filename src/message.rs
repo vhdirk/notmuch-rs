@@ -133,9 +133,9 @@ where
         unsafe { ffi::notmuch_message_thaw(self.ptr) }.as_result()
     }
 
-    pub fn get_properties<'m>(&'m self, key: &str, exact: bool) -> MessageProperties<'m, 'o, O>
+    pub fn properties<'m>(&'m self, key: &str, exact: bool) -> MessageProperties<'m, 'o, O>
     {
-        <Self as MessageExt<'o, O>>::get_properties(self, key, exact)
+        <Self as MessageExt<'o, O>>::properties(self, key, exact)
     }
 }
 
@@ -176,7 +176,7 @@ where
         )
     }
 
-    fn get_properties<'m, M>(message: M, key: &str, exact: bool) -> MessageProperties<'m, 'o, O>
+    fn properties<'m, M>(message: M, key: &str, exact: bool) -> MessageProperties<'m, 'o, O>
     where
         M: Into<ScopedSupercow<'m, Message<'o, O>>>,
     {

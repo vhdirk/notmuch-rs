@@ -219,9 +219,9 @@ impl Database {
         <Self as DatabaseExt>::directory(self, path)
     }
 
-    pub fn get_config_list<'d>(&'d self, prefix: &str) -> Result<ConfigList<'d>>
+    pub fn config_list<'d>(&'d self, prefix: &str) -> Result<ConfigList<'d>>
     {
-        <Self as DatabaseExt>::get_config_list(self, prefix)
+        <Self as DatabaseExt>::config_list(self, prefix)
     }
 
     pub fn create_query<'d>(&'d self, query_string: &str) -> Result<Query<'d>> {
@@ -250,9 +250,9 @@ impl Database {
         <Self as DatabaseExt>::remove_message(self, path)
     }
 
-    pub fn get_default_indexopts<'d, P>(&'d self) -> Result<IndexOpts<'d>>
+    pub fn default_indexopts<'d, P>(&'d self) -> Result<IndexOpts<'d>>
     {
-        <Self as DatabaseExt>::get_default_indexopts(self)
+        <Self as DatabaseExt>::default_indexopts(self)
     }
 
     pub fn index_file<'d, P>(&'d self, path: &P, indexopts: Option<IndexOpts<'d>>) -> Result<Message<'d, Self>>
@@ -316,7 +316,7 @@ pub trait DatabaseExt {
         }
     }
 
-    fn get_config_list<'d, D>(database: D, prefix: &str) -> Result<ConfigList<'d>>
+    fn config_list<'d, D>(database: D, prefix: &str) -> Result<ConfigList<'d>>
     where
         D: Into<ScopedSupercow<'d, Database>>
     {
@@ -388,7 +388,7 @@ pub trait DatabaseExt {
         }
     }
 
-    fn get_default_indexopts<'d, D>(database: D) -> Result<IndexOpts<'d>>
+    fn default_indexopts<'d, D>(database: D) -> Result<IndexOpts<'d>>
     where
         D: Into<ScopedSupercow<'d, Database>>
     {
