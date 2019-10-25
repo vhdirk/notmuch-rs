@@ -9,6 +9,7 @@ use utils::{ToStr, ScopedPhantomcow, ScopedSupercow};
 use Filenames;
 use FilenamesOwner;
 use Messages;
+use MessageProperties;
 use Tags;
 use TagsOwner;
 use IndexOpts;
@@ -131,6 +132,11 @@ where
     pub fn thaw(self: &Self) -> Result<()> {
         unsafe { ffi::notmuch_message_thaw(self.ptr) }.as_result()
     }
+
+    pub fn get_properties<'m>(&'m self, key: &str, exact: bool) -> MessageProperties<'m, 'o, O>
+    {
+        <Self as MessageExt<'o, O>>::get_properties(self, key, exact)
+    }
 }
 
 pub trait MessageExt<'o, O>
@@ -168,6 +174,20 @@ where
             unsafe { ffi::notmuch_message_get_filenames(messageref.ptr) },
             Supercow::phantom(messageref),
         )
+    }
+
+    fn get_properties<'m, M>(message: M, key: &str, exact: bool) -> MessageProperties<'m, 'o, O>
+    where
+        M: Into<ScopedSupercow<'m, Message<'o, O>>>,
+    {
+        let messageref = message.into();
+        let key_str = CString::new(key).unwrap();
+
+        let props = unsafe {
+            ffi::notmuch_message_get_properties(messageref.ptr, key_str.as_ptr(), exact as i32)
+        };
+
+        MessageProperties::from_ptr(props, Supercow::phantom(messageref))
     }
 }
 

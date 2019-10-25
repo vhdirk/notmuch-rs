@@ -22,6 +22,7 @@ mod thread;
 mod threads;
 mod index;
 mod config_list;
+mod message_properties;
 
 pub use database::{Database, DatabaseExt, AtomicOperation};
 pub use directory::{Directory, DirectoryExt};
@@ -29,6 +30,7 @@ pub use error::Error;
 pub use filenames::{Filenames, FilenamesOwner};
 pub use message::{Message, MessageExt, MessageOwner, FrozenMessage};
 pub use messages::{Messages, MessagesExt};
+pub use message_properties::{MessageProperties};
 pub use query::{Query, QueryExt};
 pub use tags::{Tags, TagsExt, TagsOwner};
 pub use thread::{Thread, ThreadExt};
