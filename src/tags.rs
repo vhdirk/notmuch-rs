@@ -28,7 +28,7 @@ impl<'o, O> Tags<'o, O>
 where
     O: TagsOwner + 'o,
 {
-    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_tags_t, owner: P) -> Tags<'o, O>
+    pub(crate) fn from_ptr<P>(ptr: *mut ffi::notmuch_tags_t, owner: P) -> Tags<'o, O>
     where
         P: Into<ScopedPhantomcow<'o, O>>,
     {

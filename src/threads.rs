@@ -28,7 +28,7 @@ impl<'d, 'q> Threads<'d, 'q>
 where
     'd: 'q,
 {
-    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_threads_t, owner: P) -> Threads<'d, 'q>
+    pub(crate) fn from_ptr<P>(ptr: *mut ffi::notmuch_threads_t, owner: P) -> Threads<'d, 'q>
     where
         P: Into<ScopedPhantomcow<'q, Query<'d>>>,
     {

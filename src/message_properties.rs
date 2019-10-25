@@ -5,7 +5,6 @@ use supercow::Supercow;
 use ffi;
 use Message;
 use MessageOwner;
-use MessageExt;
 use utils::{ScopedSupercow, ScopedPhantomcow};
 
 

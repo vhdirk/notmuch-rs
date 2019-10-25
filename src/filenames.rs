@@ -30,7 +30,7 @@ impl<'o, O> Filenames<'o, O>
 where
     O: FilenamesOwner + 'o,
 {
-    pub fn from_ptr<P>(ptr: *mut ffi::notmuch_filenames_t, owner: P) -> Filenames<'o, O>
+    pub(crate) fn from_ptr<P>(ptr: *mut ffi::notmuch_filenames_t, owner: P) -> Filenames<'o, O>
     where
         P: Into<ScopedPhantomcow<'o, O>>,
     {

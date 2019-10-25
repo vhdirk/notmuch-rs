@@ -23,7 +23,7 @@ impl<'d> Drop for IndexOpts<'d> {
 }
 
 impl<'d> IndexOpts<'d> {
-    pub fn from_ptr<O>(ptr: *mut ffi::notmuch_indexopts_t, owner: O) -> IndexOpts<'d>
+    pub(crate) fn from_ptr<O>(ptr: *mut ffi::notmuch_indexopts_t, owner: O) -> IndexOpts<'d>
     where
         O: Into<ScopedPhantomcow<'d, Database>>,
     {
