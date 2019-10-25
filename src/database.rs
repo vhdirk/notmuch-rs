@@ -18,6 +18,7 @@ use TagsOwner;
 use Message;
 use MessageOwner;
 use IndexOpts;
+use ConfigList;
 use utils::ScopedSupercow;
 
 
@@ -218,6 +219,11 @@ impl Database {
         <Self as DatabaseExt>::directory(self, path)
     }
 
+    pub fn get_config_list<'d>(&'d self, prefix: &str) -> Result<ConfigList<'d>>
+    {
+        <Self as DatabaseExt>::get_config_list(self, prefix)
+    }
+
     pub fn create_query<'d>(&'d self, query_string: &str) -> Result<Query<'d>> {
         <Self as DatabaseExt>::create_query(self, query_string)
     }
@@ -308,6 +314,22 @@ pub trait DatabaseExt {
         } else {
             Ok(Some(Directory::from_ptr(dir, Supercow::phantom(dbref))))
         }
+    }
+
+    fn get_config_list<'d, D>(database: D, prefix: &str) -> Result<ConfigList<'d>>
+    where
+        D: Into<ScopedSupercow<'d, Database>>
+    {
+        let dbref = database.into();
+
+        let prefix_str = CString::new(prefix).unwrap();
+
+        let mut cfgs = ptr::null_mut();
+        unsafe {
+            ffi::notmuch_database_get_config_list(dbref.ptr, prefix_str.as_ptr(), &mut cfgs)
+        }.as_result()?;
+
+        Ok(ConfigList::from_ptr(cfgs, Supercow::phantom(dbref)))
     }
 
     fn find_message<'d, D>(database: D, message_id: &str) -> Result<Option<Message<'d, Database>>>
@@ -406,3 +428,29 @@ impl DatabaseExt for Database {}
 
 unsafe impl Send for Database {}
 unsafe impl Sync for Database {}
+
+
+#[derive(Debug)]
+pub struct AtomicOperation<'d> {
+    database: ScopedSupercow<'d, Database>,
+}
+
+impl<'d> AtomicOperation<'d> {
+    pub fn new<D>(db: D) -> Result<Self>
+    where
+        D: Into<ScopedSupercow<'d, Database>>,
+    {
+        let database = db.into();
+        database.begin_atomic()?;
+        Ok(AtomicOperation{
+            database
+        })
+    }
+}
+
+impl<'d> Drop for AtomicOperation<'d> {
+    fn drop(&mut self) {
+        let _ = self.database.end_atomic();
+    }
+}
+
