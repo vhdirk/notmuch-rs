@@ -9,7 +9,11 @@ addons:
   apt:
     packages:
     - libnotmuch-dev
+    - notmuch
+    - git
 
 script:
   - cargo build --no-default-features --verbose --all
+  # clone notmuch to have mail corpora
+  - git clone git://git.notmuchmail.org/git/notmuch /tmp/notmuch
   - cargo test --no-default-features --verbose --all

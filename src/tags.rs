@@ -1,3 +1,4 @@
+use std::cmp::PartialEq;
 use std::ffi::CStr;
 use std::iter::Iterator;
 use std::ops::Drop;
@@ -11,7 +12,7 @@ pub trait TagsOwner {}
 pub struct Tags<'o, O> where
     O: TagsOwner + 'o,
 {
-    ptr: *mut ffi::notmuch_tags_t,
+    pub(crate) ptr: *mut ffi::notmuch_tags_t,
     marker: ScopedPhantomcow<'o, O>,
 }
 
@@ -21,6 +22,15 @@ where
 {
     fn drop(&mut self) {
         unsafe { ffi::notmuch_tags_destroy(self.ptr) };
+    }
+}
+
+impl<'o, O> PartialEq for Tags<'o, O>
+where
+    O: TagsOwner + 'o,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.ptr == other.ptr
     }
 }
 

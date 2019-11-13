@@ -46,6 +46,13 @@ impl<'d> Query<'d> {
         <Database as DatabaseExt>::create_query(db, query_string)
     }
 
+    pub fn query_string(self: &Self) -> String {
+        let qstring = unsafe {
+            CStr::from_ptr(ffi::notmuch_query_get_query_string(self.ptr))
+        };
+        qstring.to_str().unwrap().to_string()
+    }
+
     /// Specify the sorting desired for this query.
     pub fn set_sort(self: &Self, sort: Sort) {
         unsafe { ffi::notmuch_query_set_sort(self.ptr, sort.into()) }

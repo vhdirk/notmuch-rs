@@ -7,6 +7,7 @@ repository = "https://github.com/vhdirk/notmuch-rs"
 description = "Rust interface and bindings for notmuch"
 license = "GPL-3.0+"
 readme = "README.md"
+keywords = ["email", "notmuch"]
 
 [badges]
 travis-ci = { repository = "vhdirk/notmuch-rs" }
@@ -18,13 +19,18 @@ supercow = "0.1.0"
 
 [dev-dependencies]
 dirs = "1.0"
+tempfile = "3"
+gethostname = "0.2.0"
+maildir = "0.3.2"
+lettre = "0.9.2"
+lettre_email = "0.9.2"
 
 [features]
 v0_21 = []
 v0_26 = ["v0_21"]
 default = ["v0_26"]
 
-
 [[test]]
-name = "main"
-harness = false
+name = "tests"
+path = "tests/lib.rs"
+harness = true

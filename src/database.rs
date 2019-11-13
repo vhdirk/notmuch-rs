@@ -6,6 +6,7 @@ use std::ptr;
 use supercow::Supercow;
 
 use libc;
+use std::cmp::{PartialEq, PartialOrd, Ordering};
 
 use error::{Error, Result};
 use ffi;
@@ -25,13 +26,26 @@ use utils::ScopedSupercow;
 // Re-exported under database module for pretty namespacin'.
 pub use ffi::DatabaseMode;
 
-#[derive(Copy, Clone, Debug)]
-pub struct Version(libc::c_uint);
 
 #[derive(Clone, Debug)]
 pub struct Revision {
     pub revision: libc::c_ulong,
     pub uuid: String,
+}
+
+impl PartialEq for Revision {
+    fn eq(&self, other: &Revision) -> bool{
+        self.uuid == other.uuid && self.revision == other.revision
+    }
+}
+
+impl PartialOrd for Revision {
+    fn partial_cmp(&self, other: &Revision) -> Option<Ordering>{
+        if self.uuid != other.uuid {
+            return None;
+        }
+        self.revision.partial_cmp(&other.revision)
+    }
 }
 
 
@@ -79,7 +93,7 @@ impl Database {
         })
     }
 
-    pub fn close(&mut self) -> Result<()> {
+    pub fn close(&self) -> Result<()> {
         unsafe { ffi::notmuch_database_close(self.ptr) }.as_result()?;
 
         Ok(())
@@ -143,8 +157,8 @@ impl Database {
         )
     }
 
-    pub fn version(&self) -> Version {
-        Version(unsafe { ffi::notmuch_database_get_version(self.ptr) })
+    pub fn version(&self) -> u32 {
+        unsafe { ffi::notmuch_database_get_version(self.ptr) }
     }
 
     #[cfg(feature = "v0_21")]
