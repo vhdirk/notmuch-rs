@@ -92,6 +92,7 @@ mod atomic {
 }
 
 
+#[cfg(feature = "v0_21")]
 mod revision {
     use super::*;
 
