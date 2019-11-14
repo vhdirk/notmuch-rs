@@ -61,6 +61,10 @@ where
         <Self as ThreadExt<'d, 'q>>::toplevel_messages(self)
     }
 
+    pub fn matched_messages(self: &Self) -> i32 {
+        unsafe { ffi::notmuch_thread_get_matched_messages(self.ptr) }
+    }
+
     /// Get a `Messages` iterator for all messages in 'thread' in
     /// oldest-first order.
     pub fn messages(self: &Self) -> Messages<'_, Self> {

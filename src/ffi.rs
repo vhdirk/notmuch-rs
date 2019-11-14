@@ -1484,6 +1484,24 @@ extern "C" {
         exact: notmuch_bool_t,
     ) -> *mut notmuch_message_properties_t;
 
+
+    /// Return the number of properties named "key" belonging to the specific message.
+    ///
+    /// @param[in] message  The message to examine
+    /// @param[in] key      key to count
+    /// @param[out] count   The number of matching properties associated with this message.
+    ///
+    /// @returns
+    ///
+    /// NOTMUCH_STATUS_SUCCESS: successful count, possibly some other error.
+    ///
+    /// @since libnotmuch 5.2 (notmuch 0.27)
+    pub fn notmuch_message_count_properties(
+        message: *mut notmuch_message_t,
+        key: *const c_char,
+        count: *mut c_uint,
+    ) -> notmuch_status_t;
+
     ///  Is the given *properties* iterator pointing at a valid `(key,value)` pair.
     ///
     ///  When this function returns TRUE, `notmuch_message_properties_{key,value}`

@@ -1,6 +1,7 @@
-use std::ffi::CString;
+use std::ffi::{CString, CStr};
 use std::path::PathBuf;
 use std::cell::RefCell;
+use std::ptr;
 use supercow::{Supercow};
 
 use error::{Error, Result};
@@ -28,6 +29,16 @@ where
 impl<'o, O> MessageOwner for Message<'o, O> where O: MessageOwner + 'o {}
 impl<'o, O> FilenamesOwner for Message<'o, O> where O: MessageOwner + 'o {}
 impl<'o, O> TagsOwner for Message<'o, O> where O: MessageOwner + 'o {}
+
+
+// impl<'o, O> PartialEq for Message<'o, O>
+// where
+//     O: MessageOwner + 'o
+// {
+//     fn eq(self: &Self, other: &Message<'o, O>) -> bool{
+//         self.id() == other.id()
+//     }
+// }
 
 impl<'o, O> Message<'o, O>
 where
@@ -137,6 +148,58 @@ where
     {
         <Self as MessageExt<'o, O>>::properties(self, key, exact)
     }
+
+    pub fn remove_all_properties(&self, key: &str) -> Result<()>
+    {
+        let key_str = CString::new(key).unwrap();
+        unsafe {
+            ffi::notmuch_message_remove_all_properties(self.ptr, key_str.as_ptr())
+        }.as_result()
+    }
+
+    pub fn count_properties(&self, key: &str) -> Result<u32>
+    {
+        let key_str = CString::new(key).unwrap();
+        let mut cnt = 0;
+        unsafe {
+            ffi::notmuch_message_count_properties(self.ptr, key_str.as_ptr(), &mut cnt)
+        }.as_result()?;
+
+        Ok(cnt)
+    }
+
+    pub fn property(&self, key: &str, exact: bool) -> Result<String>
+    {
+        let key_str = CString::new(key).unwrap();
+        let mut prop = ptr::null();
+        unsafe {
+            ffi::notmuch_message_get_property(self.ptr, key_str.as_ptr(), &mut prop)
+        }.as_result()?;
+
+        // TODO: the unwrap here is not good
+        Ok(unsafe{
+            CStr::from_ptr(prop)
+        }.to_str().unwrap().to_string())
+    }
+
+    pub fn add_property(&self, key: &str, value: &str) -> Result<()>
+    {
+        let key_str = CString::new(key).unwrap();
+        let value_str = CString::new(value).unwrap();
+        unsafe {
+            ffi::notmuch_message_add_property(self.ptr, key_str.as_ptr(), value_str.as_ptr())
+        }.as_result()
+    }
+
+    pub fn remove_property(&self, key: &str, value: &str) -> Result<()>
+    {
+        let key_str = CString::new(key).unwrap();
+        let value_str = CString::new(value).unwrap();
+        unsafe {
+            ffi::notmuch_message_remove_property(self.ptr, key_str.as_ptr(), value_str.as_ptr())
+        }.as_result()
+    }
+
 }
 
 pub trait MessageExt<'o, O>

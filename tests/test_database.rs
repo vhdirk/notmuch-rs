@@ -71,7 +71,7 @@ mod database {
     fn test_path(){
         let mailbox = MailBox::new();
         let db = notmuch::Database::create(&mailbox.path()).unwrap();
-        assert!(db.path() == mailbox.path());
+        assert_eq!(db.path(), mailbox.path());
     }
 
     #[test]
@@ -122,8 +122,8 @@ mod revision {
         let db1 = notmuch::Database::create(&mailbox1.path()).unwrap();
         let rev1 = db1.revision();
 
-        assert!(rev0 != rev1);
-        assert!(rev0.uuid != rev1.uuid);
+        assert_ne!(rev0, rev1);
+        assert_ne!(rev0.uuid, rev1.uuid);
     }
 
     #[test]
@@ -165,8 +165,8 @@ mod messages {
         let (msgid, filename) = mailbox.deliver(None, None, None, None, vec![], true, None, false, false, false).unwrap();
         let msg = db.index_file(&filename, None).unwrap();
 
-        assert!(msg.filename() == filename);
-        assert!(msg.id() == msgid);
+        assert_eq!(msg.filename(), filename);
+        assert_eq!(msg.id(), msgid);
         
     }
 
@@ -192,11 +192,11 @@ mod messages {
         let msg0 = db.index_file(&filename, None).unwrap();
         
         let msg1 = db.find_message(&msgid).unwrap().unwrap();
-        assert!(msg0.id() == msgid);
-        assert!(msg0.id() == msg1.id());
+        assert_eq!(msg0.id(), msgid);
+        assert_eq!(msg0.id(), msg1.id());
 
-        assert!(msg0.filename() == filename);
-        assert!(msg0.filename() == msg1.filename());
+        assert_eq!(msg0.filename(), filename);
+        assert_eq!(msg0.filename(), msg1.filename());
     }
 
     #[test]
@@ -219,7 +219,7 @@ mod tags {
 
         let tags = db.all_tags().unwrap();
 
-        assert!(tags.count() == 0);
+        assert_eq!(tags.count(), 0);
     }
 
     #[test]
@@ -232,7 +232,7 @@ mod tags {
         msg.add_tag(&"hello").unwrap();
         let tags: Vec<String> = db.all_tags().unwrap().collect();
 
-        assert!(tags.len() == 1);
+        assert_eq!(tags.len(), 1);
         assert!(tags.iter().any(|x| x == "hello"));
     }
 
@@ -243,12 +243,12 @@ mod tags {
         
         let t1: Vec<String> = db.all_tags().unwrap().collect();
         let t2: Vec<String> = db.all_tags().unwrap().collect();
-        assert!(t1 == t2);
+        assert_eq!(t1, t2);
     }
 
 }
 
-struct PopulatedDatabase {
+struct DatabaseFixture {
     // Return a read-write Database.
     // The database will have 3 messages, 2 threads.
 
@@ -256,7 +256,7 @@ struct PopulatedDatabase {
     pub database: notmuch::Database,
 }
 
-impl PopulatedDatabase {
+impl DatabaseFixture {
     pub fn new() -> Self{
         let mailbox = MailBox::new();
 
@@ -281,15 +281,15 @@ mod query {
 
     #[test]
     fn test_count_messages() {
-        let db = PopulatedDatabase::new();
+        let db = DatabaseFixture::new();
 
         let query = db.database.create_query("*").unwrap();
-        assert!(query.count_messages().unwrap() == 3);
+        assert_eq!(query.count_messages().unwrap(), 3);
     }
 
     #[test]
     fn test_message_no_results() {
-        let db = PopulatedDatabase::new();
+        let db = DatabaseFixture::new();
 
         let query = db.database.create_query("not_a_matching_query").unwrap();
         let mut messages = query.search_messages().unwrap();
@@ -299,7 +299,7 @@ mod query {
 
     #[test]
     fn test_message_match() {
-        let db = PopulatedDatabase::new();
+        let db = DatabaseFixture::new();
 
         let query = db.database.create_query("*").unwrap();
         let mut messages = query.search_messages().unwrap();
@@ -309,15 +309,15 @@ mod query {
 
     #[test]
     fn test_count_threads() {
-        let db = PopulatedDatabase::new();
+        let db = DatabaseFixture::new();
 
         let query = db.database.create_query("*").unwrap();
-        assert!(query.count_threads().unwrap() == 2);
+        assert_eq!(query.count_threads().unwrap(), 2);
     }
 
     #[test]
     fn test_threads_no_results() {
-        let db = PopulatedDatabase::new();
+        let db = DatabaseFixture::new();
 
         let query = db.database.create_query("not_a_matching_query").unwrap();
         let mut threads = query.search_threads().unwrap();
@@ -327,7 +327,7 @@ mod query {
 
     #[test]
     fn test_threads_match() {
-        let db = PopulatedDatabase::new();
+        let db = DatabaseFixture::new();
 
         let query = db.database.create_query("*").unwrap();
         let mut threads = query.search_threads().unwrap();

@@ -114,22 +114,16 @@ impl MailBox {
         -> Result<(String, PathBuf)>
     {
 
-        let mut builder = EmailBuilder::new();
+        let mut builder = EmailBuilder::new()
+                            .subject(subject.unwrap_or_else(|| "Test mail".to_string()));
 
-        if let Some(val) = subject {
-            builder = builder.subject(val);
-        }
+
         if let Some(val) = body {
             builder = builder.text(val);
         }
-        builder = match to {
-            Some(val) => builder.to(val),
-            None => builder.to(format!("to@{}.localhost", self.hostname()))
-        };
-        builder = match from {
-            Some(val) => builder.from(val),
-            None => builder.from(format!("from@{}.localhost", self.hostname()))
-        };
+
+        builder = builder.to(to.unwrap_or_else(|| "to@example.com".to_string()))
+                         .from(from.unwrap_or_else(|| "src@example.com".to_string()));
 
         for h in headers.into_iter(){
             let hdr: Header = h.into();
