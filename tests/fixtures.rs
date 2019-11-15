@@ -147,16 +147,41 @@ impl MailBox {
             if seen {
                 flags += "S";
             }
-            self.maildir.store_cur_with_flags(&msg.message_to_string().unwrap().as_bytes(), flags.as_str()).unwrap()
-        };
+            println!("flags: {:?}", flags);
+            let mid = self.maildir.store_cur_with_flags(&msg.message_to_string().unwrap().as_bytes(), flags.as_str()).unwrap();
 
+            // I have no idea what the reasoning for the :2 here is, but ok.
+            format!("{}:2,{}", mid, flags)
+        };
+        
+        // let mut flags = String::from("");
+        // if flagged {
+        //     flags += "F";
+        // }
+        // if replied {
+        //     flags += "R";
+        // }
+        // if seen {
+        //     flags += "S";
+        // }
+        // println!("flags: {:?}", flags);
+        // let id = self.maildir.store_cur_with_flags(&msg.message_to_string().unwrap().as_bytes(), flags.as_str()).unwrap();
+
+        // if is_new {
+        //     let msgpath = format!("{}{}", id, flags);
+        //     std::fs::rename(msgpath, newpath)?;
+
+        //     self.maildir.path()
+        // }
+
+        
         let mut msgpath = self.path();
         msgpath = if is_new {
             msgpath.join("new")
         } else {
             msgpath.join("cur")
         };
-
+        
         msgpath = msgpath.join(&id);
 
         Ok((msg_id, msgpath))

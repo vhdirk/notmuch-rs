@@ -10,4 +10,5 @@ mod fixtures;
 mod test_database;
 mod test_thread;
 mod test_message;
+mod test_tags;
 
