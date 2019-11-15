@@ -144,18 +144,46 @@ where
         unsafe { ffi::notmuch_message_thaw(self.ptr) }.as_result()
     }
 
-    pub fn properties<'m>(&'m self, key: &str, exact: bool) -> MessageProperties<'m, 'o, O>
-    {
+    pub fn properties<'m>(&'m self, key: &str, exact: bool) -> MessageProperties<'m, 'o, O> {
         <Self as MessageExt<'o, O>>::properties(self, key, exact)
     }
 
-    pub fn remove_all_properties(&self, key: &str) -> Result<()>
+    pub fn remove_all_properties(&self, key: Option<&str>) -> Result<()>
     {
-        let key_str = CString::new(key).unwrap();
-        unsafe {
-            ffi::notmuch_message_remove_all_properties(self.ptr, key_str.as_ptr())
-        }.as_result()
+        match key {
+            Some(k) => {
+                let key_str = CString::new(k).unwrap();
+                unsafe {
+                    ffi::notmuch_message_remove_all_properties(self.ptr, key_str.as_ptr())
+                }.as_result()
+            },
+            None => {
+                let p = ptr::null();
+                unsafe {
+                    ffi::notmuch_message_remove_all_properties(self.ptr, p)
+                }.as_result()
+            }
+        }
     }
+
+    pub fn remove_all_properties_with_prefix(&self, prefix: Option<&str>) -> Result<()>
+    {
+        match prefix {
+            Some(k) => {
+                let key_str = CString::new(k).unwrap();
+                unsafe {
+                    ffi::notmuch_message_remove_all_properties_with_prefix(self.ptr, key_str.as_ptr())
+                }.as_result()
+            },
+            None => {
+                let p = ptr::null();
+                unsafe {
+                    ffi::notmuch_message_remove_all_properties_with_prefix(self.ptr, p)
+                }.as_result()
+            }
+        }
+    }
+
 
     pub fn count_properties(&self, key: &str) -> Result<u32>
     {
@@ -176,10 +204,14 @@ where
             ffi::notmuch_message_get_property(self.ptr, key_str.as_ptr(), &mut prop)
         }.as_result()?;
 
-        // TODO: the unwrap here is not good
-        Ok(unsafe{
-            CStr::from_ptr(prop)
-        }.to_str().unwrap().to_string())
+        if prop.is_null() {
+            Err(Error::UnspecifiedError)
+        } else {
+            // TODO: the unwrap here is not good
+            Ok(unsafe{
+                CStr::from_ptr(prop)
+            }.to_str().unwrap().to_string())
+        }
     }
 
     pub fn add_property(&self, key: &str, value: &str) -> Result<()>
@@ -199,7 +231,6 @@ where
             ffi::notmuch_message_remove_property(self.ptr, key_str.as_ptr(), value_str.as_ptr())
         }.as_result()
     }
-
 }
 
 pub trait MessageExt<'o, O>

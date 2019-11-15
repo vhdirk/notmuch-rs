@@ -1445,6 +1445,23 @@ extern "C" {
         key: *const c_char,
     ) -> notmuch_status_t;
 
+    /// Remove all (prefix*,value) pairs from the given message
+    ///
+    /// @param[in,out] message  message to operate on.
+    /// @param[in]     prefix   delete properties with keys that start with prefix.
+    ///                         If NULL, delete all properties
+    /// @returns
+    /// - NOTMUCH_STATUS_READ_ONLY_DATABASE: Database was opened in
+    ///   read-only mode so message cannot be modified.
+    /// - NOTMUCH_STATUS_SUCCESS: No error occurred.
+    ///
+    /// @since libnotmuch 5.1 (notmuch 0.26)
+    ///
+    pub fn notmuch_message_remove_all_properties_with_prefix(
+        message: *mut notmuch_message_t,
+        prefix: *const c_char,
+    ) -> notmuch_status_t;
+
     /// Get the properties for *message*, returning a
     /// `notmuch_message_properties_t` object which can be used to iterate over
     /// all properties.

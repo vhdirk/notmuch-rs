@@ -165,35 +165,6 @@ mod message {
 //          now = int(time.time())
 //          assert abs(now - msg.date) < 3600*24
  
-
-// struct MessagePropertiesFixture {
-//     // Return a single thread with 2 messages
-//     pub mailbox: MailBox,
-//     pub database: Arc<notmuch::Database>,
-//     pub maildir_msg: (String, PathBuf),
-//     pub message: notmuch::Message<'static, notmuch::Database>,
-// }
-
-// impl MessagePropertiesFixture {
-//     pub fn new() -> Self{
-//         let mailbox = MailBox::new();
-
-//         let (msgid, filename) = mailbox.deliver(None, None, None, None, vec![],  true, None, false, false, false).unwrap();
-
-//         let database = Arc::new(notmuch::Database::create(&mailbox.path()).unwrap());
-//         let message = <notmuch::Database as notmuch::DatabaseExt>::index_file(database.clone(), &filename, None).unwrap();
-//         let properties = <notmuch::Message as notmuch::MessageExt>::properties(&message, false);
-
-//         Self {
-//             mailbox,
-//             database,
-//             maildir_msg: (msgid, filename),
-//             message
-//         }
-//     }
-// }
-
-
 mod properties {
     use super::*;
 
@@ -245,72 +216,76 @@ mod properties {
     }
 
     #[test]
+    fn test_del() {
+        let msg = MessageFixture::new();
+        msg.message.add_property(&"foo", &"a").unwrap();
+        msg.message.add_property(&"foo", &"b").unwrap();
+
+        msg.message.remove_all_properties(Some(&"foo")).unwrap();
+        assert!(msg.message.property(&"foo", true).is_err());
+    }
+
+    #[test]
     fn test_remove() {
         let msg = MessageFixture::new();
         msg.message.add_property(&"foo", &"a").unwrap();
         msg.message.add_property(&"foo", &"b").unwrap();
 
         msg.message.remove_property(&"foo", &"a").unwrap();
-        
         assert_eq!(msg.message.property(&"foo", true).unwrap(), "b");
-
     }
 
-}
- 
+    #[test]
+    fn test_clear() {
+        let msg = MessageFixture::new();
+        msg.message.add_property(&"foo", &"a").unwrap();
 
- 
- 
-//      def test_del(self, props):
-//          props.add('foo', 'a')
-//          props.add('foo', 'b')
-//          del props['foo']
-//          with pytest.raises(KeyError):
-//              props['foo']
- 
-//      def test_remove(self, props):
-//          props.add('foo', 'a')
-//          props.add('foo', 'b')
-//          props.remove('foo', 'a')
-//          assert props['foo'] == 'b'
- 
-//      def test_view_abcs(self, props):
-//          assert isinstance(props.keys(), collections.abc.KeysView)
-//          assert isinstance(props.values(), collections.abc.ValuesView)
-//          assert isinstance(props.items(), collections.abc.ItemsView)
- 
-//      def test_pop(self, props):
-//          props.add('foo', 'a')
-//          props.add('foo', 'b')
-//          val = props.pop('foo')
-//          assert val == 'a'
- 
-//      def test_pop_default(self, props):
-//          with pytest.raises(KeyError):
-//              props.pop('foo')
-//          assert props.pop('foo', 'default') == 'default'
- 
-//      def test_popitem(self, props):
-//          props.add('foo', 'a')
-//          assert props.popitem() == ('foo', 'a')
-//          with pytest.raises(KeyError):
-//              props.popitem()
- 
-//      def test_clear(self, props):
-//          props.add('foo', 'a')
-//          props.clear()
-//          assert len(props) == 0
- 
-//      def test_getall(self, props):
-//          props.add('foo', 'a')
-//          assert set(props.getall('foo')) == {('foo', 'a')}
- 
-//      def test_getall_prefix(self, props):
-//          props.add('foo', 'a')
-//          props.add('foobar', 'b')
-//          assert set(props.getall('foo')) == {('foo', 'a'), ('foobar', 'b')}
- 
-//      def test_getall_exact(self, props):
-//          props.add('foo', 'a')
-//          props.add('foobar', 'b')
-//          assert set(props.getall('foo', exact=True)) == {('foo', 'a')}
+        msg.message.remove_all_properties(None).unwrap();
+        assert!(msg.message.property(&"foo", true).is_err());
+    }
+
+    #[test]
+    fn test_getall() {
+        let msg = MessageFixture::new();
+        msg.message.add_property(&"foo", &"a").unwrap();
+
+        let mut prop_keys: Vec<String> = msg.message.properties(&"foo", false).map(|x| x.0).collect();
+        assert_eq!(prop_keys.len(), 1);
+        assert_eq!(prop_keys, vec!["foo"]);
+
+        let mut prop_vals: Vec<String> = msg.message.properties(&"foo", false).map(|x| x.1).collect();
+        assert_eq!(prop_vals.len(), 1);
+        assert_eq!(prop_vals, vec!["a"]);
+    }
+
+    #[test]
+    fn test_getall_prefix() {
+        let msg = MessageFixture::new();
+        msg.message.add_property(&"foo", &"a").unwrap();
+        msg.message.add_property(&"foobar", &"b").unwrap();
+
+        let mut prop_keys: Vec<String> = msg.message.properties(&"foo", false).map(|x| x.0).collect();
+        assert_eq!(prop_keys.len(), 2);
+        assert_eq!(prop_keys, vec!["foo", "foobar"]);
+
+        let mut prop_vals: Vec<String> = msg.message.properties(&"foo", false).map(|x| x.1).collect();
+        assert_eq!(prop_vals.len(), 2);
+        assert_eq!(prop_vals, vec!["a", "b"]);
+    }
+
+    #[test]
+    fn test_getall_exact() {
+        let msg = MessageFixture::new();
+        msg.message.add_property(&"foo", &"a").unwrap();
+        msg.message.add_property(&"foobar", &"b").unwrap();
+
+        let mut prop_keys: Vec<String> = msg.message.properties(&"foo", true).map(|x| x.0).collect();
+        assert_eq!(prop_keys.len(), 1);
+        assert_eq!(prop_keys, vec!["foo"]);
+
+        let mut prop_vals: Vec<String> = msg.message.properties(&"foo", true).map(|x| x.1).collect();
+        assert_eq!(prop_vals.len(), 1);
+        assert_eq!(prop_vals, vec!["a"]);
+    }
+}
+
