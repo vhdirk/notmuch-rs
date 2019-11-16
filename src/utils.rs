@@ -4,6 +4,7 @@ use std::borrow::Cow;
 use supercow::{Supercow, DefaultFeatures/*, NonSyncFeatures*/};
 use supercow::ext::{BoxedStorage};
 
+
 pub trait ToStr {
     fn to_str<'a>(&self) -> Result<&'a str, str::Utf8Error>;
 
@@ -48,8 +49,3 @@ pub type ScopedPhantomcow<'a, OWNED, BORROWED = OWNED,
 
 pub type ScopedSupercow<'a, OWNED, BORROWED = OWNED, SHARED = Box<dyn DefaultFeatures<'a> + 'a>> =
     Supercow<'a, OWNED, BORROWED, SHARED, BoxedStorage>;
-
-
-
-
-

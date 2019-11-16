@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::path::PathBuf;
 use fixtures::{MailBox, NotmuchCommand};
 
 struct TagSetFixture {
@@ -109,7 +108,6 @@ mod mutable {
     fn test_from_maildir_flags(){
         let tagset = TagSetFixture::new(true, true);
 
-        let msgid = tagset.message.id();
         tagset.message.remove_tag(&"flagged").unwrap();
         tagset.message.maildir_flags_to_tags().unwrap();
 
@@ -125,20 +123,20 @@ mod mutable {
         let filename = tagset.message.filename();
         let filestr = filename.to_string_lossy();
 
-        let file_parts: Vec<&str> = filestr.split(",").collect();
+        let file_parts: Vec<&str> = filestr.split(',').collect();
         let flags = file_parts.last().unwrap();
         println!("Flags {:?}", flags);
 
-        assert!(flags.contains("F"));
+        assert!(flags.contains('F'));
         tagset.message.remove_tag(&"flagged").unwrap();
         tagset.message.tags_to_maildir_flags().unwrap();
 
         let filename = tagset.message.filename();
         let filestr = filename.to_string_lossy();
 
-        let file_parts: Vec<&str> = filestr.split(",").collect();
+        let file_parts: Vec<&str> = filestr.split(',').collect();
         let flags = file_parts.last().unwrap();
-        assert!(!flags.contains("F"));
+        assert!(!flags.contains('F'));
     }
 
 }

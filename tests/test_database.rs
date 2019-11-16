@@ -85,7 +85,7 @@ mod database {
 
 
 mod atomic {
-    use super::*;
+    // use super::*;
 
     // TODO: how do I test this??
 
@@ -107,6 +107,7 @@ mod revision {
         assert!(rev0 == rev1);
         assert!(rev0 <= rev1);
         assert!(rev0 >= rev1);
+
         assert!(!(rev0 < rev1));
         assert!(!(rev0 > rev1));
     }
@@ -176,7 +177,7 @@ mod messages {
         let db = notmuch::Database::create(&mailbox.path()).unwrap();
 
         let (msgid, filename) = mailbox.deliver(None, None, None, None, vec![], true, None, false, false, false).unwrap();
-        let msg = db.index_file(&filename, None).unwrap();
+        db.index_file(&filename, None).unwrap();
         assert!(db.find_message(&msgid).unwrap().is_some());
 
         db.remove_message(&filename).unwrap();

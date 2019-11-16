@@ -1,12 +1,8 @@
 use std::ops::Drop;
-use std::ffi::{CStr, CString};
-use supercow::Supercow;
 
 use ffi;
 use Database;
-use Filenames;
-use FilenamesOwner;
-use utils::{ToStr, ScopedSupercow, ScopedPhantomcow};
+use utils::{ToStr, ScopedPhantomcow};
 
 
 #[derive(Debug)]

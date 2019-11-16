@@ -1,5 +1,5 @@
-use std::ffi::{CString, CStr};
-use std::path::{Path, PathBuf};
+use std::ffi::CString;
+use std::path::PathBuf;
 use std::cell::RefCell;
 use std::borrow::Cow;
 use std::ptr;

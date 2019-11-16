@@ -7,24 +7,15 @@ extern crate lettre;
 extern crate lettre_email;
 
 use std::ffi::OsStr;
-use std::io::{self, Result, Write};
+use std::io::{Result, Write};
 use std::fs::{self, File};
-use std::rc::Rc;
-use std::path::{Path, PathBuf};
-use tempfile::{tempdir, tempdir_in, Builder, TempDir};
-use std::net::ToSocketAddrs;
+use std::path::PathBuf;
+use tempfile::{tempdir, TempDir};
 use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
 use maildir::Maildir;
 use lettre_email::{EmailBuilder, Header};
 use lettre::SendableEmail;
 
-
-pub fn timestamp_ms() -> u128 {
-    let start = SystemTime::now();
-    let time_since_epoch = start.duration_since(UNIX_EPOCH).unwrap();
-    time_since_epoch.as_millis()
-}
 
 // A basic test interface to a valid maildir directory.
 //
@@ -33,7 +24,6 @@ pub fn timestamp_ms() -> u128 {
 // in the top of the maildir.
 pub struct MailBox {
     root_dir: TempDir,
-    idcount: u32,
     maildir: Maildir
 }
 
@@ -73,7 +63,6 @@ impl MailBox {
 
         Self {
             root_dir,
-            idcount: 0,
             maildir
         }
     }
@@ -86,14 +75,8 @@ impl MailBox {
     //     msgid
     // }
 
-    pub fn path(&self) -> PathBuf
-    {
+    pub fn path(&self) -> PathBuf {
         self.root_dir.path().into()
-    }
-
-    pub fn hostname(&self) -> String {
-        let hname = gethostname::gethostname();
-        hname.to_string_lossy().into()
     }
 
     /// Deliver a new mail message in the mbox.
@@ -107,7 +90,7 @@ impl MailBox {
                    from: Option<String>,
                    headers: Vec<(String, String)>,
                    is_new: bool,      // Move to new dir or cur dir?
-                   keywords: Option<Vec<String>>,  // List of keywords or labels
+                   _keywords: Option<Vec<String>>,  // List of keywords or labels
                    seen: bool,     // Seen flag (cur dir only)
                    replied: bool,  // Replied flag (cur dir only)
                    flagged: bool)  // Flagged flag (cur dir only)
@@ -154,27 +137,7 @@ impl MailBox {
             format!("{}:2,{}", mid, flags)
         };
         
-        // let mut flags = String::from("");
-        // if flagged {
-        //     flags += "F";
-        // }
-        // if replied {
-        //     flags += "R";
-        // }
-        // if seen {
-        //     flags += "S";
-        // }
-        // println!("flags: {:?}", flags);
-        // let id = self.maildir.store_cur_with_flags(&msg.message_to_string().unwrap().as_bytes(), flags.as_str()).unwrap();
-
-        // if is_new {
-        //     let msgpath = format!("{}{}", id, flags);
-        //     std::fs::rename(msgpath, newpath)?;
-
-        //     self.maildir.path()
-        // }
-
-        
+       
         let mut msgpath = self.path();
         msgpath = if is_new {
             msgpath.join("new")

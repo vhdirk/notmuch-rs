@@ -249,11 +249,11 @@ mod properties {
         let msg = MessageFixture::new();
         msg.message.add_property(&"foo", &"a").unwrap();
 
-        let mut prop_keys: Vec<String> = msg.message.properties(&"foo", false).map(|x| x.0).collect();
+        let prop_keys: Vec<String> = msg.message.properties(&"foo", false).map(|x| x.0).collect();
         assert_eq!(prop_keys.len(), 1);
         assert_eq!(prop_keys, vec!["foo"]);
 
-        let mut prop_vals: Vec<String> = msg.message.properties(&"foo", false).map(|x| x.1).collect();
+        let prop_vals: Vec<String> = msg.message.properties(&"foo", false).map(|x| x.1).collect();
         assert_eq!(prop_vals.len(), 1);
         assert_eq!(prop_vals, vec!["a"]);
     }
@@ -264,11 +264,11 @@ mod properties {
         msg.message.add_property(&"foo", &"a").unwrap();
         msg.message.add_property(&"foobar", &"b").unwrap();
 
-        let mut prop_keys: Vec<String> = msg.message.properties(&"foo", false).map(|x| x.0).collect();
+        let prop_keys: Vec<String> = msg.message.properties(&"foo", false).map(|x| x.0).collect();
         assert_eq!(prop_keys.len(), 2);
         assert_eq!(prop_keys, vec!["foo", "foobar"]);
 
-        let mut prop_vals: Vec<String> = msg.message.properties(&"foo", false).map(|x| x.1).collect();
+        let prop_vals: Vec<String> = msg.message.properties(&"foo", false).map(|x| x.1).collect();
         assert_eq!(prop_vals.len(), 2);
         assert_eq!(prop_vals, vec!["a", "b"]);
     }
@@ -279,11 +279,11 @@ mod properties {
         msg.message.add_property(&"foo", &"a").unwrap();
         msg.message.add_property(&"foobar", &"b").unwrap();
 
-        let mut prop_keys: Vec<String> = msg.message.properties(&"foo", true).map(|x| x.0).collect();
+        let prop_keys: Vec<String> = msg.message.properties(&"foo", true).map(|x| x.0).collect();
         assert_eq!(prop_keys.len(), 1);
         assert_eq!(prop_keys, vec!["foo"]);
 
-        let mut prop_vals: Vec<String> = msg.message.properties(&"foo", true).map(|x| x.1).collect();
+        let prop_vals: Vec<String> = msg.message.properties(&"foo", true).map(|x| x.1).collect();
         assert_eq!(prop_vals.len(), 1);
         assert_eq!(prop_vals, vec!["a"]);
     }

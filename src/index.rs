@@ -1,13 +1,10 @@
 use std::ops::Drop;
-use supercow::{Supercow, Phantomcow};
 
-use error::{Error, Result};
+use error::Result;
 use ffi;
 use ffi::DecryptionPolicy;
 use Database;
-use Filenames;
-use FilenamesOwner;
-use utils::{ScopedSupercow, ScopedPhantomcow};
+use utils::ScopedPhantomcow;
 
 
 #[derive(Debug)]

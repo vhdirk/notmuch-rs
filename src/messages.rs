@@ -1,5 +1,3 @@
-use std::ops::Drop;
-
 use ffi;
 use utils::ScopedPhantomcow;
 use MessageOwner;

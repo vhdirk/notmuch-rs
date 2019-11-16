@@ -1,11 +1,10 @@
 use std::ops::Drop;
-use std::ffi::{CStr, CString};
-use supercow::Supercow;
+use std::ffi::CStr;
 
 use ffi;
 use Message;
 use MessageOwner;
-use utils::{ScopedSupercow, ScopedPhantomcow};
+use utils::{ScopedPhantomcow};
 
 
 #[derive(Debug)]
