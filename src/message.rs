@@ -1,7 +1,9 @@
 use std::ffi::{CString, CStr};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::cell::RefCell;
+use std::borrow::Cow;
 use std::ptr;
+
 use supercow::{Supercow};
 
 use error::{Error, Result};
@@ -54,14 +56,14 @@ where
         }
     }
 
-    pub fn id(self: &Self) -> String {
+    pub fn id(self: &Self) -> Cow<'_, str> {
         let mid = unsafe { ffi::notmuch_message_get_message_id(self.ptr) };
-        mid.to_str().unwrap().to_string()
+        mid.to_string_lossy()
     }
 
-    pub fn thread_id(self: &Self) -> String {
+    pub fn thread_id(self: &Self) -> Cow<'_, str> {
         let tid = unsafe { ffi::notmuch_message_get_thread_id(self.ptr) };
-        tid.to_str().unwrap().to_string()
+        tid.to_string_lossy()
     }
 
     pub fn replies(self: &Self) -> Messages<'o, O> {
@@ -93,16 +95,18 @@ where
         unsafe { ffi::notmuch_message_get_date(self.ptr) as i64 }
     }
 
-    pub fn header(&self, name: &str) -> Result<Option<&str>> {
+    pub fn header(&self, name: &str) -> Result<Option<Cow<'_, str>>> {
         let name = CString::new(name).unwrap();
         let ret = unsafe { ffi::notmuch_message_get_header(self.ptr, name.as_ptr()) };
         if ret.is_null() {
             Err(Error::UnspecifiedError)
         } else {
-            Ok(match ret.to_str().unwrap() {
-                "" => None,
-                ret => Some(ret),
-            })
+            let ret_str = ret.to_string_lossy();
+            if ret_str.is_empty() {
+                Ok(None)
+            } else{
+                Ok(Some(ret_str))
+            }
         }
     }
 
@@ -196,7 +200,7 @@ where
         Ok(cnt)
     }
 
-    pub fn property(&self, key: &str, exact: bool) -> Result<String>
+    pub fn property(&self, key: &str) -> Result<Cow<'_, str>>
     {
         let key_str = CString::new(key).unwrap();
         let mut prop = ptr::null();
@@ -208,9 +212,7 @@ where
             Err(Error::UnspecifiedError)
         } else {
             // TODO: the unwrap here is not good
-            Ok(unsafe{
-                CStr::from_ptr(prop)
-            }.to_str().unwrap().to_string())
+            Ok(prop.to_string_lossy())
         }
     }
 

@@ -1,4 +1,5 @@
 use std::ops::Drop;
+use std::borrow::Cow;
 
 use ffi;
 use utils::{ToStr, ScopedSupercow, ScopedPhantomcow};
@@ -43,9 +44,9 @@ where
         }
     }
 
-    pub fn id(self: &Self) -> String {
+    pub fn id(self: &Self) -> &str {
         let tid = unsafe { ffi::notmuch_thread_get_thread_id(self.ptr) };
-        tid.to_str().unwrap().to_string()
+        tid.to_str().unwrap()
     }
 
     pub fn total_messages(self: &Self) -> i32 {
@@ -75,18 +76,16 @@ where
         <Self as ThreadExt<'d, 'q>>::tags(self)
     }
 
-    pub fn subject(self: &Self) -> String {
+    pub fn subject(self: &Self) -> Cow<'_, str> {
         let sub = unsafe { ffi::notmuch_thread_get_subject(self.ptr) };
-
-        sub.to_str().unwrap().to_string()
+        sub.to_string_lossy()
     }
 
     pub fn authors(self: &Self) -> Vec<String> {
         let athrs = unsafe { ffi::notmuch_thread_get_authors(self.ptr) };
 
         athrs
-            .to_str()
-            .unwrap()
+            .to_string_lossy()
             .split(',')
             .map(|s| s.to_string())
             .collect()

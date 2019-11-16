@@ -6,7 +6,7 @@ use ffi;
 use Database;
 use Filenames;
 use FilenamesOwner;
-use utils::{ScopedSupercow, ScopedPhantomcow};
+use utils::{ToStr, ScopedSupercow, ScopedPhantomcow};
 
 
 #[derive(Debug)]
@@ -46,15 +46,15 @@ impl<'d> Iterator for ConfigList<'d>
         }
 
         let (k, v) = unsafe {
-            let key = CStr::from_ptr(ffi::notmuch_config_list_key(self.ptr));
-            let value = CStr::from_ptr(ffi::notmuch_config_list_value(self.ptr));
+            let key = ffi::notmuch_config_list_key(self.ptr);
+            let value = ffi::notmuch_config_list_value(self.ptr);
 
             ffi::notmuch_config_list_move_to_next(self.ptr);
 
             (key, value)
         };
 
-        Some((k.to_str().unwrap().to_string(), v.to_str().unwrap().to_string()))
+        Some((k.to_string_lossy().to_string(), v.to_string_lossy().to_string()))
     }
 }
 

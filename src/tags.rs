@@ -69,7 +69,7 @@ where
             CStr::from_ptr(t)
         };
 
-        Some(ctag.to_str().unwrap().to_string())
+        Some(ctag.to_string_lossy().to_string())
     }
 }
 

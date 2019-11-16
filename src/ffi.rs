@@ -6,7 +6,7 @@ use libc::{c_char, c_double, c_int, c_uint, c_ulong, c_void, time_t};
 
 use error::{Error, Result};
 use std::{error, fmt, str};
-
+use std::borrow::Cow;
 use utils::ToStr;
 
 notmuch_enum! {
@@ -56,6 +56,14 @@ impl notmuch_status_t {
 impl ToStr for Status {
     fn to_str<'a>(&self) -> std::result::Result<&'a str, str::Utf8Error> {
         unsafe { notmuch_status_to_string((*self).into()) }.to_str()
+    }
+
+    fn to_str_unchecked<'a>(&self) -> &'a str {
+        unsafe { notmuch_status_to_string((*self).into()) }.to_str_unchecked()
+    }
+
+    fn to_string_lossy<'a>(&self) -> Cow<'a, str> {
+        unsafe { notmuch_status_to_string((*self).into()) }.to_string_lossy()
     }
 }
 

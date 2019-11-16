@@ -64,7 +64,7 @@ where
             (key, value)
         };
 
-        Some((k.to_str().unwrap().to_string(), v.to_str().unwrap().to_string()))
+        Some((k.to_string_lossy().to_string(), v.to_string_lossy().to_string()))
     }
 }
 

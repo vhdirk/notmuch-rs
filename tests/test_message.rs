@@ -70,7 +70,7 @@ mod message {
     #[test]
     fn test_header() {
         let msg = MessageFixture::new();
-        assert_eq!(msg.message.header(&"from").unwrap(), Some("<src@example.com>"));
+        assert_eq!(msg.message.header(&"from").unwrap().unwrap().to_string(), "<src@example.com>");
     }
 
     #[test]
@@ -172,10 +172,10 @@ mod properties {
     fn test_add_single() {
         let msg = MessageFixture::new();
         msg.message.add_property(&"foo", &"bar").unwrap();
-        assert_eq!(msg.message.property(&"foo", true).unwrap(), "bar");
+        assert_eq!(msg.message.property(&"foo").unwrap(), "bar");
 
         msg.message.add_property(&"bar", &"baz").unwrap();
-        assert_eq!(msg.message.property(&"bar", true).unwrap(), "baz");
+        assert_eq!(msg.message.property(&"bar").unwrap(), "baz");
     }
 
     #[test]
@@ -184,7 +184,7 @@ mod properties {
         msg.message.add_property(&"foo", &"bar").unwrap();
         msg.message.add_property(&"foo", &"baz").unwrap();
 
-        assert_eq!(msg.message.property(&"foo", true).unwrap(), "bar");
+        assert_eq!(msg.message.property(&"foo").unwrap(), "bar");
 
         let props = msg.message.properties(&"foo", true);
         let expect = vec![("foo", "bar"), ("foo", "baz")];
@@ -222,7 +222,7 @@ mod properties {
         msg.message.add_property(&"foo", &"b").unwrap();
 
         msg.message.remove_all_properties(Some(&"foo")).unwrap();
-        assert!(msg.message.property(&"foo", true).is_err());
+        assert!(msg.message.property(&"foo").is_err());
     }
 
     #[test]
@@ -232,7 +232,7 @@ mod properties {
         msg.message.add_property(&"foo", &"b").unwrap();
 
         msg.message.remove_property(&"foo", &"a").unwrap();
-        assert_eq!(msg.message.property(&"foo", true).unwrap(), "b");
+        assert_eq!(msg.message.property(&"foo").unwrap(), "b");
     }
 
     #[test]
@@ -241,7 +241,7 @@ mod properties {
         msg.message.add_property(&"foo", &"a").unwrap();
 
         msg.message.remove_all_properties(None).unwrap();
-        assert!(msg.message.property(&"foo", true).is_err());
+        assert!(msg.message.property(&"foo").is_err());
     }
 
     #[test]
