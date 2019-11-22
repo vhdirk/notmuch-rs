@@ -37,15 +37,25 @@ impl ToString for *const libc::c_char {
     }
 }
 
-// pub type ScopedNonSyncSupercow<'a, OWNED, BORROWED = OWNED> =
-//     Supercow<'a, OWNED, BORROWED,
-//              Box<NonSyncFeatures<'a> + 'a>,
-//              BoxedStorage>;
 
+#[cfg(not(nonsync))]
 pub type ScopedPhantomcow<'a, OWNED, BORROWED = OWNED, 
                               SHARED = Box<dyn DefaultFeatures<'a> + 'a>,
                               STORAGE = BoxedStorage> =
     Supercow<'a, OWNED, BORROWED, SHARED, STORAGE, ()>;
 
+#[cfg(not(nonsync))]
 pub type ScopedSupercow<'a, OWNED, BORROWED = OWNED, SHARED = Box<dyn DefaultFeatures<'a> + 'a>> =
     Supercow<'a, OWNED, BORROWED, SHARED, BoxedStorage>;
+
+
+#[cfg(nonsync)]
+pub type ScopedPhantomcow<'a, OWNED, BORROWED = OWNED, 
+                              SHARED = Box<dyn NonSyncFeatures<'a> + 'a>,
+                              STORAGE = BoxedStorage> =
+    Supercow<'a, OWNED, BORROWED, SHARED, STORAGE, ()>;
+
+#[cfg(nonsync)]
+pub type ScopedSupercow<'a, OWNED, BORROWED = OWNED, SHARED = Box<dyn NonSyncFeatures<'a> + 'a>> =
+    Supercow<'a, OWNED, BORROWED, SHARED, BoxedStorage>;
+
