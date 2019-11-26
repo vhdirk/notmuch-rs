@@ -8,6 +8,7 @@ extern crate lettre_email;
 
 mod fixtures;
 mod test_database;
+mod test_query;
 mod test_thread;
 mod test_message;
 mod test_tags;

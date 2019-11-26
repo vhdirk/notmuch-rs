@@ -40,12 +40,6 @@ fn test_threadid() {
     assert!(!thread.thread.id().is_empty());
 }
 
-#[test]
-fn test_len() {
-    let thread = ThreadFixture::new();
-
-    assert_eq!(thread.thread.total_messages(), 2);
-}
 
 #[test]
 fn test_toplevel() {

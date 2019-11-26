@@ -116,7 +116,7 @@ mod tests {
     
     #[test]
     #[should_panic] // until test data is filled in
-    fn recurse() -> () {
+    fn recurse() {
         match database::Database::open(
             &String::new(),
             database::DatabaseMode::ReadOnly,
