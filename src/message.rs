@@ -235,6 +235,15 @@ where
     }
 }
 
+impl<'o, O> Drop for Message<'o, O>
+where
+    O: MessageOwner + 'o,
+{
+    fn drop(&mut self) {
+        unsafe { ffi::notmuch_message_destroy(self.ptr) };
+    }
+}
+
 pub trait MessageExt<'o, O>
 where
     O: MessageOwner + 'o,
