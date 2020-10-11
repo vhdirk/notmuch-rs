@@ -24,7 +24,7 @@ mod index;
 mod config_list;
 mod message_properties;
 
-pub use database::{Database, DatabaseExt, AtomicOperation};
+pub use database::{Database, DatabaseExt, AtomicOperation, Revision};
 pub use directory::{Directory, DirectoryExt};
 pub use error::Error;
 pub use filenames::{Filenames, FilenamesOwner};
