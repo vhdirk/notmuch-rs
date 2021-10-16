@@ -26,6 +26,15 @@ notmuch_enum! {
         NOTMUCH_STATUS_UNBALANCED_ATOMIC => UnbalancedAtomic,
         NOTMUCH_STATUS_UNSUPPORTED_OPERATION => UnsupportedOperation,
         NOTMUCH_STATUS_UPGRADE_REQUIRED => UpgradeRequired,
+        NOTMUCH_STATUS_PATH_ERROR => PathError,
+        NOTMUCH_STATUS_IGNORED => Ignored,
+        NOTMUCH_STATUS_ILLEGAL_ARGUMENT => IllegalArgument,
+        NOTMUCH_STATUS_MALFORMED_CRYPTO_PROTOCOL => MalformedCryptoProtocol,
+        NOTMUCH_STATUS_FAILED_CRYPTO_CONTEXT_CREATION => FailedCryptoContextCreation,
+        NOTMUCH_STATUS_UNKNOWN_CRYPTO_PROTOCOL => UnknownCryptoProtocol,
+        NOTMUCH_STATUS_NO_CONFIG => NoConfig,
+        NOTMUCH_STATUS_NO_DATABASE => NoDatabase,
+        NOTMUCH_STATUS_DATABASE_EXISTS => DatabaseExists,
         // Not an actual status value.  Just a way to find out how many
         // valid status values there are.
         NOTMUCH_STATUS_LAST_STATUS => LastStatus
