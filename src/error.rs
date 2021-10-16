@@ -14,24 +14,20 @@ pub enum Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", error::Error::description(self))
+        match self {
+            Error::IoError(e) => e.fmt(f),
+            Error::NotmuchError(e) => e.fmt(f),
+            Error::UnspecifiedError => write!(f, "Generic notmuch error"),
+        }
     }
 }
 
-impl std::error::Error for Error {
-    fn description(&self) -> &str {
-        match self {
-            Error::IoError(e) => error::Error::description(e),
-            Error::NotmuchError(e) => e.description(),
-            Error::UnspecifiedError => "Generic notmuch error",
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
-        match *self {
-            Error::IoError(ref e) => Some(e),
-            Error::NotmuchError(ref e) => Some(e),
-            Error::UnspecifiedError => None,
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match &self {
+            Error::IoError(e) => Some(e),
+            Error::NotmuchError(e) => Some(e),
+            Error::UnspecifiedError => None
         }
     }
 }

@@ -700,7 +700,7 @@ extern "C" {
     ///
     /// Typical usage might be:
     ///
-    /// ```norun
+    /// ```ignore
     /// notmuch_query_t *query;
     /// notmuch_threads_t *threads;
     /// notmuch_thread_t *thread;
@@ -744,7 +744,7 @@ extern "C" {
     ///
     /// Typical usage might be:
     ///
-    /// ```norun
+    /// ```ignore
     /// notmuch_query_t *query;
     /// notmuch_messages_t *messages;
     /// notmuch_message_t *message;
@@ -976,7 +976,7 @@ extern "C" {
     ///
     /// Typical usage might be:
     ///
-    /// ```norun
+    /// ```ignore
     /// notmuch_thread_t *thread;
     /// notmuch_tags_t *tags;
     /// const char *tag;
@@ -1143,7 +1143,7 @@ extern "C" {
         message: *mut notmuch_message_t,
         indexopts: *mut notmuch_indexopts_t
     ) -> notmuch_status_t;
-    
+
     /// Get a value of a flag for the email corresponding to 'message'.
     pub fn notmuch_message_get_flag(
         message: *mut notmuch_message_t,
@@ -1192,7 +1192,7 @@ extern "C" {
     ///
     /// Typical usage might be:
     ///
-    /// ```norun
+    /// ```ignore
     /// notmuch_message_t *message;
     /// notmuch_tags_t *tags;
     /// const char *tag;
@@ -1262,7 +1262,7 @@ extern "C" {
     /// This function examines the filenames of 'message' for maildir flags, and adds or removes
     /// tags on 'message' as follows when these flags are present:
     ///
-    /// ```norun
+    /// ```ignore
     /// Flag	Action if present
     /// ----	-----------------
     /// 'D'	Adds the "draft" tag to the message
@@ -1343,7 +1343,7 @@ extern "C" {
     /// change tag values. For example, explicitly setting a message to
     /// have a given set of tags might look like this:
     ///
-    /// ```norun
+    /// ```ignore
     /// notmuch_message_freeze (message);
     ///
     /// notmuch_message_remove_all_tags (message);
@@ -1494,7 +1494,7 @@ extern "C" {
     ///
     /// Typical usage might be:
     ///
-    /// ```norun
+    /// ```ignore
     /// notmuch_message_properties_t *list;
     ///
     /// for (list = notmuch_message_get_properties (message, "testkey1", TRUE);
@@ -1818,11 +1818,11 @@ extern "C" {
     pub fn notmuch_database_get_default_indexopts(db: *mut notmuch_database_t) -> *mut notmuch_indexopts_t;
 
 
-    //// 
+    ////
     //// Stating a policy about how to decrypt messages.
     ////
     //// See index.decrypt in notmuch-config(1) for more details.
-    //// 
+    ////
     //// typedef enum {
     ////     NOTMUCH_DECRYPT_FALSE,
     ////     NOTMUCH_DECRYPT_TRUE,
@@ -1830,7 +1830,7 @@ extern "C" {
     ////     NOTMUCH_DECRYPT_NOSTASH,
     //// } notmuch_decryption_policy_t;
     ////
-    //// 
+    ////
     //// Specify whether to decrypt encrypted parts while indexing.
     ////
     //// Be aware that the index is likely sufficient to reconstruct the
@@ -1844,13 +1844,13 @@ extern "C" {
 
     //// Return whether to decrypt encrypted parts while indexing.
     //// see notmuch_indexopts_set_decrypt_policy.
-    ////  
+    ////
     //// @since libnotmuch 5.1 (notmuch 0.26)
     pub fn notmuch_indexopts_get_decrypt_policy(options: *const notmuch_indexopts_t) -> notmuch_decryption_policy_t;
 
 
     /// Destroy a notmuch_indexopts_t object.
-    /// 
+    ///
     /// @since libnotmuch 5.1 (notmuch 0.26)
     pub fn notmuch_indexopts_destroy(options: *mut notmuch_indexopts_t);
 
