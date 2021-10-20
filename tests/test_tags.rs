@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use fixtures::{MailBox, NotmuchCommand};
 
 struct TagSetFixture {
@@ -6,26 +5,50 @@ struct TagSetFixture {
     // This will have the default new mail tags: inbox, unread.
     pub mailbox: MailBox,
     pub cmd: NotmuchCommand,
-    pub database: Arc<notmuch::Database>,
-    pub message: notmuch::Message<'static, notmuch::Database>
+    pub database: notmuch::Database,
+    pub message: notmuch::Message,
 }
 
 impl TagSetFixture {
-    pub fn new(mutable: bool, flagged: bool) -> Self{
+    pub fn new(mutable: bool, flagged: bool) -> Self {
         let mailbox = MailBox::new();
-        let (_msg, filename) = mailbox.deliver(None, None, None, None, vec![], !flagged, None, false, false, flagged).unwrap();
-      
+        let (_msg, filename) = mailbox
+            .deliver(
+                None,
+                None,
+                None,
+                None,
+                vec![],
+                !flagged,
+                None,
+                false,
+                false,
+                flagged,
+            )
+            .unwrap();
+
         let cmd = NotmuchCommand::new(&mailbox.path());
         cmd.run(vec!["new"]).unwrap();
 
-        let database = Arc::new(notmuch::Database::open(&mailbox.path(), if !mutable {notmuch::DatabaseMode::ReadOnly} else { notmuch::DatabaseMode::ReadWrite }).unwrap());
-        let message = <notmuch::Database as notmuch::DatabaseExt>::find_message_by_filename(database.clone(), &filename).unwrap().unwrap();    
+        let database = notmuch::Database::open(
+            &mailbox.path(),
+            if !mutable {
+                notmuch::DatabaseMode::ReadOnly
+            } else {
+                notmuch::DatabaseMode::ReadWrite
+            },
+        )
+        .unwrap();
+        let message = database
+            .find_message_by_filename(&filename)
+            .unwrap()
+            .unwrap();
 
         Self {
             mailbox,
             database,
-            cmd, 
-            message
+            cmd,
+            message,
         }
     }
 }
@@ -35,20 +58,22 @@ mod immutable {
     use super::*;
 
     #[test]
-    fn test_neg(){
+    fn test_neg() {
         let tagset = TagSetFixture::new(false, false);
 
         let tags: Vec<String> = tagset.database.all_tags().unwrap().collect();
         tagset.cmd.run(vec!["tag", "+foo", "*"]).unwrap();
 
-        let database = notmuch::Database::open(&tagset.mailbox.path(), notmuch::DatabaseMode::ReadOnly).unwrap();
+        let database =
+            notmuch::Database::open(&tagset.mailbox.path(), notmuch::DatabaseMode::ReadOnly)
+                .unwrap();
         let ntags: Vec<String> = database.all_tags().unwrap().collect();
 
         assert_ne!(tags, ntags);
     }
 
     #[test]
-    fn test_contains(){
+    fn test_contains() {
         let tagset = TagSetFixture::new(false, false);
         let tags: Vec<String> = tagset.database.all_tags().unwrap().collect();
 
@@ -56,13 +81,11 @@ mod immutable {
         assert!(!tags.iter().any(|x| x == "foo"));
     }
 
-
     #[test]
-    fn test_len(){
+    fn test_len() {
         let tagset = TagSetFixture::new(false, false);
         assert_eq!(tagset.database.all_tags().unwrap().count(), 2);
     }
-
 }
 
 mod mutable {
@@ -70,7 +93,7 @@ mod mutable {
     use super::*;
 
     #[test]
-    fn test_add(){
+    fn test_add() {
         let tagset = TagSetFixture::new(true, false);
         assert!(!tagset.message.tags().any(|x| x == "foo"));
 
@@ -79,7 +102,7 @@ mod mutable {
     }
 
     #[test]
-    fn test_discard(){
+    fn test_discard() {
         let tagset = TagSetFixture::new(true, false);
         assert!(tagset.message.tags().any(|x| x == "inbox"));
 
@@ -88,7 +111,7 @@ mod mutable {
     }
 
     #[test]
-    fn test_discard_not_present(){
+    fn test_discard_not_present() {
         let tagset = TagSetFixture::new(true, false);
         assert!(!tagset.message.tags().any(|x| x == "foo"));
 
@@ -96,7 +119,7 @@ mod mutable {
     }
 
     #[test]
-    fn test_clear(){
+    fn test_clear() {
         let tagset = TagSetFixture::new(true, false);
         assert!(tagset.message.tags().count() > 0);
         tagset.message.remove_all_tags().unwrap();
@@ -105,7 +128,7 @@ mod mutable {
     }
 
     #[test]
-    fn test_from_maildir_flags(){
+    fn test_from_maildir_flags() {
         let tagset = TagSetFixture::new(true, true);
 
         tagset.message.remove_tag(&"flagged").unwrap();
@@ -114,10 +137,8 @@ mod mutable {
         assert!(tagset.message.tags().any(|x| x == "flagged"));
     }
 
-
     #[test]
-    fn test_to_maildir_flags(){
-
+    fn test_to_maildir_flags() {
         let tagset = TagSetFixture::new(true, true);
 
         let filename = tagset.message.filename();
@@ -138,5 +159,4 @@ mod mutable {
         let flags = file_parts.last().unwrap();
         assert!(!flags.contains('F'));
     }
-
 }

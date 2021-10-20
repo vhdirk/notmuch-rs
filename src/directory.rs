@@ -1,57 +1,40 @@
 use std::ops::Drop;
-use supercow::Supercow;
+use std::rc::Rc;
 
 use ffi;
 use Database;
 use Filenames;
-use FilenamesOwner;
-use utils::{ScopedSupercow, ScopedPhantomcow};
-
 
 #[derive(Debug)]
-pub struct Directory<'d> {
-    ptr: *mut ffi::notmuch_directory_t,
-    marker: ScopedPhantomcow<'d, Database>,
+pub(crate) struct DirectoryPtr(*mut ffi::notmuch_directory_t);
+
+#[derive(Debug, Clone)]
+pub struct Directory {
+    ptr: Rc<DirectoryPtr>,
+    owner: Database,
 }
 
-impl<'d> Drop for Directory<'d> {
+impl Drop for Directory {
     fn drop(&mut self) {
-        unsafe { ffi::notmuch_directory_destroy(self.ptr) };
+        unsafe { ffi::notmuch_directory_destroy(self.ptr.0) };
     }
 }
 
-impl<'d> FilenamesOwner for Directory<'d> {}
-
-impl<'d> Directory<'d> {
-    pub(crate) fn from_ptr<O>(ptr: *mut ffi::notmuch_directory_t, owner: O) -> Directory<'d>
-    where
-        O: Into<ScopedPhantomcow<'d, Database>>,
-    {
+impl Directory {
+    pub(crate) fn from_ptr(
+        ptr: *mut ffi::notmuch_directory_t,
+        owner: Database,
+    ) -> Directory {
         Directory {
-            ptr,
-            marker: owner.into(),
+            ptr: Rc::new(DirectoryPtr(ptr)),
+            owner,
         }
     }
 
-    pub fn child_directories(&self) -> Filenames<Self> {
-        <Self as DirectoryExt>::child_directories(self)
-    }
-}
-
-pub trait DirectoryExt<'d> {
-    fn child_directories<'s, S>(directory: S) -> Filenames<'s, Directory<'d>>
-    where
-        S: Into<ScopedSupercow<'s, Directory<'d>>>,
-    {
-        let dir = directory.into();
+    fn child_directories(&self) -> Filenames {
         Filenames::from_ptr(
-            unsafe { ffi::notmuch_directory_get_child_directories(dir.ptr) },
-            Supercow::phantom(dir),
+            unsafe { ffi::notmuch_directory_get_child_directories(self.ptr.0) },
+            self.clone(),
         )
     }
 }
-
-impl<'d> DirectoryExt<'d> for Directory<'d> {}
-
-unsafe impl<'d> Send for Directory<'d> {}
-unsafe impl<'d> Sync for Directory<'d> {}

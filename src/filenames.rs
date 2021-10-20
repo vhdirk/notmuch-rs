@@ -2,67 +2,64 @@ use std::ffi::CStr;
 use std::iter::Iterator;
 use std::ops::Drop;
 use std::path::PathBuf;
+use std::rc::Rc;
+
+use from_variants::FromVariants;
+
+use Directory;
+use Message;
 
 use ffi;
-use utils::ScopedPhantomcow;
 
-pub trait FilenamesOwner {}
-
-#[derive(Debug)]
-pub struct Filenames<'o, O>
-where
-    O: FilenamesOwner + 'o,
-{
-    pub(crate) ptr: *mut ffi::notmuch_filenames_t,
-    pub(crate) marker: ScopedPhantomcow<'o, O>,
+#[derive(Clone, Debug, FromVariants)]
+pub(crate) enum FilenamesOwner {
+    Directory(Directory),
+    Message(Message),
 }
 
-impl<'o, O> Drop for Filenames<'o, O>
-where
-    O: FilenamesOwner + 'o,
-{
-    fn drop(self: &mut Self) {
-        unsafe { ffi::notmuch_filenames_destroy(self.ptr) };
+#[derive(Debug)]
+pub(crate) struct FilenamesPtr(*mut ffi::notmuch_filenames_t);
+
+impl Drop for FilenamesPtr {
+    fn drop(&mut self) {
+        unsafe { ffi::notmuch_filenames_destroy(self.0) };
     }
 }
 
-impl<'o, O> Filenames<'o, O>
-where
-    O: FilenamesOwner + 'o,
-{
-    pub(crate) fn from_ptr<P>(ptr: *mut ffi::notmuch_filenames_t, owner: P) -> Filenames<'o, O>
+#[derive(Debug, Clone)]
+pub struct Filenames {
+    ptr: Rc<FilenamesPtr>,
+    owner: FilenamesOwner,
+}
+
+impl Filenames {
+    pub(crate) fn from_ptr<O>(ptr: *mut ffi::notmuch_filenames_t, owner: O) -> Self
     where
-        P: Into<ScopedPhantomcow<'o, O>>,
+        O: Into<FilenamesOwner>,
     {
         Filenames {
-            ptr,
-            marker: owner.into(),
+            ptr: Rc::new(FilenamesPtr(ptr)),
+            owner: owner.into(),
         }
     }
 }
 
-impl<'o, O> Iterator for Filenames<'o, O>
-where
-    O: FilenamesOwner + 'o,
-{
+impl Iterator for Filenames {
     type Item = PathBuf;
 
-    fn next(self: &mut Self) -> Option<Self::Item> {
-        let valid = unsafe { ffi::notmuch_filenames_valid(self.ptr) };
+    fn next(&mut self) -> Option<Self::Item> {
+        let valid = unsafe { ffi::notmuch_filenames_valid(self.ptr.0) };
 
         if valid == 0 {
             return None;
         }
 
         let ctag = unsafe {
-            let t = ffi::notmuch_filenames_get(self.ptr);
-            ffi::notmuch_filenames_move_to_next(self.ptr);
+            let t = ffi::notmuch_filenames_get(self.ptr.0);
+            ffi::notmuch_filenames_move_to_next(self.ptr.0);
             CStr::from_ptr(t)
         };
 
         Some(PathBuf::from(ctag.to_str().unwrap()))
     }
 }
-
-unsafe impl<'o, O> Send for Filenames<'o, O> where O: FilenamesOwner + 'o {}
-unsafe impl<'o, O> Sync for Filenames<'o, O> where O: FilenamesOwner + 'o {}

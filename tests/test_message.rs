@@ -5,9 +5,9 @@ use fixtures::MailBox;
 struct MessageFixture {
     // Return a single thread with 2 messages
     pub mailbox: MailBox,
-    pub database: Arc<notmuch::Database>,
+    pub database: notmuch::Database,
     pub maildir_msg: (String, PathBuf),
-    pub message: notmuch::Message<'static, notmuch::Database>,
+    pub message: notmuch::Message,
 }
 
 impl MessageFixture {
@@ -16,9 +16,9 @@ impl MessageFixture {
 
         let (msgid, filename) = mailbox.deliver(None, None, None, None, vec![],  true, None, false, false, false).unwrap();
 
-        let database = Arc::new(notmuch::Database::create(&mailbox.path()).unwrap());
-        let message = <notmuch::Database as notmuch::DatabaseExt>::index_file(database.clone(), &filename, None).unwrap();
-    
+        let database = notmuch::Database::create(&mailbox.path()).unwrap();
+        let message = database.index_file(&filename, None).unwrap();
+
         Self {
             mailbox,
             database,
@@ -35,14 +35,14 @@ mod message {
     #[test]
     fn test_messageid() {
         let msg = MessageFixture::new();
-        let copy = <notmuch::Database as notmuch::DatabaseExt>::find_message_by_filename(msg.database.clone(), &msg.message.filename()).unwrap().unwrap();
+        let copy = msg.database.find_message_by_filename(&msg.message.filename()).unwrap().unwrap();
         assert_eq!(msg.message.id(), copy.id())
     }
 
     #[test]
     fn test_messageid_find() {
         let msg = MessageFixture::new();
-        let copy = <notmuch::Database as notmuch::DatabaseExt>::find_message(msg.database.clone(), &msg.message.id()).unwrap().unwrap();
+        let copy = msg.database.find_message(&msg.message.id()).unwrap().unwrap();
         assert_eq!(msg.message.id(), copy.id())
     }
 
@@ -113,20 +113,20 @@ mod message {
     fn test_freeze_err() {
         // not sure if this test is ok?
         let msg = MessageFixture::new();
-        
+
         msg.message.add_tag(&"foo").unwrap();
-        
+
         msg.message.freeze().unwrap();
         assert!(msg.message.remove_all_tags().is_ok());
 
-        let copy = <notmuch::Database as notmuch::DatabaseExt>::find_message(msg.database.clone(), &msg.message.id()).unwrap().unwrap();
+        let copy = msg.database.find_message(&msg.message.id()).unwrap().unwrap();
         assert!(copy.tags().any(|x| x == "foo"));
 
         msg.message.thaw().unwrap();
 
         assert!(!msg.message.tags().any(|x| x == "foo"));
 
-        let copy2 = <notmuch::Database as notmuch::DatabaseExt>::find_message(msg.database.clone(), &msg.message.id()).unwrap().unwrap();
+        let copy2 = msg.database.find_message(&msg.message.id()).unwrap().unwrap();
         assert!(!copy2.tags().any(|x| x == "foo"));
     }
 
@@ -141,11 +141,11 @@ mod message {
             assert!(msg.message.remove_all_tags().is_ok());
             assert!(!msg.message.tags().any(|x| x == "foo"));
 
-            let copy = <notmuch::Database as notmuch::DatabaseExt>::find_message(msg.database.clone(), &msg.message.id()).unwrap().unwrap();
+            let copy = msg.database.find_message(&msg.message.id()).unwrap().unwrap();
             assert!(copy.tags().any(|x| x == "foo"));
         }
 
-        let copy2 = <notmuch::Database as notmuch::DatabaseExt>::find_message(msg.database.clone(), &msg.message.id()).unwrap().unwrap();
+        let copy2 = msg.database.find_message(&msg.message.id()).unwrap().unwrap();
         assert!(!copy2.tags().any(|x| x == "foo"));
         assert!(!msg.message.tags().any(|x| x == "foo"));
     }
@@ -164,7 +164,7 @@ mod message {
 //          #     UTC or the other way around.
 //          now = int(time.time())
 //          assert abs(now - msg.date) < 3600*24
- 
+
 mod properties {
     use super::*;
 

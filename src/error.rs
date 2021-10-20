@@ -27,7 +27,7 @@ impl error::Error for Error {
         match &self {
             Error::IoError(e) => Some(e),
             Error::NotmuchError(e) => Some(e),
-            Error::UnspecifiedError => None
+            Error::UnspecifiedError => None,
         }
     }
 }

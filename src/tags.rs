@@ -1,70 +1,77 @@
+use std::rc::Rc;
 use std::cmp::PartialEq;
 use std::ffi::CStr;
 use std::iter::Iterator;
 use std::ops::Drop;
 
-use ffi;
-use utils::ScopedPhantomcow;
+use from_variants::FromVariants;
 
-pub trait TagsOwner {}
+use ffi;
+use Thread;
+use Database;
+use Message;
+use Messages;
+
+#[derive(Clone, Debug, FromVariants)]
+pub(crate) enum TagsOwner {
+    Database(Database),
+    Message(Message),
+    Messages(Messages),
+    Thread(Thread),
+}
 
 #[derive(Debug)]
-pub struct Tags<'o, O> where
-    O: TagsOwner + 'o,
-{
-    pub(crate) ptr: *mut ffi::notmuch_tags_t,
-    marker: ScopedPhantomcow<'o, O>,
-}
+pub(crate) struct TagsPtr(*mut ffi::notmuch_tags_t);
 
-impl<'o, O> Drop for Tags<'o, O>
-where
-    O: TagsOwner + 'o,
+impl Drop for TagsPtr
 {
     fn drop(&mut self) {
-        unsafe { ffi::notmuch_tags_destroy(self.ptr) };
+        unsafe { ffi::notmuch_tags_destroy(self.0) };
     }
 }
 
-impl<'o, O> PartialEq for Tags<'o, O>
-where
-    O: TagsOwner + 'o,
-{
+impl PartialEq for TagsPtr{
     fn eq(&self, other: &Self) -> bool {
-        self.ptr == other.ptr
+        self.0 == other.0
     }
 }
 
-impl<'o, O> Tags<'o, O>
-where
-    O: TagsOwner + 'o,
+
+#[derive(Clone, Debug)]
+pub struct Tags
 {
-    pub(crate) fn from_ptr<P>(ptr: *mut ffi::notmuch_tags_t, owner: P) -> Tags<'o, O>
+    ptr: Rc<TagsPtr>,
+    owner: TagsOwner,
+}
+
+
+impl Tags
+{
+    pub(crate) fn from_ptr<O>(ptr: *mut ffi::notmuch_tags_t, owner: O) -> Tags
     where
-        P: Into<ScopedPhantomcow<'o, O>>,
+        O: Into<TagsOwner>,
     {
         Tags {
-            ptr,
-            marker: owner.into(),
+            ptr: Rc::new(TagsPtr(ptr)),
+            owner: owner.into(),
         }
     }
 }
 
-impl<'o, O> Iterator for Tags<'o, O>
-where
-    O: TagsOwner + 'o,
+impl Iterator for Tags
 {
     type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let valid = unsafe { ffi::notmuch_tags_valid(self.ptr) };
+        let valid = unsafe { ffi::notmuch_tags_valid(self.ptr.0) };
 
         if valid == 0 {
             return None;
         }
 
         let ctag = unsafe {
-            let t = ffi::notmuch_tags_get(self.ptr);
-            ffi::notmuch_tags_move_to_next(self.ptr);
+            let t = ffi::notmuch_tags_get(self.ptr.0);
+            ffi::notmuch_tags_move_to_next(self.ptr.0);
 
             CStr::from_ptr(t)
         };
@@ -72,14 +79,3 @@ where
         Some(ctag.to_string_lossy().to_string())
     }
 }
-
-pub trait TagsExt<'o, O>
-where
-    O: TagsOwner + 'o,
-{
-}
-
-impl<'o, O> TagsExt<'o, O> for Tags<'o, O> where O: TagsOwner + 'o {}
-
-unsafe impl<'o, O> Send for Tags<'o, O> where O: TagsOwner + 'o {}
-unsafe impl<'o, O> Sync for Tags<'o, O> where O: TagsOwner + 'o {}
