@@ -153,7 +153,7 @@ mod revision {
     // TODO: add tests for revisions comparisons
 
 }
- 
+
 
 mod messages {
     use super::*;
@@ -168,7 +168,7 @@ mod messages {
 
         assert_eq!(msg.filename(), filename);
         assert_eq!(msg.id(), msgid);
-        
+
     }
 
     #[test]
@@ -183,7 +183,7 @@ mod messages {
         db.remove_message(&filename).unwrap();
         assert!(db.find_message(&msgid).unwrap().is_none());
     }
-    
+
     #[test]
     fn test_find_message() {
         let mailbox = MailBox::new();
@@ -191,7 +191,7 @@ mod messages {
 
         let (msgid, filename) = mailbox.deliver(None, None, None, None, vec![], true, None, false, false, false).unwrap();
         let msg0 = db.index_file(&filename, None).unwrap();
-        
+
         let msg1 = db.find_message(&msgid).unwrap().unwrap();
         assert_eq!(msg0.id(), msgid);
         assert_eq!(msg0.id(), msg1.id());
@@ -207,7 +207,7 @@ mod messages {
 
         assert!(db.find_message(&"foo").unwrap().is_none());
     }
-    
+
 }
 
 mod tags {
@@ -241,7 +241,7 @@ mod tags {
     fn test_iters() {
         let mailbox = MailBox::new();
         let db = notmuch::Database::create(&mailbox.path()).unwrap();
-        
+
         let t1: Vec<String> = db.all_tags().unwrap().collect();
         let t2: Vec<String> = db.all_tags().unwrap().collect();
         assert_eq!(t1, t2);
@@ -269,7 +269,7 @@ impl DatabaseFixture {
         cmd.run(vec!["new"]).unwrap();
 
         let database = notmuch::Database::open(&mailbox.path(), notmuch::DatabaseMode::ReadWrite).unwrap();
-    
+
         Self {
             mailbox,
             database

@@ -1,6 +1,6 @@
 [package]
 name = "notmuch"
-version = "0.6.1"
+version = "0.7.0"
 authors = ["Dirk Van Haerenborgh <vhdirk@gmail.com>"]
 homepage = "https://github.com/vhdirk/notmuch-rs"
 repository = "https://github.com/vhdirk/notmuch-rs"
@@ -16,7 +16,7 @@ travis-ci = { repository = "vhdirk/notmuch-rs" }
 [dependencies]
 libc = "0.2"
 # clippy = { version = "0.0.211", optional = true }
-supercow = "0.1.0"
+from_variants = "0.6.0"
 
 [dev-dependencies]
 dirs = "1.0"

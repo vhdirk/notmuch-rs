@@ -1,76 +1,65 @@
+use std::rc::Rc;
 use std::ops::Drop;
+use std::fmt::Debug;
+
+use from_variants::FromVariants;
 
 use ffi;
-use Thread;
 use Query;
-use utils::ScopedPhantomcow;
+use Thread;
 
-
-#[derive(Debug)]
-pub struct Threads<'d, 'q>
-where
-    'd: 'q
-{
-    ptr: *mut ffi::notmuch_threads_t,
-    marker: ScopedPhantomcow<'q, Query<'d>>,
+#[derive(Clone, Debug, FromVariants)]
+pub(crate) enum ThreadsOwner {
+    Query(Query),
 }
 
-impl<'d, 'q> Drop for Threads<'d, 'q>
-where
-    'd: 'q,
+#[derive(Debug)]
+pub struct ThreadsPtr(*mut ffi::notmuch_threads_t);
+
+impl Drop for ThreadsPtr
 {
     fn drop(&mut self) {
-        unsafe { ffi::notmuch_threads_destroy(self.ptr) };
+        unsafe { ffi::notmuch_threads_destroy(self.0) };
     }
 }
 
-impl<'d, 'q> Threads<'d, 'q>
-where
-    'd: 'q,
+#[derive(Clone, Debug)]
+pub struct Threads
 {
-    pub(crate) fn from_ptr<P>(ptr: *mut ffi::notmuch_threads_t, owner: P) -> Threads<'d, 'q>
+    ptr: Rc<ThreadsPtr>,
+    owner: Box<ThreadsOwner>,
+}
+
+impl Threads
+{
+    pub(crate) fn from_ptr<O>(ptr: *mut ffi::notmuch_threads_t, owner: O) -> Threads
     where
-        P: Into<ScopedPhantomcow<'q, Query<'d>>>,
+        O: Into<ThreadsOwner>,
     {
         Threads {
-            ptr,
-            marker: owner.into(),
+            ptr: Rc::new(ThreadsPtr(ptr)),
+            owner: Box::new(owner.into()),
         }
     }
 }
 
-impl<'d, 'q> Iterator for Threads<'d, 'q>
-where
-    'd: 'q,
+impl Iterator for Threads
 {
-    type Item = Thread<'d, 'q>;
+    type Item = Thread;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let valid = unsafe { ffi::notmuch_threads_valid(self.ptr) };
+        let valid = unsafe { ffi::notmuch_threads_valid(self.ptr.0) };
 
         if valid == 0 {
             return None;
         }
 
         let cthrd = unsafe {
-            let thrd = ffi::notmuch_threads_get(self.ptr);
-            ffi::notmuch_threads_move_to_next(self.ptr);
+            let thrd = ffi::notmuch_threads_get(self.ptr.0);
+            ffi::notmuch_threads_move_to_next(self.ptr.0);
             thrd
         };
 
-        Some(Thread::from_ptr(cthrd, ScopedPhantomcow::<'q, Query<'d>>::share(&mut self.marker)))
+        Some(Thread::from_ptr(cthrd, self.clone()))
     }
 }
-
-
-pub trait ThreadsExt<'d, 'q>
-where
-    'd: 'q,
-{
-}
-
-impl<'d, 'q> ThreadsExt<'d, 'q> for Threads<'d, 'q> where 'd: 'q {}
-
-
-unsafe impl<'d, 'q> Send for Threads<'d, 'q> where 'd: 'q {}
-unsafe impl<'d, 'q> Sync for Threads<'d, 'q> where 'd: 'q {}

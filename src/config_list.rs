@@ -1,58 +1,59 @@
 use std::ops::Drop;
+use std::rc::Rc;
 
-use ffi;
 use Database;
-use utils::{ToStr, ScopedPhantomcow};
-
+use ffi;
+use utils::ToStr;
 
 #[derive(Debug)]
-pub struct ConfigList<'d> {
-    ptr: *mut ffi::notmuch_config_list_t,
-    marker: ScopedPhantomcow<'d, Database>,
+pub struct ConfigListPtr(*mut ffi::notmuch_config_list_t);
+
+#[derive(Clone, Debug)]
+pub struct ConfigList {
+    ptr: Rc<ConfigListPtr>,
+    owner: Database,
 }
 
-impl<'d> Drop for ConfigList<'d> {
+impl Drop for ConfigListPtr {
     fn drop(&mut self) {
-        unsafe { ffi::notmuch_config_list_destroy(self.ptr) };
+        unsafe { ffi::notmuch_config_list_destroy(self.0) };
     }
 }
 
-impl<'d> ConfigList<'d> {
-    pub(crate) fn from_ptr<O>(ptr: *mut ffi::notmuch_config_list_t, owner: O) -> ConfigList<'d>
-    where
-        O: Into<ScopedPhantomcow<'d, Database>>,
-    {
+impl ConfigList {
+    pub(crate) fn from_ptr(
+        ptr: *mut ffi::notmuch_config_list_t,
+        owner: Database,
+    ) -> ConfigList {
         ConfigList {
-            ptr,
-            marker: owner.into(),
+            ptr: Rc::new(ConfigListPtr(ptr)),
+            owner,
         }
     }
 }
 
-
-impl<'d> Iterator for ConfigList<'d>
-{
+impl Iterator for ConfigList {
     type Item = (String, String);
 
     fn next(&mut self) -> Option<Self::Item> {
-        let valid = unsafe { ffi::notmuch_config_list_valid(self.ptr) };
+        let valid = unsafe { ffi::notmuch_config_list_valid(self.ptr.0) };
 
         if valid == 0 {
             return None;
         }
 
         let (k, v) = unsafe {
-            let key = ffi::notmuch_config_list_key(self.ptr);
-            let value = ffi::notmuch_config_list_value(self.ptr);
+            let key = ffi::notmuch_config_list_key(self.ptr.0);
+            let value = ffi::notmuch_config_list_value(self.ptr.0);
 
-            ffi::notmuch_config_list_move_to_next(self.ptr);
+            ffi::notmuch_config_list_move_to_next(self.ptr.0);
 
             (key, value)
         };
 
-        Some((k.to_string_lossy().to_string(), v.to_string_lossy().to_string()))
+        Some((
+            k.to_string_lossy().to_string(),
+            v.to_string_lossy().to_string(),
+        ))
     }
 }
-
-unsafe impl<'d> Send for ConfigList<'d> {}
-unsafe impl<'d> Sync for ConfigList<'d> {}

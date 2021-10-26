@@ -1,50 +1,52 @@
+use std::marker::PhantomData;
+use std::ops::Deref;
+use std::ops::DerefMut;
+use std::rc::Rc;
+
+use from_variants::FromVariants;
+
 use ffi;
-use utils::ScopedPhantomcow;
-use MessageOwner;
+use Query;
+use Thread;
 use Message;
 use Tags;
-use TagsOwner;
 
-#[derive(Debug)]
-pub struct Messages<'o, O>
-where
-    O: MessageOwner + 'o,
-{
-    pub(crate) ptr: *mut ffi::notmuch_messages_t,
-    marker: ScopedPhantomcow<'o, O>,
+#[derive(Clone, Debug, FromVariants)]
+pub(crate) enum MessagesOwner {
+    Query(Query),
+    Message(Message),
+    Messages(Messages),
+    Thread(Thread),
 }
 
-// impl<'o, O> Drop for Messages<'o, O>
-// where
-//     O: MessageOwner + 'o,
-// {
-//     fn drop(self: &mut Self) {
-//         unsafe { ffi::notmuch_messages_destroy(self.ptr) };
-//     }
-// }
+#[derive(Debug)]
+pub(crate) struct MessagesPtr(*mut ffi::notmuch_messages_t);
 
-impl<'o, O> Messages<'o, O>
-where
-    O: MessageOwner + 'o,
-{
-    pub(crate) fn from_ptr<P>(ptr: *mut ffi::notmuch_messages_t, owner: P) -> Messages<'o, O>
+impl Drop for MessagesPtr {
+    fn drop(&mut self) {
+        unsafe { ffi::notmuch_messages_destroy(self.0) };
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Messages {
+    ptr: Rc<MessagesPtr>,
+    owner: Box<MessagesOwner>,
+}
+
+impl Messages {
+    pub(crate) fn from_ptr<O>(ptr: *mut ffi::notmuch_messages_t, owner: O) -> Messages
     where
-        P: Into<ScopedPhantomcow<'o, O>>,
+        O: Into<MessagesOwner>,
     {
         Messages {
-            ptr,
-            marker: owner.into(),
+            ptr: Rc::new(MessagesPtr(ptr)),
+            owner: Box::new(owner.into()),
         }
     }
 }
 
-impl<'o, O> MessageOwner for Messages<'o, O> where O: MessageOwner + 'o {}
-impl<'o, O> TagsOwner for Messages<'o, O> where O: MessageOwner + 'o {}
-
-impl<'o, O> Messages<'o, O>
-where
-    O: MessageOwner + 'o,
-{
+impl Messages {
     /**
      * Return a list of tags from all messages.
      *
@@ -58,75 +60,59 @@ where
      *
      * The function returns NULL on error.
      */
-    pub fn collect_tags<'m>(self: &'o Self) -> Tags<'m, Self> {
+    pub fn collect_tags(&self) -> Tags {
         Tags::from_ptr(
-            unsafe { ffi::notmuch_messages_collect_tags(self.ptr) },
-            self,
+            unsafe { ffi::notmuch_messages_collect_tags(self.ptr.0) },
+            self.clone(),
         )
     }
 }
 
-impl<'o, O> Iterator for Messages<'o, O>
-where
-    O: MessageOwner + 'o,
-{
-    type Item = Message<'o, O>;
+impl Iterator for Messages {
+    type Item = Message;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let valid = unsafe { ffi::notmuch_messages_valid(self.ptr) };
+        let valid = unsafe { ffi::notmuch_messages_valid(self.ptr.0) };
 
         if valid == 0 {
             return None;
         }
 
-        let cthrd = unsafe {
-            let thrd = ffi::notmuch_messages_get(self.ptr);
-            ffi::notmuch_messages_move_to_next(self.ptr);
-            thrd
+        let cmsg = unsafe {
+            let msg = ffi::notmuch_messages_get(self.ptr.0);
+            ffi::notmuch_messages_move_to_next(self.ptr.0);
+            msg
         };
 
-        Some(Message::from_ptr(cthrd, ScopedPhantomcow::<'o, O>::share(&mut self.marker)))
+        Some(Message::from_ptr(cmsg, self.clone()))
     }
 }
-
-
-
-pub trait MessagesExt<'o, O>
-where
-    O: MessageOwner + 'o,
-{
-}
-
-impl<'o, O> MessagesExt<'o, O> for Messages<'o, O> where O: MessageOwner + 'o {}
-
-
-unsafe impl<'o, O> Send for Messages<'o, O> where O: MessageOwner + 'o {}
-unsafe impl<'o, O> Sync for Messages<'o, O> where O: MessageOwner + 'o {}
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
+
     // This will not compile if ownership can't be subject to recursion
-    fn descend<'o, O: 'o + super::MessageOwner, T: Iterator<Item=super::Message<'o, O>>>(iter: T)
-            -> usize {
-        iter.map(|msg| descend(msg.replies()) ).count()
+    fn descend<T>(iter: T) -> usize
+    where
+        T: Iterator<Item = super::Message>,
+    {
+        iter.map(|msg| descend(msg.replies())).count()
     }
-    
-    use query::Query;
+
     use database;
-    
+    use query::Query;
+
     #[test]
     #[should_panic] // until test data is filled in
     fn recurse() {
-        match database::Database::open(
-            &String::new(),
-            database::DatabaseMode::ReadOnly,
-        ) {
+        match database::Database::open(&String::new(), database::DatabaseMode::ReadOnly) {
             /* This will not happen without test data, but will force the compiler to compile
              * the descend function.
              */
             Ok(db) => {
-                let q = Query::create(db, &String::new()).unwrap();
-                descend::<Query, super::Messages<Query>>(q.search_messages().unwrap());
+                let q = Query::create(&db, &String::new()).unwrap();
+                descend(q.search_messages().unwrap());
             }
             Err(err) => {
                 panic!("Got error while trying to open db: {:?}", err);

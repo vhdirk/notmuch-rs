@@ -1,31 +1,26 @@
 use std::ffi::{CStr, CString};
+use std::fmt::Debug;
 use std::ops::Drop;
 use std::path::Path;
 use std::ptr;
-
-use supercow::Supercow;
+use std::rc::Rc;
 
 use libc;
-use std::cmp::{PartialEq, PartialOrd, Ordering};
+use std::cmp::{Ordering, PartialEq, PartialOrd};
 
 use error::{Error, Result};
 use ffi;
 use ffi::Status;
 use utils::ToStr;
+use ConfigList;
 use Directory;
+use IndexOpts;
+use Message;
 use Query;
 use Tags;
-use TagsOwner;
-use Message;
-use MessageOwner;
-use IndexOpts;
-use ConfigList;
-use utils::ScopedSupercow;
-
 
 // Re-exported under database module for pretty namespacin'.
 pub use ffi::DatabaseMode;
-
 
 #[derive(Clone, Debug)]
 pub struct Revision {
@@ -34,13 +29,13 @@ pub struct Revision {
 }
 
 impl PartialEq for Revision {
-    fn eq(&self, other: &Revision) -> bool{
+    fn eq(&self, other: &Revision) -> bool {
         self.uuid == other.uuid && self.revision == other.revision
     }
 }
 
 impl PartialOrd for Revision {
-    fn partial_cmp(&self, other: &Revision) -> Option<Ordering>{
+    fn partial_cmp(&self, other: &Revision) -> Option<Ordering> {
         if self.uuid != other.uuid {
             return None;
         }
@@ -48,23 +43,22 @@ impl PartialOrd for Revision {
     }
 }
 
-
 #[derive(Debug)]
-pub struct Database {
-    pub(crate) ptr: *mut ffi::notmuch_database_t,
-}
+pub(crate) struct DatabasePtr(*mut ffi::notmuch_database_t);
 
-impl Drop for Database {
+impl Drop for DatabasePtr {
     fn drop(&mut self) {
-        unsafe { ffi::notmuch_database_destroy(self.ptr) };
+        unsafe { ffi::notmuch_database_destroy(self.0) };
     }
 }
 
-impl TagsOwner for Database {}
-impl MessageOwner for Database {}
+#[derive(Clone, Debug)]
+pub struct Database {
+    ptr: Rc<DatabasePtr>,
+}
 
 impl Database {
-    pub fn create<P>(path: &P) -> Result<Self>
+    pub fn create<P>(path: P) -> Result<Self>
     where
         P: AsRef<Path>,
     {
@@ -74,11 +68,11 @@ impl Database {
         unsafe { ffi::notmuch_database_create(path_str.as_ptr(), &mut db) }.as_result()?;
 
         Ok(Database {
-            ptr: db,
+            ptr: Rc::new(DatabasePtr(db)),
         })
     }
 
-    pub fn open<P>(path: &P, mode: DatabaseMode) -> Result<Self>
+    pub fn open<P>(path: P, mode: DatabaseMode) -> Result<Self>
     where
         P: AsRef<Path>,
     {
@@ -89,17 +83,17 @@ impl Database {
             .as_result()?;
 
         Ok(Database {
-            ptr: db,
+            ptr: Rc::new(DatabasePtr(db)),
         })
     }
 
     pub fn close(&self) -> Result<()> {
-        unsafe { ffi::notmuch_database_close(self.ptr) }.as_result()?;
+        unsafe { ffi::notmuch_database_close(self.ptr.0) }.as_result()?;
 
         Ok(())
     }
 
-    pub fn compact<P, F>(path: &P, backup_path: Option<&P>) -> Result<()>
+    pub fn compact<P, F>(path: P, backup_path: Option<&P>) -> Result<()>
     where
         P: AsRef<Path>,
         F: FnMut(&str),
@@ -108,7 +102,7 @@ impl Database {
         Database::_compact(path, backup_path, status)
     }
 
-    pub fn compact_with_status<P, F>(path: &P, backup_path: Option<&P>, status: F) -> Result<()>
+    pub fn compact_with_status<P, F>(path: P, backup_path: Option<&P>, status: F) -> Result<()>
     where
         P: AsRef<Path>,
         F: FnMut(&str),
@@ -116,7 +110,7 @@ impl Database {
         Database::_compact(path, backup_path, Some(status))
     }
 
-    fn _compact<P, F>(path: &P, backup_path: Option<&P>, status: Option<F>) -> Result<()>
+    fn _compact<P, F>(path: P, backup_path: Option<&P>, status: Option<F>) -> Result<()>
     where
         P: AsRef<Path>,
         F: FnMut(&str),
@@ -144,21 +138,22 @@ impl Database {
                 },
                 status.map_or(ptr::null_mut(), |f| &f as *const _ as *mut libc::c_void),
             )
-        }.as_result()?;
+        }
+        .as_result()?;
 
         Ok(())
     }
 
     pub fn path(&self) -> &Path {
         Path::new(
-            unsafe { ffi::notmuch_database_get_path(self.ptr) }
+            unsafe { ffi::notmuch_database_get_path(self.ptr.0) }
                 .to_str()
                 .unwrap(),
         )
     }
 
     pub fn version(&self) -> u32 {
-        unsafe { ffi::notmuch_database_get_version(self.ptr) }
+        unsafe { ffi::notmuch_database_get_version(self.ptr.0) }
     }
 
     #[cfg(feature = "v0_21")]
@@ -166,7 +161,7 @@ impl Database {
         let uuid_p: *const libc::c_char = ptr::null();
         let revision = unsafe {
             ffi::notmuch_database_get_revision(
-                self.ptr,
+                self.ptr.0,
                 (&uuid_p) as *const _ as *mut *const libc::c_char,
             )
         };
@@ -180,10 +175,10 @@ impl Database {
     }
 
     pub fn needs_upgrade(&self) -> bool {
-        unsafe { ffi::notmuch_database_needs_upgrade(self.ptr) == 1 }
+        unsafe { ffi::notmuch_database_needs_upgrade(self.ptr.0) == 1 }
     }
 
-    pub fn upgrade<F>(&mut self) -> Result<()>
+    pub fn upgrade<F>(&self) -> Result<()>
     where
         F: FnMut(f64),
     {
@@ -191,14 +186,14 @@ impl Database {
         self._upgrade(status)
     }
 
-    pub fn upgrade_with_status<F>(&mut self, status: F) -> Result<()>
+    pub fn upgrade_with_status<F>(&self, status: F) -> Result<()>
     where
         F: FnMut(f64),
     {
         self._upgrade(Some(status))
     }
 
-    fn _upgrade<F>(&mut self, status: Option<F>) -> Result<()>
+    fn _upgrade<F>(&self, status: Option<F>) -> Result<()>
     where
         F: FnMut(f64),
     {
@@ -213,7 +208,7 @@ impl Database {
 
         unsafe {
             ffi::notmuch_database_upgrade(
-                self.ptr,
+                self.ptr.0,
                 if status.is_some() {
                     Some(wrapper::<F>)
                 } else {
@@ -221,250 +216,156 @@ impl Database {
                 },
                 status.map_or(ptr::null_mut(), |f| &f as *const _ as *mut libc::c_void),
             )
-        }.as_result()?;
+        }
+        .as_result()?;
 
         Ok(())
     }
 
-    pub fn directory<'d, P>(&'d self, path: &P) -> Result<Option<Directory<'d>>>
+    pub fn directory<P>(&self, path: P) -> Result<Option<Directory>>
     where
         P: AsRef<Path>,
     {
-        <Self as DatabaseExt>::directory(self, path)
-    }
-
-    pub fn config_list<'d>(&'d self, prefix: &str) -> Result<ConfigList<'d>>
-    {
-        <Self as DatabaseExt>::config_list(self, prefix)
-    }
-
-    pub fn create_query<'d>(&'d self, query_string: &str) -> Result<Query<'d>> {
-        <Self as DatabaseExt>::create_query(self, query_string)
-    }
-
-    pub fn all_tags<'d>(&'d self) -> Result<Tags<'d, Self>> {
-        <Self as DatabaseExt>::all_tags(self)
-    }
-
-    pub fn find_message<'d>(&'d self, message_id: &str) -> Result<Option<Message<'d, Self>>> {
-        <Self as DatabaseExt>::find_message(self, message_id)
-    }
-
-    pub fn find_message_by_filename<'d, P>(&'d self, filename: &P) -> Result<Option<Message<'d, Self>>>
-    where
-        P: AsRef<Path>,
-    {
-        <Self as DatabaseExt>::find_message_by_filename(self, filename)
-    }
-
-    pub fn remove_message<'d, P>(&'d self, path: &P) -> Result<()>
-    where
-        P: AsRef<Path>,
-    {
-        <Self as DatabaseExt>::remove_message(self, path)
-    }
-
-    pub fn default_indexopts<'d, P>(&'d self) -> Result<IndexOpts<'d>>
-    {
-        <Self as DatabaseExt>::default_indexopts(self)
-    }
-
-    pub fn index_file<'d, P>(&'d self, path: &P, indexopts: Option<IndexOpts<'d>>) -> Result<Message<'d, Self>>
-    where
-        P: AsRef<Path>,
-    {
-        <Self as DatabaseExt>::index_file(self, path, indexopts)
-    }
-
-    pub fn begin_atomic(&self) -> Result<()> {
-        unsafe { ffi::notmuch_database_begin_atomic(self.ptr) }.as_result()
-    }
-
-    pub fn end_atomic(&self) -> Result<()> {
-        unsafe { ffi::notmuch_database_end_atomic(self.ptr) }.as_result()
-    }
-}
-
-pub trait DatabaseExt {
-    fn create_query<'d, D>(database: D, query_string: &str) -> Result<Query<'d>>
-    where
-        D: Into<Supercow<'d, Database>>,
-    {
-        let dbref = database.into();
-        let query_str = CString::new(query_string).unwrap();
-
-        let query = unsafe { ffi::notmuch_query_create(dbref.ptr, query_str.as_ptr()) };
-
-        Ok(Query::from_ptr(query, Supercow::phantom(dbref)))
-    }
-
-    fn all_tags<'d, D>(database: D) -> Result<Tags<'d, Database>>
-    where
-        D: Into<ScopedSupercow<'d, Database>>,
-    {
-        let dbref = database.into();
-
-        let tags = unsafe { ffi::notmuch_database_get_all_tags(dbref.ptr) };
-
-        Ok(Tags::from_ptr(tags, ScopedSupercow::phantom(dbref)))
-    }
-
-    fn directory<'d, D, P>(database: D, path: &P) -> Result<Option<Directory<'d>>>
-    where
-        D: Into<ScopedSupercow<'d, Database>>,
-        P: AsRef<Path>,
-    {
-        let dbref = database.into();
-
         let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
 
         let mut dir = ptr::null_mut();
-        unsafe {
-            ffi::notmuch_database_get_directory(dbref.ptr, path_str.as_ptr(), &mut dir)
-        }.as_result()?;
+        unsafe { ffi::notmuch_database_get_directory(self.ptr.0, path_str.as_ptr(), &mut dir) }
+            .as_result()?;
 
         if dir.is_null() {
             Ok(None)
         } else {
-            Ok(Some(Directory::from_ptr(dir, Supercow::phantom(dbref))))
+            Ok(Some(Directory::from_ptr(dir, self.clone())))
         }
     }
 
-    fn config_list<'d, D>(database: D, prefix: &str) -> Result<ConfigList<'d>>
-    where
-        D: Into<ScopedSupercow<'d, Database>>
-    {
-        let dbref = database.into();
-
+    pub fn config_list(&self, prefix: &str) -> Result<ConfigList> {
         let prefix_str = CString::new(prefix).unwrap();
 
         let mut cfgs = ptr::null_mut();
         unsafe {
-            ffi::notmuch_database_get_config_list(dbref.ptr, prefix_str.as_ptr(), &mut cfgs)
-        }.as_result()?;
+            ffi::notmuch_database_get_config_list(self.ptr.0, prefix_str.as_ptr(), &mut cfgs)
+        }
+        .as_result()?;
 
-        Ok(ConfigList::from_ptr(cfgs, Supercow::phantom(dbref)))
+        Ok(ConfigList::from_ptr(cfgs, self.clone()))
     }
 
-    fn find_message<'d, D>(database: D, message_id: &str) -> Result<Option<Message<'d, Database>>>
-    where
-        D: Into<ScopedSupercow<'d, Database>>
-    {
-        let dbref = database.into();
+    pub fn create_query(&self, query_string: &str) -> Result<Query> {
+        let query_str = CString::new(query_string).unwrap();
+
+        let query = unsafe { ffi::notmuch_query_create(self.ptr.0, query_str.as_ptr()) };
+
+        Ok(Query::from_ptr(query, self.clone()))
+    }
+
+    pub fn all_tags(&self) -> Result<Tags> {
+        let tags = unsafe { ffi::notmuch_database_get_all_tags(self.ptr.0) };
+
+        Ok(Tags::from_ptr(tags, self.clone()))
+    }
+
+    pub fn find_message(&self, message_id: &str) -> Result<Option<Message>> {
         let message_id_str = CString::new(message_id).unwrap();
 
         let mut msg = ptr::null_mut();
         unsafe {
-            ffi::notmuch_database_find_message(dbref.ptr, message_id_str.as_ptr(), &mut msg)
-        }.as_result()?;
+            ffi::notmuch_database_find_message(self.ptr.0, message_id_str.as_ptr(), &mut msg)
+        }
+        .as_result()?;
 
         if msg.is_null() {
             Ok(None)
         } else {
-            Ok(Some(Message::from_ptr(msg, Supercow::phantom(dbref))))
+            Ok(Some(Message::from_ptr(msg, self.clone())))
         }
     }
 
-    fn find_message_by_filename<'d, D, P>(database: D, filename: &P) -> Result<Option<Message<'d, Database>>>
+    pub fn find_message_by_filename<P>(&self, filename: &P) -> Result<Option<Message>>
     where
-        D: Into<ScopedSupercow<'d, Database>>,
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
-        let dbref = database.into();
         let path_str = CString::new(filename.as_ref().to_str().unwrap()).unwrap();
 
         let mut msg = ptr::null_mut();
         unsafe {
-            ffi::notmuch_database_find_message_by_filename(dbref.ptr, path_str.as_ptr(), &mut msg)
-        }.as_result()?;
+            ffi::notmuch_database_find_message_by_filename(self.ptr.0, path_str.as_ptr(), &mut msg)
+        }
+        .as_result()?;
 
         if msg.is_null() {
             Ok(None)
         } else {
-            Ok(Some(Message::from_ptr(msg, Supercow::phantom(dbref))))
+            Ok(Some(Message::from_ptr(msg, self.clone())))
         }
     }
 
-    fn remove_message<'d, D, P>(database: D, path: &P) -> Result<()>
+    pub fn remove_message<P>(&self, path: P) -> Result<()>
     where
-        D: Into<ScopedSupercow<'d, Database>>,
         P: AsRef<Path>,
     {
-        let dbref = database.into();
         match path.as_ref().to_str() {
             Some(path_str) => {
                 let msg_path = CString::new(path_str).unwrap();
 
-                unsafe { ffi::notmuch_database_remove_message(dbref.ptr, msg_path.as_ptr()) }
+                unsafe { ffi::notmuch_database_remove_message(self.ptr.0, msg_path.as_ptr()) }
                     .as_result()
             }
             None => Err(Error::NotmuchError(Status::FileError)),
         }
     }
 
-    fn default_indexopts<'d, D>(database: D) -> Result<IndexOpts<'d>>
-    where
-        D: Into<ScopedSupercow<'d, Database>>
-    {
-        let dbref = database.into();
+    pub fn default_indexopts(&self) -> Result<IndexOpts> {
+        let opts = unsafe { ffi::notmuch_database_get_default_indexopts(self.ptr.0) };
 
-        let opts = unsafe { ffi::notmuch_database_get_default_indexopts(dbref.ptr) };
-
-        Ok(IndexOpts::from_ptr(opts, ScopedSupercow::phantom(dbref)))
+        Ok(IndexOpts::from_ptr(opts, self.clone()))
     }
 
-
-    fn index_file<'d, D, P>(database: D, path: &P, indexopts: Option<IndexOpts<'d>>) -> Result<Message<'d, Database>>
+    pub fn index_file<P>(&self, path: P, indexopts: Option<IndexOpts>) -> Result<Message>
     where
-        D: Into<ScopedSupercow<'d, Database>>,
         P: AsRef<Path>,
     {
-        let dbref = database.into();
-
-        let opts = indexopts.map_or(ptr::null_mut(), |opt| opt.ptr);
+        let opts = indexopts.map_or(ptr::null_mut(), |opt| opt.ptr.0);
 
         match path.as_ref().to_str() {
             Some(path_str) => {
                 let msg_path = CString::new(path_str).unwrap();
 
                 let mut msg = ptr::null_mut();
-                unsafe { ffi::notmuch_database_index_file(dbref.ptr, msg_path.as_ptr(), opts, &mut msg) }
-                    .as_result()?;
-                
-                Ok(Message::from_ptr(msg, ScopedSupercow::phantom(dbref)))
+                unsafe {
+                    ffi::notmuch_database_index_file(self.ptr.0, msg_path.as_ptr(), opts, &mut msg)
+                }
+                .as_result()?;
+
+                Ok(Message::from_ptr(msg, self.clone()))
             }
             None => Err(Error::NotmuchError(Status::FileError)),
         }
     }
-}
 
-impl DatabaseExt for Database {}
+    pub fn begin_atomic(&self) -> Result<()> {
+        unsafe { ffi::notmuch_database_begin_atomic(self.ptr.0) }.as_result()
+    }
 
-unsafe impl Send for Database {}
-unsafe impl Sync for Database {}
-
-
-#[derive(Debug)]
-pub struct AtomicOperation<'d> {
-    database: ScopedSupercow<'d, Database>,
-}
-
-impl<'d> AtomicOperation<'d> {
-    pub fn new<D>(db: D) -> Result<Self>
-    where
-        D: Into<ScopedSupercow<'d, Database>>,
-    {
-        let database = db.into();
-        database.begin_atomic()?;
-        Ok(AtomicOperation{
-            database
-        })
+    pub fn end_atomic(&self) -> Result<()> {
+        unsafe { ffi::notmuch_database_end_atomic(self.ptr.0) }.as_result()
     }
 }
 
-impl<'d> Drop for AtomicOperation<'d> {
+#[derive(Debug)]
+pub struct AtomicOperation {
+    database: Database,
+}
+
+impl AtomicOperation {
+    pub fn new(database: &Database) -> Result<Self> {
+        database.begin_atomic()?;
+        Ok(AtomicOperation { database: database.clone() })
+    }
+}
+
+impl Drop for AtomicOperation {
     fn drop(&mut self) {
         let _ = self.database.end_atomic();
     }
 }
-

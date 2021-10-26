@@ -1,88 +1,96 @@
-use std::ops::Drop;
 use std::borrow::Cow;
+use std::ops::Drop;
+use std::rc::Rc;
+
+use from_variants::FromVariants;
 
 use ffi;
-use utils::{ToStr, ScopedSupercow, ScopedPhantomcow};
-use Messages;
-use MessageOwner;
-use Tags;
-use TagsOwner;
+use utils::ToStr;
 use Query;
+use Threads;
+use Messages;
+use Tags;
 
-#[derive(Debug)]
-pub struct Thread<'d, 'q>
-where
-    'd: 'q
-{
-    pub(crate) ptr: *mut ffi::notmuch_thread_t,
-    pub(crate) marker: ScopedPhantomcow<'q, Query<'d>>,
+#[derive(Clone, Debug, FromVariants)]
+pub(crate) enum ThreadOwner {
+    Query(Query),
+    Threads(Threads),
 }
 
-impl<'d, 'q> Drop for Thread<'d, 'q>
-where
-    'd: 'q
-{
+#[derive(Debug)]
+pub(crate) struct ThreadPtr(*mut ffi::notmuch_thread_t);
+
+impl Drop for ThreadPtr {
     fn drop(&mut self) {
-        unsafe { ffi::notmuch_thread_destroy(self.ptr) };
+        unsafe { ffi::notmuch_thread_destroy(self.0) };
     }
 }
 
-impl<'d, 'q> MessageOwner for Thread<'d, 'q> where 'd: 'q {}
-impl<'d, 'q> TagsOwner for Thread<'d, 'q> where 'd: 'q {}
+#[derive(Clone, Debug)]
+pub struct Thread {
+    ptr: Rc<ThreadPtr>,
+    owner: Box<ThreadOwner>,
+}
 
-impl<'d, 'q> Thread<'d, 'q>
-where
-    'd: 'q
-{
-    pub(crate) fn from_ptr<P>(ptr: *mut ffi::notmuch_thread_t, owner: P) -> Thread<'d, 'q>
+impl Thread {
+    pub(crate) fn from_ptr<P>(ptr: *mut ffi::notmuch_thread_t, owner: P) -> Thread
     where
-        P: Into<ScopedPhantomcow<'q, Query<'d>>>,
+        P: Into<ThreadOwner>,
     {
         Thread {
-            ptr,
-            marker: owner.into(),
+            ptr: Rc::new(ThreadPtr(ptr)),
+            owner: Box::new(owner.into()),
         }
     }
 
-    pub fn id(self: &Self) -> &str {
-        let tid = unsafe { ffi::notmuch_thread_get_thread_id(self.ptr) };
+    pub fn id(&self) -> &str {
+        let tid = unsafe { ffi::notmuch_thread_get_thread_id(self.ptr.0) };
         tid.to_str().unwrap()
     }
 
-    pub fn total_messages(self: &Self) -> i32 {
-        unsafe { ffi::notmuch_thread_get_total_messages(self.ptr) }
+    pub fn total_messages(&self) -> i32 {
+        unsafe { ffi::notmuch_thread_get_total_messages(self.ptr.0) }
     }
 
     #[cfg(feature = "0.26")]
-    pub fn total_files(self: &Self) -> i32 {
-        unsafe { ffi::notmuch_thread_get_total_files(self.ptr) }
+    pub fn total_files(&self) -> i32 {
+        unsafe { ffi::notmuch_thread_get_total_files(self.ptr.0) }
     }
 
-    pub fn toplevel_messages(self: &Self) -> Messages<'_, Self> {
-        <Self as ThreadExt<'d, 'q>>::toplevel_messages(self)
+    pub fn toplevel_messages(&self) -> Messages {
+        Messages::from_ptr(
+            unsafe { ffi::notmuch_thread_get_toplevel_messages(self.ptr.0) },
+            self.clone(),
+        )
     }
 
-    pub fn matched_messages(self: &Self) -> i32 {
-        unsafe { ffi::notmuch_thread_get_matched_messages(self.ptr) }
+    pub fn matched_messages(&self) -> i32 {
+        unsafe { ffi::notmuch_thread_get_matched_messages(self.ptr.0) }
     }
 
     /// Get a `Messages` iterator for all messages in 'thread' in
     /// oldest-first order.
-    pub fn messages(self: &Self) -> Messages<'_, Self> {
-        <Self as ThreadExt<'d, 'q>>::messages(self)
+    pub fn messages(&self) -> Messages {
+        Messages::from_ptr(
+            unsafe { ffi::notmuch_thread_get_messages(self.ptr.0) },
+            self.clone(),
+        )
     }
 
-    pub fn tags(&self) -> Tags<'_, Self> {
-        <Self as ThreadExt<'d, 'q>>::tags(self)
+    pub fn tags(&self) -> Tags {
+        Tags::from_ptr(
+            unsafe { ffi::notmuch_thread_get_tags(self.ptr.0) },
+            self.clone(),
+        )
     }
 
-    pub fn subject(self: &Self) -> Cow<'_, str> {
-        let sub = unsafe { ffi::notmuch_thread_get_subject(self.ptr) };
+    pub fn subject(&self) -> Cow<'_, str> {
+        let sub = unsafe { ffi::notmuch_thread_get_subject(self.ptr.0) };
         sub.to_string_lossy()
     }
 
-    pub fn authors(self: &Self) -> Vec<String> {
-        let athrs = unsafe { ffi::notmuch_thread_get_authors(self.ptr) };
+    pub fn authors(&self) -> Vec<String> {
+        let athrs = unsafe { ffi::notmuch_thread_get_authors(self.ptr.0) };
 
         athrs
             .to_string_lossy()
@@ -92,57 +100,12 @@ where
     }
 
     /// Get the date of the oldest message in 'thread' as a time_t value.
-    pub fn oldest_date(self: &Self) -> i64 {
-        unsafe { ffi::notmuch_thread_get_oldest_date(self.ptr) as i64 }
+    pub fn oldest_date(&self) -> i64 {
+        unsafe { ffi::notmuch_thread_get_oldest_date(self.ptr.0) as i64 }
     }
 
     /// Get the date of the newest message in 'thread' as a time_t value.
-    pub fn newest_date(self: &Self) -> i64 {
-        unsafe { ffi::notmuch_thread_get_newest_date(self.ptr) as i64 }
+    pub fn newest_date(&self) -> i64 {
+        unsafe { ffi::notmuch_thread_get_newest_date(self.ptr.0) as i64 }
     }
 }
-
-pub trait ThreadExt<'d, 'q>
-where
-    'd: 'q
-{
-    fn tags<'s, S>(thread: S) -> Tags<'s, Thread<'d, 'q>>
-    where
-        S: Into<ScopedSupercow<'s, Thread<'d, 'q>>>,
-    {
-        let threadref = thread.into();
-        Tags::from_ptr(
-            unsafe { ffi::notmuch_thread_get_tags(threadref.ptr) },
-            ScopedSupercow::phantom(threadref),
-        )
-    }
-
-    fn toplevel_messages<'s, S>(thread: S) -> Messages<'s, Thread<'d, 'q>>
-    where
-        S: Into<ScopedSupercow<'s, Thread<'d, 'q>>>,
-    {
-        let threadref = thread.into();
-        Messages::from_ptr(
-            unsafe { ffi::notmuch_thread_get_toplevel_messages(threadref.ptr) },
-            ScopedSupercow::phantom(threadref),
-        )
-    }
-
-    /// Get a `Messages` iterator for all messages in 'thread' in
-    /// oldest-first order.
-    fn messages<'s, S>(thread: S) -> Messages<'s, Thread<'d, 'q>>
-    where
-        S: Into<ScopedSupercow<'s, Thread<'d, 'q>>>,
-    {
-        let threadref = thread.into();
-        Messages::from_ptr(
-            unsafe { ffi::notmuch_thread_get_messages(threadref.ptr) },
-            ScopedSupercow::phantom(threadref),
-        )
-    }
-}
-
-impl<'d, 'q> ThreadExt<'d, 'q> for Thread<'d, 'q> where 'd: 'q {}
-
-unsafe impl<'d, 'q> Send for Thread<'d, 'q> where 'd: 'q {}
-unsafe impl<'d, 'q> Sync for Thread<'d, 'q> where 'd: 'q {}
