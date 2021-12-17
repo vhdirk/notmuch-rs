@@ -38,4 +38,4 @@ pub use tags::Tags;
 pub use thread::Thread;
 pub use threads::Threads;
 
-pub use ffi::{DatabaseMode, DecryptionPolicy, Sort, Status};
+pub use ffi::{DatabaseMode, DecryptionPolicy, Sort, Status, Exclude};
