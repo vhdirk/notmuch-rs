@@ -72,14 +72,14 @@ impl Database {
         })
     }
 
-    pub fn open<P>(path: P, mode: DatabaseMode) -> Result<Self>
+    pub fn open<P>(path: Option<P>, mode: DatabaseMode) -> Result<Self>
     where
         P: AsRef<Path>,
     {
-        let path_str = CString::new(path.as_ref().to_str().unwrap()).unwrap();
-
         let mut db = ptr::null_mut();
-        unsafe { ffi::notmuch_database_open(path_str.as_ptr(), mode.into(), &mut db) }
+        let path_str = path.map(|path| CString::new(path.as_ref().to_str().unwrap()).unwrap());
+        let path_ptr = path_str.map(|p| p.as_ptr()).unwrap_or_else(|| ptr::null());
+        unsafe { ffi::notmuch_database_open(path_ptr, mode.into(), &mut db) }
             .as_result()?;
 
         Ok(Database {
