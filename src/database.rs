@@ -77,8 +77,8 @@ impl Database {
         P: AsRef<Path>,
     {
         let mut db = ptr::null_mut();
-        let path_str = path.map(|path| CString::new(path.as_ref().to_str().unwrap()).unwrap());
-        let path_ptr = path_str.map(|p| p.as_ptr()).unwrap_or_else(|| ptr::null());
+        let path_str = path.map(|p| CString::new(p.as_ref().to_str().unwrap()).unwrap());
+        let path_ptr = path_str.as_ref().map(|p| p.as_ptr()).unwrap_or_else(|| ptr::null());
         unsafe { ffi::notmuch_database_open(path_ptr, mode.into(), &mut db) }
             .as_result()?;
 
