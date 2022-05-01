@@ -72,6 +72,7 @@ impl Database {
         })
     }
 
+    #[deprecated = "Replaced with `open_with_config`"]
     pub fn open<P>(path: P, mode: DatabaseMode) -> Result<Self>
     where
         P: AsRef<Path>,
@@ -81,6 +82,55 @@ impl Database {
         let mut db = ptr::null_mut();
         unsafe { ffi::notmuch_database_open(path_str.as_ptr(), mode.into(), &mut db) }
             .as_result()?;
+
+        Ok(Database {
+            ptr: Rc::new(DatabasePtr(db)),
+        })
+    }
+
+    pub fn open_with_config<DP, CP>(
+        database_path: Option<DP>,
+        mode: DatabaseMode,
+        config_path: Option<CP>,
+        profile: Option<&str>,
+    ) -> Result<Self>
+    where
+        DP: AsRef<Path>,
+        CP: AsRef<Path>,
+    {
+        let database_path_str =
+            database_path.map(|p| CString::new(p.as_ref().to_str().unwrap()).unwrap());
+        let database_path_ptr = database_path_str
+            .as_ref()
+            .map(|p| p.as_ptr())
+            .unwrap_or_else(|| ptr::null());
+
+        let config_path_str =
+            config_path.map(|p| CString::new(p.as_ref().to_str().unwrap()).unwrap());
+        let config_path_ptr = config_path_str
+            .as_ref()
+            .map(|p| p.as_ptr())
+            .unwrap_or_else(|| ptr::null());
+
+        let profile_str = profile.map(|p| CString::new(p).unwrap());
+        let profile_ptr = profile_str
+            .as_ref()
+            .map(|p| p.as_ptr())
+            .unwrap_or_else(|| ptr::null());
+
+        let mut db = ptr::null_mut();
+        let mut error_message = ptr::null_mut();
+        unsafe {
+            ffi::notmuch_database_open_with_config(
+                database_path_ptr,
+                mode.into(),
+                config_path_ptr,
+                profile_ptr,
+                &mut db,
+                &mut error_message,
+            )
+        }
+        .as_verbose_result(error_message)?;
 
         Ok(Database {
             ptr: Rc::new(DatabasePtr(db)),
@@ -360,7 +410,9 @@ pub struct AtomicOperation {
 impl AtomicOperation {
     pub fn new(database: &Database) -> Result<Self> {
         database.begin_atomic()?;
-        Ok(AtomicOperation { database: database.clone() })
+        Ok(AtomicOperation {
+            database: database.clone(),
+        })
     }
 }
 

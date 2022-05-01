@@ -31,13 +31,20 @@ extern crate notmuch;
 ```rust
 extern crate notmuch;
 
-
 fn main() {
-
     let mut mail_path = std::env::home_dir().unwrap();
     mail_path.push(".mail");
 
-    let db = notmuch::Database::open(&mail_path, notmuch::DatabaseMode::ReadOnly).unwrap();
+    let mut config_path = std::env::home_dir().unwrap();
+    config_path.push(".config/custom-notmuch-config-path");
+
+    let db = notmuch::Database::open_with_config(
+        &mail_path,
+        notmuch::DatabaseMode::ReadOnly,
+        &config_path,
+        None,
+    )
+    .unwrap();
     let query = db.create_query("").unwrap();
     let mut threads = query.search_threads().unwrap();
 
@@ -45,7 +52,6 @@ fn main() {
         println!("thread {:?} {:?}", thread.subject(), thread.authors());
     }
 }
-
 ```
 
 ## Concurrency

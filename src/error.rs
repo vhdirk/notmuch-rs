@@ -9,6 +9,7 @@ pub type Result<T> = result::Result<T, Error>;
 pub enum Error {
     IoError(io::Error),
     NotmuchError(ffi::Status),
+    NotmuchVerboseError(ffi::Status, String),
     UnspecifiedError,
 }
 
@@ -17,6 +18,7 @@ impl fmt::Display for Error {
         match self {
             Error::IoError(e) => e.fmt(f),
             Error::NotmuchError(e) => e.fmt(f),
+            Error::NotmuchVerboseError(e, msg) => write!(f, "{} {}", e, msg),
             Error::UnspecifiedError => write!(f, "Generic notmuch error"),
         }
     }
@@ -27,6 +29,7 @@ impl error::Error for Error {
         match &self {
             Error::IoError(e) => Some(e),
             Error::NotmuchError(e) => Some(e),
+            Error::NotmuchVerboseError(e, _) => Some(e),
             Error::UnspecifiedError => None,
         }
     }
