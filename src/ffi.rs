@@ -5,8 +5,9 @@
 use libc::{c_char, c_double, c_int, c_uint, c_ulong, c_void, time_t};
 
 use error::{Error, Result};
-use std::{error, fmt, str};
 use std::borrow::Cow;
+use std::ffi::CStr;
+use std::{error, fmt, ptr, str};
 use utils::ToStr;
 
 notmuch_enum! {
@@ -58,6 +59,30 @@ impl notmuch_status_t {
             Ok(())
         } else {
             Err(Error::NotmuchError(Status::from(self)))
+        }
+    }
+
+    pub fn as_verbose_result(self, error_message_cstr: *mut c_char) -> Result<()> {
+        let error_message = if error_message_cstr == ptr::null_mut() {
+            None
+        } else {
+            unsafe {
+                let msg = Some(
+                    CStr::from_ptr(error_message_cstr)
+                        .to_string_lossy()
+                        .to_string(),
+                );
+                libc::free(error_message_cstr as *mut c_void);
+                msg
+            }
+        };
+        if self.is_ok() {
+            Ok(())
+        } else {
+            Err(Error::NotmuchVerboseError(
+                Status::from(self),
+                error_message.unwrap(),
+            ))
         }
     }
 }
@@ -268,6 +293,108 @@ extern "C" {
     pub fn notmuch_database_open_verbose(
         path: *const c_char,
         mode: notmuch_database_mode_t,
+        database: *mut *mut notmuch_database_t,
+        error_message: *mut *mut c_char,
+    ) -> notmuch_status_t;
+
+    /// Open an existing notmuch database located at `database_path`, using
+    /// configuration in `config_path`.
+    ///
+    /// *   `database_path`: Path to existing database.
+    ///
+    ///     A notmuch database is a Xapian database containing appropriate
+    ///     metadata.
+    ///
+    ///     The database should have been created at some time in the past, (not
+    ///     necessarily by this process), by calling `notmuch_database_create`.
+    ///
+    ///     If `database_path` is `NULL`, use the location specified
+    ///
+    ///     * in the environment variable `NOTMUCH_DATABASE`, if non-empty
+    ///
+    ///     * in a configuration file, located as described under 'config_path'
+    ///
+    ///     * by `$XDG_DATA_HOME`/notmuch/`$PROFILE` where `XDG_DATA_HOME`
+    ///     defaults to "$HOME/.local/share" and `PROFILE` as as discussed in
+    ///     'profile'
+    ///
+    ///     If `database_path` is non-`NULL`, but does not appear to be a Xapian
+    ///     database, check for a directory '.notmuch/xapian' below
+    ///     `database_path` (this is the behavior of
+    ///     `notmuch_database_open_verbose` pre-0.32).
+    ///
+    /// *   `mode`: Mode to open database. Use one of
+    ///     `notmuch_database_mode_t::READ_WRITE` or
+    ///     `notmuch_database_mode_t::READ_ONLY`.
+    ///
+    /// *   `config_path`: Path to config file.
+    ///
+    ///     Config file is key-value, with mandatory sections. See
+    ///     `notmuch-config(5)` for more information. The key-value pair
+    ///     overrides the corresponding configuration data stored in the
+    ///     database (see `notmuch_database_get_config`).
+    ///
+    ///     If `config_path` is `NULL` use the path specified
+    ///
+    ///     * in environment variable `NOTMUCH_CONFIG`, if non-empty
+    ///
+    ///     * by `XDG_CONFIG_HOME`/notmuch/ where `XDG_CONFIG_HOME` defaults to
+    ///       "`$HOME`/.config".
+    ///
+    ///     * by `$HOME`/.notmuch-config
+    ///
+    ///     If `config_path` is `""` (empty string) then do not open any
+    ///     configuration file.
+    ///
+    /// *   `profile`: Name of profile (configuration/database variant).
+    ///
+    ///     If non-`NULL`, append to the directory / file path determined for
+    ///     `config_path` and `database_path`.
+    ///
+    ///     If `NULL` then use
+    ///
+    ///     * environment variable `NOTMUCH_PROFILE` if defined,
+    ///
+    ///     * otherwise `"default"` for directories and `""` (empty string) for
+    ///       paths.
+    ///
+    /// *   `database`: Pointer to database object. May not be `NULL`.
+    ///
+    ///     The caller should call `notmuch_database_destroy` when finished with
+    ///     this database.
+    ///
+    ///     In case of any failure, this function returns an error status and
+    ///     sets `*database` to `NULL`.
+    ///
+    /// *   `error_message`: If non-`NULL`, store error message from opening the
+    ///     database.
+    ///
+    ///     Any such message is allocated by `malloc(3)` and should be freed by
+    ///     the caller.
+    ///
+    /// Return Value:
+    ///
+    /// *   `notmuch_status_t::SUCCESS`: Successfully opened the database.
+    ///
+    /// *   `notmuch_status_t::NULL_POINTER`: The given `database` argument is
+    ///     `NULL`.
+    ///
+    /// *   `notmuch_status_t::NO_CONFIG`: No config file was found. Fatal.
+    ///
+    /// *   `notmuch_status_t::OUT_OF_MEMORY`: Out of memory.
+    ///
+    /// *   `notmuch_status_t::FILE_ERROR`: An error occurred trying to open the
+    ///     database or config file (such as permission denied, or file not
+    ///     found, etc.), or the database version is unknown.
+    ///
+    /// *   `notmuch_status_t::XAPIAN_EXCEPTION`: A Xapian exception occurred.
+    ///
+    /// Since libnotmuch 5.4 (notmuch 0.32)
+    pub fn notmuch_database_open_with_config(
+        database_path: *const c_char,
+        mode: notmuch_database_mode_t,
+        config_path: *const c_char,
+        profile: *const c_char,
         database: *mut *mut notmuch_database_t,
         error_message: *mut *mut c_char,
     ) -> notmuch_status_t;
