@@ -45,7 +45,8 @@ notmuch_enum! {
 impl notmuch_status_t {
     pub fn is_ok(self) -> bool {
         match self {
-            notmuch_status_t::NOTMUCH_STATUS_SUCCESS => true,
+            notmuch_status_t::NOTMUCH_STATUS_SUCCESS
+            | notmuch_status_t::NOTMUCH_STATUS_DUPLICATE_MESSAGE_ID => true,
             _ => false,
         }
     }
