@@ -8,11 +8,14 @@ use std::rc::Rc;
 use libc;
 use std::cmp::{Ordering, PartialEq, PartialOrd};
 
+use config_pairs::ConfigPairs;
 use error::{Error, Result};
 use ffi;
+use ffi::ConfigKey;
 use ffi::Status;
 use utils::ToStr;
 use ConfigList;
+use ConfigValues;
 use Directory;
 use IndexOpts;
 use Message;
@@ -88,6 +91,7 @@ impl Database {
         })
     }
 
+    #[cfg(feature = "v0_32")]
     pub fn open_with_config<DP, CP>(
         database_path: Option<DP>,
         mode: DatabaseMode,
@@ -299,6 +303,81 @@ impl Database {
         .as_result()?;
 
         Ok(ConfigList::from_ptr(cfgs, self.clone()))
+    }
+
+    #[cfg(feature = "v0_32")]
+    pub fn config(&self, key: ConfigKey) -> Option<String> {
+        let val_str = unsafe { ffi::notmuch_config_get(self.ptr.0, key.into()) };
+
+        if val_str.is_null() {
+            None
+        } else {
+            Some(val_str.to_string_lossy().to_string())
+        }
+    }
+
+    #[cfg(feature = "v0_32")]
+    pub fn config_set(&self, key: ConfigKey, val: &str) -> Result<()> {
+        let val_str = CString::new(val).unwrap();
+
+        unsafe { ffi::notmuch_config_set(self.ptr.0, key.into(), val_str.as_ptr()) }.as_result()
+    }
+
+    #[cfg(feature = "v0_32")]
+    pub fn config_values(&self, key: ConfigKey) -> Option<ConfigValues> {
+        let values = unsafe { ffi::notmuch_config_get_values(self.ptr.0, key.into()) };
+
+        if values.is_null() {
+            None
+        } else {
+            Some(ConfigValues::from_ptr(values, self.clone()))
+        }
+    }
+
+    #[cfg(feature = "v0_32")]
+    pub fn config_values_string(&self, key: &str) -> Option<ConfigValues> {
+        let key_str = CString::new(key).unwrap();
+
+        let values = unsafe { ffi::notmuch_config_get_values_string(self.ptr.0, key_str.as_ptr()) };
+
+        if values.is_null() {
+            None
+        } else {
+            Some(ConfigValues::from_ptr(values, self.clone()))
+        }
+    }
+
+    #[cfg(feature = "v0_32")]
+    pub fn config_pairs(&self, prefix: &str) -> Option<ConfigPairs> {
+        let prefix_str = CString::new(prefix).unwrap();
+
+        let pairs = unsafe { ffi::notmuch_config_get_pairs(self.ptr.0, prefix_str.as_ptr()) };
+
+        if pairs.is_null() {
+            None
+        } else {
+            Some(ConfigPairs::from_ptr(pairs, self.clone()))
+        }
+    }
+
+    #[cfg(feature = "v0_32")]
+    pub fn config_bool(&self, key: ConfigKey) -> Result<bool> {
+        let mut value: ffi::notmuch_bool_t = 0;
+
+        unsafe { ffi::notmuch_config_get_bool(self.ptr.0, key.into(), &mut value) }.as_result()?;
+
+        Ok(value != 0)
+    }
+
+    #[cfg(feature = "v0_32")]
+    pub fn config_path(&self) -> Option<&Path> {
+        let config_path_str = unsafe { ffi::notmuch_config_path(self.ptr.0) };
+
+        if config_path_str.is_null() {
+            None
+        } else {
+            Some(Path::new(config_path_str.to_str().unwrap()))
+        }
     }
 
     pub fn create_query(&self, query_string: &str) -> Result<Query> {
