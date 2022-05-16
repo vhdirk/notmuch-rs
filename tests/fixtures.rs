@@ -41,30 +41,35 @@ impl MailBox {
 
         let cfg_fname = root_path.join("notmuch-config");
         let mut cfg_file = File::create(cfg_fname).unwrap();
-        write!(cfg_file, r#"
-            [database]
-            path={tmppath}
-            [user]
-            name=Some Hacker
-            primary_email=dst@example.com
-            [new]
-            tags=unread;inbox;
-            ignore=
-            [search]
-            exclude_tags=deleted;spam;
-            [maildir]
-            synchronize_flags=true
-            [crypto]
-            gpg_path=gpg
-        "#, tmppath=root_path.to_string_lossy()).unwrap();
+        write!(
+            cfg_file,
+            r#"
+[database]
+path={tmppath}
+hook_dir={tmppath}/hooks
+[user]
+name=Some Hacker
+primary_email=dst@example.com
+[new]
+tags=unread;inbox;
+ignore=
+[search]
+exclude_tags=deleted;spam;
+[maildir]
+synchronize_flags=true
+[crypto]
+gpg_path=gpg
+"#,
+            tmppath = root_path.to_string_lossy()
+        )
+        .unwrap();
 
         let maildir = Maildir::from(root_path.to_path_buf());
         maildir.create_dirs().unwrap();
 
-        Self {
-            root_dir,
-            maildir
-        }
+        std::fs::create_dir(root_path.join("hooks")).unwrap();
+
+        Self { root_dir, maildir }
     }
 
     /// Return a new unique message ID
@@ -187,9 +192,13 @@ impl NotmuchCommand {
     {
         let cfg_fname = self.maildir_path.join("notmuch-config");
 
-        Command::new("notmuch").env("NOTMUCH_CONFIG", &cfg_fname)
-                               .args(args)
-                               .status()?;
+        Command::new("notmuch")
+            .env("NOTMUCH_CONFIG", &cfg_fname)
+            .env_remove("NOTMUCH_DATABASE")
+            .env_remove("NOTMUCH_PROFILE")
+            .env_remove("MAILDIR")
+            .args(args)
+            .status()?;
         Ok(())
     }
 
