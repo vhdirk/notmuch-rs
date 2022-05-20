@@ -11,6 +11,8 @@ mod ffi;
 mod utils;
 
 mod config_list;
+mod config_pairs;
+mod config_values;
 mod database;
 mod directory;
 mod error;
@@ -25,6 +27,8 @@ mod thread;
 mod threads;
 
 pub use config_list::ConfigList;
+pub use config_pairs::ConfigPairs;
+pub use config_values::ConfigValues;
 pub use database::{AtomicOperation, Database, Revision};
 pub use directory::Directory;
 pub use error::Error;
@@ -38,4 +42,4 @@ pub use tags::Tags;
 pub use thread::Thread;
 pub use threads::Threads;
 
-pub use ffi::{DatabaseMode, DecryptionPolicy, Sort, Status, Exclude, MessageFlag};
+pub use ffi::{ConfigKey, DatabaseMode, DecryptionPolicy, Exclude, MessageFlag, Sort, Status};

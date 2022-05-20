@@ -166,6 +166,26 @@ notmuch_enum! {
     }
 }
 
+notmuch_enum! {
+    #[repr(C)]
+    #[derive(Debug, Eq, PartialEq, Clone, Copy)]
+    pub enum notmuch_config_key_t => ConfigKey {
+        NOTMUCH_CONFIG_DATABASE_PATH => DatabasePath,
+        NOTMUCH_CONFIG_MAIL_ROOT => MailRoot,
+        NOTMUCH_CONFIG_HOOK_DIR => HookDir,
+        NOTMUCH_CONFIG_BACKUP_DIR => BackupDir,
+        NOTMUCH_CONFIG_EXCLUDE_TAGS => ExcludeTags,
+        NOTMUCH_CONFIG_NEW_TAGS => NewTags,
+        NOTMUCH_CONFIG_NEW_IGNORE => NewIgnore,
+        NOTMUCH_CONFIG_SYNC_MAILDIR_FLAGS => MaildirFlags,
+        NOTMUCH_CONFIG_PRIMARY_EMAIL => PrimaryEmail,
+        NOTMUCH_CONFIG_OTHER_EMAIL => OtherEmail,
+        NOTMUCH_CONFIG_USER_NAME => UserName,
+        NOTMUCH_CONFIG_AUTOCOMMIT => Autocommit,
+        NOTMUCH_CONFIG_EXTRA_HEADERS => ExtraHeaders
+    }
+}
+
 #[repr(C)]
 pub struct notmuch_database_t(c_void);
 #[repr(C)]
@@ -188,6 +208,10 @@ pub struct notmuch_filenames_t(c_void);
 pub struct notmuch_message_properties_t(c_void);
 #[repr(C)]
 pub struct notmuch_config_list_t(c_void);
+#[repr(C)]
+pub struct notmuch_config_values_t(c_void);
+#[repr(C)]
+pub struct notmuch_config_pairs_t(c_void);
 #[repr(C)]
 pub struct notmuch_indexopts_t(c_void);
 
@@ -1932,6 +1956,194 @@ extern "C" {
     ///
     /// @since libnotmuch 4.4 (notmuch 0.23)
     pub fn notmuch_config_list_destroy(config_list: *mut notmuch_config_list_t);
+
+    /// get a configuration value from an open database.
+    ///
+    /// This value reflects all configuration information given at the time the database was opened.
+    ///
+    /// @param[in] notmuch database
+    /// @param[in] key configuration key
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    ///
+    /// @retval NULL if 'key' unknown or if no value is known for
+    ///         'key'.  Otherwise returns a string owned by notmuch which should
+    ///         not be modified nor freed by the caller.
+    pub fn notmuch_config_get(
+        notmuch: *mut notmuch_database_t,
+        key: notmuch_config_key_t,
+    ) -> *const c_char;
+
+    /// set a configuration value from in an open database.
+    ///
+    /// This value reflects all configuration information given at the time
+    /// the database was opened.
+    ///
+    /// @param[in,out] notmuch database open read/write
+    /// @param[in] key configuration key
+    /// @param[in] val configuration value
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    ///
+    /// @retval returns any return value for notmuch_database_set_config.
+    pub fn notmuch_config_set(
+        notmuch: *mut notmuch_database_t,
+        key: notmuch_config_key_t,
+        val: *const c_char,
+    ) -> notmuch_status_t;
+
+    /// Returns an iterator for a ';'-delimited list of configuration values
+    ///
+    /// These values reflect all configuration information given at the
+    /// time the database was opened.
+    ///
+    /// @param[in] notmuch database
+    /// @param[in] key configuration key
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    ///
+    /// @retval NULL in case of error.
+    pub fn notmuch_config_get_values(
+        notmuch: *mut notmuch_database_t,
+        key: notmuch_config_key_t,
+    ) -> *mut notmuch_config_values_t;
+
+    /// Returns an iterator for a ';'-delimited list of configuration values
+    ///
+    /// These values reflect all configuration information given at the
+    /// time the database was opened.
+    ///
+    /// @param[in] notmuch database
+    /// @param[in] key configuration key
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    ///
+    /// @retval NULL in case of error.
+    pub fn notmuch_config_get_values_string(
+        notmuch: *mut notmuch_database_t,
+        key: *const c_char,
+    ) -> *mut notmuch_config_values_t;
+
+    /// Is the given 'config_values' iterator pointing at a valid element.
+    ///
+    /// @param[in] values iterator
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    ///
+    /// @retval FALSE if passed a NULL pointer, or the iterator is exhausted.
+    pub fn notmuch_config_values_valid(values: *mut notmuch_config_values_t) -> notmuch_bool_t;
+
+    /// Get the current value from the 'values' iterator
+    ///
+    /// @param[in] values iterator
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    ///
+    /// @retval a string with the same lifetime as the iterator
+    pub fn notmuch_config_values_get(values: *mut notmuch_config_values_t) -> *const c_char;
+
+    /// Move the 'values' iterator to the next element
+    ///
+    /// @param[in,out] values iterator
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    ///
+    pub fn notmuch_config_values_move_to_next(values: *mut notmuch_config_values_t);
+
+    /// reset the 'values' iterator to the first element
+    ///
+    /// @param[in,out] values iterator. A NULL value is ignored.
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    ///
+    pub fn notmuch_config_values_start(values: *mut notmuch_config_values_t);
+
+    /// Destroy a config values iterator, along with any associated
+    /// resources.
+    ///
+    /// @param[in,out] values iterator
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    pub fn notmuch_config_values_destroy(values: *mut notmuch_config_values_t);
+
+    /// Returns an iterator for a (key, value) configuration pairs
+    ///
+    /// @param[in] notmuch database
+    /// @param[in] prefix prefix for keys. Pass \"\" for all keys.
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    ///
+    /// @retval NULL in case of error.
+    pub fn notmuch_config_get_pairs(
+        notmuch: *mut notmuch_database_t,
+        prefix: *const c_char,
+    ) -> *mut notmuch_config_pairs_t;
+
+    /// Is the given 'config_pairs' iterator pointing at a valid element.
+    ///
+    /// @param[in] pairs iterator
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    ///
+    /// @retval FALSE if passed a NULL pointer, or the iterator is exhausted.
+    pub fn notmuch_config_pairs_valid(pairs: *mut notmuch_config_pairs_t) -> notmuch_bool_t;
+
+    /// Move the 'config_pairs' iterator to the next element
+    ///
+    /// @param[in,out] pairs iterator
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    pub fn notmuch_config_pairs_move_to_next(pairs: *mut notmuch_config_pairs_t);
+
+    /// Get the current key from the 'config_pairs' iterator
+    ///
+    /// @param[in] pairs iterator
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    ///
+    /// @retval a string with the same lifetime as the iterator
+    pub fn notmuch_config_pairs_key(pairs: *mut notmuch_config_pairs_t) -> *const c_char;
+
+    /// Get the current value from the 'config_pairs' iterator
+    ///
+    /// @param[in] pairs iterator
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    ///
+    /// @retval a string with the same lifetime as the iterator
+    pub fn notmuch_config_pairs_value(pairs: *mut notmuch_config_pairs_t) -> *const c_char;
+
+    /// Destroy a config_pairs iterator, along with any associated
+    /// resources.
+    ///
+    /// @param[in,out] pairs iterator
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    pub fn notmuch_config_pairs_destroy(pairs: *mut notmuch_config_pairs_t);
+
+    /// get a configuration value from an open database as Boolean
+    ///
+    /// This value reflects all configuration information given at the time
+    /// the database was opened.
+    ///
+    /// @param[in] notmuch database
+    /// @param[in] key configuration key
+    /// @param[out] val configuration value, converted to Boolean
+    ///
+    /// @since libnotmuch 5.4 (notmuch 0.32)
+    ///
+    /// @retval #NOTMUCH_STATUS_ILLEGAL_ARGUMENT if either key is unknown
+    /// or the corresponding value does not convert to Boolean.
+    pub fn notmuch_config_get_bool(
+        notmuch: *mut notmuch_database_t,
+        key: notmuch_config_key_t,
+        val: *mut notmuch_bool_t,
+    ) -> notmuch_status_t;
+
+    /// return the path of the config file loaded, if any
+    ///
+    /// @retval NULL if no config file was loaded
+    pub fn notmuch_config_path(notmuch: *mut notmuch_database_t) -> *const c_char;
 
     /// get the current default indexing options for a given database.
     ///
