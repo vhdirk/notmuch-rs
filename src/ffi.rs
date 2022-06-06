@@ -84,7 +84,7 @@ impl notmuch_status_t {
         } else {
             Err(Error::NotmuchVerboseError(
                 Status::from(self),
-                error_message.unwrap(),
+                error_message.unwrap_or("[no info]".to_string()),
             ))
         }
     }
