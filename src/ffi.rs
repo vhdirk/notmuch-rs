@@ -36,6 +36,8 @@ notmuch_enum! {
         NOTMUCH_STATUS_NO_CONFIG => NoConfig,
         NOTMUCH_STATUS_NO_DATABASE => NoDatabase,
         NOTMUCH_STATUS_DATABASE_EXISTS => DatabaseExists,
+        NOTMUCH_STATUS_BAD_QUERY_SYNTAX => BadQuerySyntax,
+        NOTMUCH_STATUS_NO_MAIL_ROOT => NoMailRoot,
         // Not an actual status value.  Just a way to find out how many
         // valid status values there are.
         NOTMUCH_STATUS_LAST_STATUS => LastStatus
