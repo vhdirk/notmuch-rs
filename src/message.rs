@@ -17,6 +17,8 @@ use Query;
 use Thread;
 use Tags;
 
+pub use ffi::MessageFlag;
+
 #[derive(Clone, Debug, FromVariants)]
 pub(crate) enum MessageOwner {
     Database(Database),
@@ -87,6 +89,14 @@ impl Message {
                 .to_str()
                 .unwrap(),
         )
+    }
+
+    pub fn get_flag(&self, flag: MessageFlag) -> bool {
+        unsafe { ffi::notmuch_message_get_flag(self.ptr.0, flag.into()) != 0}
+    }
+
+    pub fn set_flag(&self, flag: MessageFlag, value: bool) {
+        unsafe { ffi::notmuch_message_set_flag(self.ptr.0, flag.into(), value as i32)}
     }
 
     pub fn date(&self) -> i64 {
