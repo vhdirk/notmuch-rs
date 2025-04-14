@@ -184,7 +184,7 @@ impl Database {
         unsafe {
             ffi::notmuch_database_compact(
                 path_str.as_ptr(),
-                backup_path.map_or(ptr::null(), |p| p.as_ptr()),
+                backup_path.as_ref().map_or(ptr::null(), |p| p.as_ptr()),
                 if status.is_some() {
                     Some(wrapper::<F>)
                 } else {
