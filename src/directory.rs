@@ -8,16 +8,16 @@ use Filenames;
 #[derive(Debug)]
 pub(crate) struct DirectoryPtr(*mut ffi::notmuch_directory_t);
 
+impl Drop for DirectoryPtr {
+    fn drop(&mut self) {
+        unsafe { ffi::notmuch_directory_destroy(self.0) };
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Directory {
     ptr: Rc<DirectoryPtr>,
     owner: Database,
-}
-
-impl Drop for Directory {
-    fn drop(&mut self) {
-        unsafe { ffi::notmuch_directory_destroy(self.ptr.0) };
-    }
 }
 
 impl Directory {
