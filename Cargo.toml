@@ -1,6 +1,6 @@
 [package]
 name = "notmuch"
-version = "0.8.0"
+version = "0.8.1"
 authors = ["Dirk Van Haerenborgh <vhdirk@gmail.com>"]
 homepage = "https://github.com/vhdirk/notmuch-rs"
 repository = "https://github.com/vhdirk/notmuch-rs"
@@ -16,15 +16,15 @@ travis-ci = { repository = "vhdirk/notmuch-rs" }
 [dependencies]
 libc = "0.2"
 # clippy = { version = "0.0.211", optional = true }
-from_variants = "0.6.0"
+from_variants = "1.0.2"
 
 [dev-dependencies]
-dirs = "1.0"
-tempfile = "3"
-gethostname = "0.2.0"
-maildir = "0.3.2"
-lettre = "0.9.2"
-lettre_email = "0.9.2"
+dirs = "7.0.0"
+tempfile = "3.27.0"
+gethostname = "1.1.0"
+maildir = "0.6.6"
+lettre = "0.11.23"
+lettre_email = "0.9.4"
 
 [features]
 v0_21 = []
